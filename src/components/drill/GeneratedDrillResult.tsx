@@ -45,11 +45,18 @@ export function GeneratedDrillResult({
     let currentContent: string[] = [];
 
     for (const line of lines) {
-      if (line.startsWith('## ')) {
+      // Handle both # and ## headers
+      if (line.startsWith('## ') || line.startsWith('# ')) {
         if (currentContent.length) {
           sections[currentSection] = currentContent.join('\n').trim();
         }
-        currentSection = line.replace('## ', '').toLowerCase();
+        // Normalize section names
+        let sectionName = line.replace(/^#+\s*/, '').toLowerCase();
+        // Map common variations
+        if (sectionName.includes('coaching')) sectionName = 'coaching points';
+        if (sectionName.includes('progression') || sectionName.includes('variation')) sectionName = 'progressions';
+        if (sectionName.includes('instruction') || sectionName.includes('how')) sectionName = 'instructions';
+        currentSection = sectionName;
         currentContent = [];
       } else {
         currentContent.push(line);
@@ -65,6 +72,13 @@ export function GeneratedDrillResult({
 
   const sections = parseDescription(result.description);
   const drillJson = result.drill_json || {};
+
+  // Determine which tabs to show
+  const hasSetup = !!sections.setup;
+  const hasInstructions = !!sections.instructions;
+  const hasCoaching = !!sections['coaching points'];
+  const hasProgressions = !!sections.progressions;
+  const hasOverview = !!sections.overview;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -139,28 +153,50 @@ export function GeneratedDrillResult({
 
       {/* Description Tabs */}
       <div className="form-section">
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue={hasOverview ? "overview" : hasSetup ? "setup" : "instructions"} className="w-full">
           <TabsList className="w-full flex-wrap h-auto gap-1 p-1">
-            {sections.overview && <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>}
-            {sections.setup && <TabsTrigger value="setup" className="text-xs">Setup</TabsTrigger>}
-            {sections.instructions && <TabsTrigger value="instructions" className="text-xs">Instructions</TabsTrigger>}
-            {sections['coaching points'] && <TabsTrigger value="coaching" className="text-xs">Coaching</TabsTrigger>}
-            {(sections.progressions || sections['progressions/variations']) && (
-              <TabsTrigger value="progressions" className="text-xs">Progressions</TabsTrigger>
-            )}
+            {hasOverview && <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>}
+            {hasSetup && <TabsTrigger value="setup" className="text-xs">Setup</TabsTrigger>}
+            {hasInstructions && <TabsTrigger value="instructions" className="text-xs">Instructions</TabsTrigger>}
+            {hasCoaching && <TabsTrigger value="coaching" className="text-xs">Coaching Points</TabsTrigger>}
+            {hasProgressions && <TabsTrigger value="progressions" className="text-xs">Progressions</TabsTrigger>}
           </TabsList>
           
-          {Object.entries(sections).map(([key, content]) => (
-            <TabsContent 
-              key={key} 
-              value={key === 'coaching points' ? 'coaching' : key === 'progressions/variations' ? 'progressions' : key} 
-              className="mt-4"
-            >
+          {hasOverview && (
+            <TabsContent value="overview" className="mt-4">
               <div className="prose prose-sm max-w-none text-foreground">
-                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{content}</pre>
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.overview}</pre>
               </div>
             </TabsContent>
-          ))}
+          )}
+          {hasSetup && (
+            <TabsContent value="setup" className="mt-4">
+              <div className="prose prose-sm max-w-none text-foreground">
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.setup}</pre>
+              </div>
+            </TabsContent>
+          )}
+          {hasInstructions && (
+            <TabsContent value="instructions" className="mt-4">
+              <div className="prose prose-sm max-w-none text-foreground">
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.instructions}</pre>
+              </div>
+            </TabsContent>
+          )}
+          {hasCoaching && (
+            <TabsContent value="coaching" className="mt-4">
+              <div className="prose prose-sm max-w-none text-foreground">
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections['coaching points']}</pre>
+              </div>
+            </TabsContent>
+          )}
+          {hasProgressions && (
+            <TabsContent value="progressions" className="mt-4">
+              <div className="prose prose-sm max-w-none text-foreground">
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.progressions}</pre>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

@@ -56,11 +56,11 @@ export function DrillDetailModal({
     let currentContent: string[] = [];
 
     for (const line of lines) {
-      if (line.startsWith('## ')) {
+      if (line.startsWith('## ') || line.startsWith('# ')) {
         if (currentContent.length) {
           sections[currentSection] = currentContent.join('\n').trim();
         }
-        currentSection = line.replace('## ', '').toLowerCase();
+        currentSection = line.replace(/^#+\s*/, '').toLowerCase();
         currentContent = [];
       } else {
         currentContent.push(line);
@@ -74,7 +74,28 @@ export function DrillDetailModal({
     return sections;
   };
 
-  const sections = parseDescription(drill.fullDescription);
+  // Build sections from drill data - prioritize structured fields, fallback to parsed description
+  const buildSections = () => {
+    const sections: Record<string, string> = {};
+    
+    // Check for structured drill data first (from library API)
+    if (drill.setup) sections.setup = drill.setup;
+    if (drill.instructions) sections.instructions = drill.instructions;
+    if (drill.coachingPoints) sections['coaching points'] = drill.coachingPoints;
+    if (drill.variations) sections.progressions = drill.variations;
+    
+    // If we have structured data, return it
+    if (Object.keys(sections).length > 0) {
+      // Add overview from description if available
+      if (drill.description) sections.overview = drill.description;
+      return sections;
+    }
+    
+    // Otherwise, parse from fullDescription markdown
+    return parseDescription(drill.fullDescription);
+  };
+
+  const sections = buildSections();
 
   return (
     <>
@@ -144,9 +165,9 @@ export function DrillDetailModal({
           </div>
 
           {/* Description Tabs */}
-          {sections ? (
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full justify-start">
+          {sections && Object.keys(sections).length > 0 ? (
+            <Tabs defaultValue={sections.overview ? "overview" : sections.setup ? "setup" : "instructions"} className="w-full">
+              <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
                 {sections.overview && <TabsTrigger value="overview">Overview</TabsTrigger>}
                 {sections.setup && <TabsTrigger value="setup">Setup</TabsTrigger>}
                 {sections.instructions && <TabsTrigger value="instructions">Instructions</TabsTrigger>}
@@ -154,13 +175,41 @@ export function DrillDetailModal({
                 {sections.progressions && <TabsTrigger value="progressions">Progressions</TabsTrigger>}
               </TabsList>
               
-              {Object.entries(sections).map(([key, content]) => (
-                <TabsContent key={key} value={key === 'coaching points' ? 'coaching' : key} className="mt-4">
+              {sections.overview && (
+                <TabsContent value="overview" className="mt-4">
                   <div className="prose prose-sm max-w-none text-foreground">
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{content}</pre>
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.overview}</pre>
                   </div>
                 </TabsContent>
-              ))}
+              )}
+              {sections.setup && (
+                <TabsContent value="setup" className="mt-4">
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.setup}</pre>
+                  </div>
+                </TabsContent>
+              )}
+              {sections.instructions && (
+                <TabsContent value="instructions" className="mt-4">
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.instructions}</pre>
+                  </div>
+                </TabsContent>
+              )}
+              {sections['coaching points'] && (
+                <TabsContent value="coaching" className="mt-4">
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections['coaching points']}</pre>
+                  </div>
+                </TabsContent>
+              )}
+              {sections.progressions && (
+                <TabsContent value="progressions" className="mt-4">
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.progressions}</pre>
+                  </div>
+                </TabsContent>
+              )}
             </Tabs>
           ) : (
             <div className="prose prose-sm max-w-none">
