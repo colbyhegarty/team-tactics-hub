@@ -1,6 +1,110 @@
-import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize } from '@/types/drill';
+import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, Drill, DrillCategory, IntensityLevel } from '@/types/drill';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.example.com';
+
+// Library API response types
+export interface LibraryDrillMeta {
+  id: string;
+  name: string;
+  category: string;
+  player_count: string;
+  duration: string;
+}
+
+export interface LibraryListResponse {
+  success: boolean;
+  count: number;
+  drills: LibraryDrillMeta[];
+}
+
+export interface LibraryDrillDetail {
+  id: string;
+  name: string;
+  category: string;
+  player_count: string;
+  duration: string;
+  setup?: string;
+  instructions?: string;
+  variations?: string;
+  coaching_points?: string;
+}
+
+export interface LibraryDrillResponse {
+  success: boolean;
+  drill: LibraryDrillDetail;
+  svg: string;
+}
+
+export interface LibraryCategoriesResponse {
+  success: boolean;
+  categories: string[];
+}
+
+// Fetch all drills from library (metadata only)
+export async function fetchLibraryDrills(): Promise<LibraryListResponse> {
+  const response = await fetch(`${API_URL}/api/library`);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch drills: ${errorText}`);
+  }
+  
+  return response.json();
+}
+
+// Fetch single drill with full details and SVG
+export async function fetchLibraryDrill(id: string): Promise<LibraryDrillResponse> {
+  const response = await fetch(`${API_URL}/api/library/${id}`);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch drill: ${errorText}`);
+  }
+  
+  return response.json();
+}
+
+// Fetch available categories
+export async function fetchLibraryCategories(): Promise<LibraryCategoriesResponse> {
+  const response = await fetch(`${API_URL}/api/library/categories/list`);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch categories: ${errorText}`);
+  }
+  
+  return response.json();
+}
+
+// Helper to convert API drill to app Drill type
+export function mapLibraryDrillToDrill(
+  meta: LibraryDrillMeta,
+  detail?: LibraryDrillDetail,
+  svg?: string
+): Drill {
+  const playerCount = parseInt(meta.player_count) || 10;
+  const duration = parseInt(meta.duration) || 15;
+  
+  let fullDescription = '';
+  if (detail) {
+    if (detail.setup) fullDescription += `## Setup\n${detail.setup}\n\n`;
+    if (detail.instructions) fullDescription += `## Instructions\n${detail.instructions}\n\n`;
+    if (detail.coaching_points) fullDescription += `## Coaching Points\n${detail.coaching_points}\n\n`;
+    if (detail.variations) fullDescription += `## Progressions\n${detail.variations}\n\n`;
+  }
+  
+  return {
+    id: meta.id,
+    name: meta.name,
+    category: (meta.category || 'Other') as DrillCategory,
+    description: detail?.setup?.slice(0, 150) || `${meta.category} drill for ${playerCount} players`,
+    playerCount,
+    duration,
+    intensity: 'Medium' as IntensityLevel,
+    svg,
+    fullDescription: fullDescription || undefined,
+  };
+}
 
 function buildPrompt(formData: DrillFormData): string {
   let prompt = `Create a ${formData.drillType} drill`;
