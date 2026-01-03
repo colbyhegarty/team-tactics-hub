@@ -1,33 +1,107 @@
-import { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
-import { drillLibrary, categories } from '@/lib/drillLibrary';
+import { 
+  fetchLibraryDrills, 
+  fetchLibraryDrill, 
+  fetchLibraryCategories,
+  mapLibraryDrillToDrill,
+  LibraryDrillMeta 
+} from '@/lib/api';
 import { saveDrill, removeDrill, isDrillSaved } from '@/lib/storage';
-import { Drill, DrillCategory } from '@/types/drill';
+import { Drill } from '@/types/drill';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 export default function DrillLibrary() {
-  const [selectedCategory, setSelectedCategory] = useState<DrillCategory | 'All'>('All');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [drillsMeta, setDrillsMeta] = useState<LibraryDrillMeta[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [savedState, setSavedState] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDrill, setIsLoadingDrill] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const filteredDrills = drillLibrary.filter(drill => {
+  // Fetch drills and categories on mount
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const [drillsRes, categoriesRes] = await Promise.all([
+          fetchLibraryDrills(),
+          fetchLibraryCategories()
+        ]);
+        
+        if (drillsRes.success) {
+          setDrillsMeta(drillsRes.drills);
+        }
+        
+        if (categoriesRes.success) {
+          setCategories(categoriesRes.categories);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load drills');
+        toast({
+          title: 'Error',
+          description: 'Failed to load drill library. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadData();
+  }, [toast]);
+
+  // Convert meta to partial Drill for display
+  const drillsForDisplay: Drill[] = drillsMeta.map(meta => mapLibraryDrillToDrill(meta));
+
+  const filteredDrills = drillsForDisplay.filter(drill => {
     const matchesCategory = selectedCategory === 'All' || drill.category === selectedCategory;
     const matchesSearch = drill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       drill.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const handleViewDrill = (drill: Drill) => {
-    setSelectedDrill(drill);
+  const handleViewDrill = async (drill: Drill) => {
+    setIsLoadingDrill(true);
+    
+    try {
+      const response = await fetchLibraryDrill(drill.id);
+      
+      if (response.success) {
+        const fullDrill = mapLibraryDrillToDrill(
+          { 
+            id: response.drill.id, 
+            name: response.drill.name, 
+            category: response.drill.category,
+            player_count: response.drill.player_count,
+            duration: response.drill.duration
+          },
+          response.drill,
+          response.svg
+        );
+        setSelectedDrill(fullDrill);
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load drill details. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingDrill(false);
+    }
   };
 
   const handleSaveDrill = (drill: Drill) => {
@@ -76,7 +150,7 @@ export default function DrillLibrary() {
         <div className="px-4 py-4">
           <h1 className="text-2xl font-bold text-foreground md:text-3xl">Drill Library</h1>
           <p className="mt-1 text-muted-foreground">
-            Browse pre-made drills organized by category
+            Browse drills organized by category
           </p>
         </div>
 
@@ -119,9 +193,21 @@ export default function DrillLibrary() {
         </div>
       </header>
 
-      {/* Drill Grid */}
+      {/* Content */}
       <div className="container py-6 px-4">
-        {filteredDrills.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading drills...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-destructive mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        ) : filteredDrills.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No drills found matching your criteria.</p>
           </div>
@@ -139,6 +225,16 @@ export default function DrillLibrary() {
           </div>
         )}
       </div>
+
+      {/* Loading overlay for drill details */}
+      {isLoadingDrill && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading drill details...</p>
+          </div>
+        </div>
+      )}
 
       {/* Drill Detail Modal */}
       <DrillDetailModal
