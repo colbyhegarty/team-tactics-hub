@@ -103,6 +103,11 @@ export function mapLibraryDrillToDrill(
     intensity: 'Medium' as IntensityLevel,
     svg,
     fullDescription: fullDescription || undefined,
+    // Structured fields from library API
+    setup: detail?.setup,
+    instructions: detail?.instructions,
+    coachingPoints: detail?.coaching_points,
+    variations: detail?.variations,
   };
 }
 

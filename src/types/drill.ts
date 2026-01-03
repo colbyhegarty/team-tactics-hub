@@ -10,6 +10,11 @@ export interface Drill {
   fullDescription?: string;
   drillJson?: Record<string, unknown>;
   savedAt?: string;
+  // Structured fields from library API
+  setup?: string;
+  instructions?: string;
+  coachingPoints?: string;
+  variations?: string;
 }
 
 export type DrillCategory = 
