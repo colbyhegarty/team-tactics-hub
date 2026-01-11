@@ -4,12 +4,16 @@ export interface Drill {
   category: DrillCategory;
   description: string;
   playerCount: number;
+  playerCountDisplay?: string; // Original string like "9+" for display
   duration: number;
   intensity: IntensityLevel;
+  ageGroup?: AgeGroup;
+  difficulty?: string;
   svg?: string;
   fullDescription?: string;
   drillJson?: Record<string, unknown>;
   savedAt?: string;
+  source?: string;
   // Structured fields from library API
   setup?: string;
   instructions?: string;

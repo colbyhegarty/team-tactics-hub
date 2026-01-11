@@ -1,7 +1,7 @@
-import GenerateDrill from './GenerateDrill';
+import FindDrill from './FindDrill';
 
 const Index = () => {
-  return <GenerateDrill />;
+  return <FindDrill />;
 };
 
 export default Index;

@@ -1,7 +1,8 @@
-import { Clock, Users, Zap, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Clock, Users, Zap, Bookmark, BookmarkCheck, GraduationCap } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 
 interface DrillCardProps {
   drill: Drill;
@@ -15,12 +16,13 @@ export function DrillCard({ drill, isSaved, onView, onSave, className }: DrillCa
   return (
     <div
       className={cn(
-        'group rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-card-lg hover:border-primary/20',
+        'group rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-card-lg hover:border-primary/20 cursor-pointer',
         className
       )}
+      onClick={() => onView(drill)}
     >
       {/* Diagram Preview */}
-      <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-field/10 flex items-center justify-center">
+      <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-field/10 flex items-center justify-center border border-border/50">
         {drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
@@ -39,36 +41,48 @@ export function DrillCard({ drill, isSaved, onView, onSave, className }: DrillCa
 
       {/* Content */}
       <div className="space-y-3">
-        <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+        {/* Title */}
+        <h3 className="font-bold text-foreground text-lg line-clamp-2 group-hover:text-primary transition-colors">
           {drill.name}
         </h3>
 
+        {/* Category Badge */}
+        <div className="flex flex-wrap gap-2">
+          <span className={cn('badge-pill font-medium', getCategoryColor(drill.category))}>
+            {drill.category}
+          </span>
+          {drill.difficulty && (
+            <span className={cn('badge-pill font-medium', getDifficultyColor(drill.difficulty))}>
+              {drill.difficulty}
+            </span>
+          )}
+        </div>
+
+        {/* Description */}
         <p className="text-sm text-muted-foreground line-clamp-2">
           {drill.description}
         </p>
 
-        {/* Tags */}
+        {/* Meta Tags */}
         <div className="flex flex-wrap gap-2">
-          <span className="badge-pill badge-primary">
+          <span className="badge-pill badge-muted">
             <Users className="h-3 w-3" />
-            {drill.playerCount}
+            {drill.playerCountDisplay || drill.playerCount}
           </span>
           <span className="badge-pill badge-muted">
             <Clock className="h-3 w-3" />
             {drill.duration} min
           </span>
-          <span className={cn(
-            'badge-pill',
-            drill.intensity === 'High' ? 'bg-destructive/10 text-destructive' :
-            drill.intensity === 'Medium' ? 'bg-accent/20 text-accent-foreground' :
-            'badge-muted'
-          )}>
-            {drill.intensity}
-          </span>
+          {drill.ageGroup && (
+            <span className="badge-pill badge-muted">
+              <GraduationCap className="h-3 w-3" />
+              {drill.ageGroup}
+            </span>
+          )}
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="default"
             size="sm"

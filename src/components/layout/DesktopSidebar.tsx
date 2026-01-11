@@ -1,9 +1,9 @@
-import { Sparkles, Library, User, Dumbbell } from 'lucide-react';
+import { Search, Library, User, Dumbbell } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { to: '/', icon: Sparkles, label: 'Generate Drill' },
+  { to: '/', icon: Search, label: 'Find Drill' },
   { to: '/library', icon: Library, label: 'Drill Library' },
   { to: '/profile', icon: User, label: 'My Profile' },
 ];
@@ -47,7 +47,7 @@ export function DesktopSidebar() {
       <div className="border-t border-border px-4 py-4">
         <div className="rounded-lg bg-secondary/50 px-4 py-3">
           <p className="text-xs text-muted-foreground">
-            Build better training sessions with AI-powered drill generation.
+            Find the perfect drill for your training sessions.
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
-import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, Drill, DrillCategory, IntensityLevel } from '@/types/drill';
+import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, Drill, DrillCategory, IntensityLevel, AgeGroup } from '@/types/drill';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.example.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://soccer-drill-api.onrender.com';
 
 // Library API response types
 export interface LibraryDrillMeta {
@@ -9,6 +9,9 @@ export interface LibraryDrillMeta {
   category: string;
   player_count: string;
   duration: string;
+  age_group?: string;
+  difficulty?: string;
+  description?: string;
 }
 
 export interface LibraryListResponse {
@@ -23,10 +26,13 @@ export interface LibraryDrillDetail {
   category: string;
   player_count: string;
   duration: string;
+  age_group?: string;
+  difficulty?: string;
   setup?: string;
   instructions?: string;
   variations?: string;
   coaching_points?: string;
+  source?: string;
 }
 
 export interface LibraryDrillResponse {
@@ -38,6 +44,17 @@ export interface LibraryDrillResponse {
 export interface LibraryCategoriesResponse {
   success: boolean;
   categories: string[];
+}
+
+// Filter parameters for drill search
+export interface DrillFilterParams {
+  category?: string;
+  age_group?: string;
+  min_players?: number;
+  max_players?: number;
+  difficulty?: string;
+  duration?: number;
+  search?: string;
 }
 
 // Fetch all drills from library (metadata only)
@@ -76,14 +93,99 @@ export async function fetchLibraryCategories(): Promise<LibraryCategoriesRespons
   return response.json();
 }
 
+// Fetch filtered drills
+export async function fetchFilteredDrills(filters: DrillFilterParams): Promise<LibraryListResponse> {
+  const params = new URLSearchParams();
+  
+  if (filters.category && filters.category !== 'All') {
+    params.append('category', filters.category);
+  }
+  if (filters.age_group && filters.age_group !== 'All') {
+    params.append('age_group', filters.age_group);
+  }
+  if (filters.min_players !== undefined) {
+    params.append('min_players', filters.min_players.toString());
+  }
+  if (filters.max_players !== undefined) {
+    params.append('max_players', filters.max_players.toString());
+  }
+  if (filters.difficulty && filters.difficulty !== 'All') {
+    params.append('difficulty', filters.difficulty);
+  }
+  if (filters.duration) {
+    params.append('duration', filters.duration.toString());
+  }
+  if (filters.search) {
+    params.append('search', filters.search);
+  }
+
+  const queryString = params.toString();
+  const url = queryString 
+    ? `${API_URL}/api/library/filter?${queryString}`
+    : `${API_URL}/api/library`;
+    
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch filtered drills: ${errorText}`);
+  }
+  
+  return response.json();
+}
+
+// Map difficulty to color
+export function getDifficultyColor(difficulty?: string): string {
+  switch (difficulty?.toLowerCase()) {
+    case 'easy':
+      return 'bg-emerald-500/10 text-emerald-600';
+    case 'medium':
+      return 'bg-amber-500/10 text-amber-600';
+    case 'hard':
+      return 'bg-red-500/10 text-red-600';
+    default:
+      return 'bg-muted text-muted-foreground';
+  }
+}
+
+// Map category to color
+export function getCategoryColor(category?: string): string {
+  switch (category?.toLowerCase()) {
+    case 'possession':
+      return 'bg-emerald-500/10 text-emerald-600';
+    case 'finishing':
+      return 'bg-red-500/10 text-red-600';
+    case 'passing':
+      return 'bg-blue-500/10 text-blue-600';
+    case 'dribbling':
+      return 'bg-purple-500/10 text-purple-600';
+    case 'defending':
+      return 'bg-orange-500/10 text-orange-600';
+    case 'pressing & transitions':
+      return 'bg-cyan-500/10 text-cyan-600';
+    case 'conditioning':
+      return 'bg-pink-500/10 text-pink-600';
+    default:
+      return 'bg-primary/10 text-primary';
+  }
+}
+
 // Helper to convert API drill to app Drill type
 export function mapLibraryDrillToDrill(
   meta: LibraryDrillMeta,
   detail?: LibraryDrillDetail,
   svg?: string
 ): Drill {
-  const playerCount = parseInt(meta.player_count) || 10;
+  // Handle player count - preserve original string for display
+  const playerCountStr = meta.player_count || '10';
+  const playerCount = parseInt(playerCountStr.replace(/[^\d]/g, '')) || 10;
   const duration = parseInt(meta.duration) || 15;
+  
+  // Map difficulty
+  const difficulty = detail?.difficulty || meta.difficulty;
+  let intensity: IntensityLevel = 'Medium';
+  if (difficulty?.toLowerCase() === 'hard') intensity = 'High';
+  if (difficulty?.toLowerCase() === 'easy') intensity = 'Low';
   
   let fullDescription = '';
   if (detail) {
@@ -97,12 +199,16 @@ export function mapLibraryDrillToDrill(
     id: meta.id,
     name: meta.name,
     category: (meta.category || 'Other') as DrillCategory,
-    description: detail?.setup?.slice(0, 150) || `${meta.category} drill for ${playerCount} players`,
+    description: meta.description || detail?.setup?.slice(0, 150) || `${meta.category} drill for ${playerCount} players`,
     playerCount,
+    playerCountDisplay: playerCountStr,
     duration,
-    intensity: 'Medium' as IntensityLevel,
+    intensity,
+    ageGroup: (detail?.age_group || meta.age_group) as AgeGroup | undefined,
+    difficulty: difficulty,
     svg,
     fullDescription: fullDescription || undefined,
+    source: detail?.source,
     // Structured fields from library API
     setup: detail?.setup,
     instructions: detail?.instructions,
