@@ -1,4 +1,4 @@
-import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Zap, Maximize2, Sparkles } from 'lucide-react';
+import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Zap, Maximize2, Sparkles, GraduationCap, ExternalLink } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 
 interface DrillDetailModalProps {
   drill: Drill | null;
@@ -107,26 +108,28 @@ export function DrillDetailModal({
 
           {/* Quick Info Bar */}
           <div className="flex flex-wrap gap-2 py-2">
-            <span className="badge-pill badge-primary">
+            <span className={cn('badge-pill font-medium', getCategoryColor(drill.category))}>
+              {drill.category}
+            </span>
+            {drill.difficulty && (
+              <span className={cn('badge-pill font-medium', getDifficultyColor(drill.difficulty))}>
+                {drill.difficulty}
+              </span>
+            )}
+            <span className="badge-pill badge-muted">
               <Users className="h-3 w-3" />
-              {drill.playerCount} players
+              {drill.playerCountDisplay || drill.playerCount} players
             </span>
             <span className="badge-pill badge-muted">
               <Clock className="h-3 w-3" />
               {drill.duration} min
             </span>
-            <span className={cn(
-              'badge-pill',
-              drill.intensity === 'High' ? 'bg-destructive/10 text-destructive' :
-              drill.intensity === 'Medium' ? 'bg-accent/20 text-accent-foreground' :
-              'badge-muted'
-            )}>
-              <Zap className="h-3 w-3" />
-              {drill.intensity}
-            </span>
-            <span className="badge-pill bg-primary/10 text-primary">
-              {drill.category}
-            </span>
+            {drill.ageGroup && (
+              <span className="badge-pill badge-muted">
+                <GraduationCap className="h-3 w-3" />
+                {drill.ageGroup}
+              </span>
+            )}
           </div>
 
           {/* Diagram */}
@@ -218,30 +221,44 @@ export function DrillDetailModal({
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-            <Button
-              variant={isSaved ? 'secondary' : 'default'}
-              onClick={() => onSave(drill)}
-            >
-              {isSaved ? (
-                <>
-                  <BookmarkCheck className="h-4 w-4" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Bookmark className="h-4 w-4" />
-                  Save to My Drills
-                </>
-              )}
-            </Button>
-            
-            {onUseAsTemplate && (
-              <Button variant="outline" onClick={() => onUseAsTemplate(drill)}>
-                <Sparkles className="h-4 w-4" />
-                Use as Template
-              </Button>
+          <div className="flex flex-col gap-4 pt-4 border-t border-border">
+            {/* Source Attribution */}
+            {drill.source && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <ExternalLink className="h-3 w-3" />
+                Source: {drill.source}
+              </div>
             )}
+            
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant={isSaved ? 'secondary' : 'default'}
+                onClick={() => onSave(drill)}
+              >
+                {isSaved ? (
+                  <>
+                    <BookmarkCheck className="h-4 w-4" />
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="h-4 w-4" />
+                    Save to My Drills
+                  </>
+                )}
+              </Button>
+              
+              {onUseAsTemplate && (
+                <Button variant="outline" onClick={() => onUseAsTemplate(drill)}>
+                  <Sparkles className="h-4 w-4" />
+                  Use as Template
+                </Button>
+              )}
+              
+              <Button variant="ghost" onClick={onClose}>
+                Back to Library
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

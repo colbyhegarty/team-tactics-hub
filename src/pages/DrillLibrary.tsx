@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Search, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect, useCallback } from 'react';
+import { Loader2, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
+import { DrillFilters } from '@/components/drill/DrillFilters';
 import { 
   fetchLibraryDrills, 
   fetchLibraryDrill, 
   fetchLibraryCategories,
+  fetchFilteredDrills,
   mapLibraryDrillToDrill,
-  LibraryDrillMeta 
+  LibraryDrillMeta,
+  DrillFilterParams
 } from '@/lib/api';
 import { saveDrill, removeDrill, isDrillSaved } from '@/lib/storage';
 import { Drill } from '@/types/drill';
@@ -18,8 +20,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function DrillLibrary() {
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<DrillFilterParams>({});
   const [drillsMeta, setDrillsMeta] = useState<LibraryDrillMeta[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [savedState, setSavedState] = useState<Record<string, boolean>>({});
@@ -29,24 +30,35 @@ export default function DrillLibrary() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Fetch drills and categories on mount
+  // Fetch categories on mount
   useEffect(() => {
-    async function loadData() {
+    async function loadCategories() {
+      try {
+        const categoriesRes = await fetchLibraryCategories();
+        if (categoriesRes.success) {
+          setCategories(categoriesRes.categories);
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  // Fetch drills when filters change
+  useEffect(() => {
+    async function loadDrills() {
       setIsLoading(true);
       setError(null);
       
       try {
-        const [drillsRes, categoriesRes] = await Promise.all([
-          fetchLibraryDrills(),
-          fetchLibraryCategories()
-        ]);
+        const hasFilters = Object.keys(filters).length > 0;
+        const drillsRes = hasFilters 
+          ? await fetchFilteredDrills(filters)
+          : await fetchLibraryDrills();
         
         if (drillsRes.success) {
           setDrillsMeta(drillsRes.drills);
-        }
-        
-        if (categoriesRes.success) {
-          setCategories(categoriesRes.categories);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load drills');
@@ -60,18 +72,11 @@ export default function DrillLibrary() {
       }
     }
     
-    loadData();
-  }, [toast]);
+    loadDrills();
+  }, [filters, toast]);
 
-  // Convert meta to partial Drill for display
+  // Convert meta to Drill for display
   const drillsForDisplay: Drill[] = drillsMeta.map(meta => mapLibraryDrillToDrill(meta));
-
-  const filteredDrills = drillsForDisplay.filter(drill => {
-    const matchesCategory = selectedCategory === 'All' || drill.category === selectedCategory;
-    const matchesSearch = drill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      drill.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
 
   const handleViewDrill = async (drill: Drill) => {
     setIsLoadingDrill(true);
@@ -86,7 +91,9 @@ export default function DrillLibrary() {
             name: response.drill.name, 
             category: response.drill.category,
             player_count: response.drill.player_count,
-            duration: response.drill.duration
+            duration: response.drill.duration,
+            age_group: response.drill.age_group,
+            difficulty: response.drill.difficulty,
           },
           response.drill,
           response.svg
@@ -129,11 +136,10 @@ export default function DrillLibrary() {
     navigate('/', { 
       state: { 
         templateDrill: {
-          drillType: drill.category,
-          description: drill.description,
-          totalPlayers: drill.playerCount,
+          category: drill.category,
+          playerCount: drill.playerCount,
           duration: drill.duration,
-          intensity: drill.intensity,
+          ageGroup: drill.ageGroup,
         }
       }
     });
@@ -148,48 +154,28 @@ export default function DrillLibrary() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-foreground md:text-3xl">Drill Library</h1>
-          <p className="mt-1 text-muted-foreground">
-            Browse drills organized by category
-          </p>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary md:hidden">
+              <Library className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground md:text-3xl">Drill Library</h1>
+              <p className="text-sm text-muted-foreground">
+                Browse and discover training drills
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Search */}
+        {/* Filters */}
         <div className="px-4 pb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search drills..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Category Tabs */}
-        <div className="px-4 pb-4 overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
-            <Button
-              variant={selectedCategory === 'All' ? 'default' : 'secondary'}
-              size="sm"
-              onClick={() => setSelectedCategory('All')}
-              className="shrink-0"
-            >
-              All
-            </Button>
-            {categories.map(category => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'secondary'}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="shrink-0"
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
+          <DrillFilters
+            categories={categories}
+            filters={filters}
+            onFilterChange={setFilters}
+            resultCount={drillsForDisplay.length}
+            isLoading={isLoading}
+          />
         </div>
       </header>
 
@@ -207,13 +193,20 @@ export default function DrillLibrary() {
               Try Again
             </Button>
           </div>
-        ) : filteredDrills.length === 0 ? (
+        ) : drillsForDisplay.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No drills found matching your criteria.</p>
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Library className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">No drills found</h3>
+            <p className="text-muted-foreground mb-4">Try adjusting your filters or search criteria.</p>
+            <Button variant="outline" onClick={() => setFilters({})}>
+              Clear Filters
+            </Button>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredDrills.map(drill => (
+            {drillsForDisplay.map(drill => (
               <DrillCard
                 key={drill.id}
                 drill={drill}
