@@ -28,7 +28,7 @@ import { useLocation } from 'react-router-dom';
 const AGE_GROUPS = ['All', 'U8', 'U10', 'U12', 'U14', 'U16+'];
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard'];
 const DURATIONS = [
-  { value: '', label: 'Any Duration' },
+  { value: 'any', label: 'Any Duration' },
   { value: '10', label: '10 minutes' },
   { value: '15', label: '15 minutes' },
   { value: '20', label: '20 minutes' },
@@ -52,11 +52,11 @@ interface FindDrillFormData {
 }
 
 const initialFormData: FindDrillFormData = {
-  category: '',
+  category: 'none',
   playerCount: '',
   ageGroup: 'All',
   difficulty: 'All',
-  duration: '',
+  duration: 'any',
   focusArea: '',
   equipment: {
     cones: false,
@@ -86,7 +86,9 @@ export default function FindDrill() {
       try {
         const res = await fetchLibraryCategories();
         if (res.success) {
-          setCategories(res.categories);
+          // Filter out empty/undefined categories
+          const validCategories = res.categories.filter((cat) => cat && cat.trim() !== '');
+          setCategories(validCategories);
         }
       } catch (err) {
         console.error('Failed to load categories:', err);
@@ -117,7 +119,7 @@ export default function FindDrill() {
     try {
       const filters: Record<string, any> = {};
       
-      if (formData.category && formData.category !== 'All') {
+      if (formData.category && formData.category !== 'All' && formData.category !== 'none') {
         filters.category = formData.category;
       }
       if (formData.ageGroup && formData.ageGroup !== 'All') {
@@ -126,7 +128,7 @@ export default function FindDrill() {
       if (formData.difficulty && formData.difficulty !== 'All') {
         filters.difficulty = formData.difficulty;
       }
-      if (formData.duration) {
+      if (formData.duration && formData.duration !== 'any') {
         filters.duration = parseInt(formData.duration);
       }
       if (formData.playerCount) {
@@ -275,6 +277,7 @@ export default function FindDrill() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Select category...</SelectItem>
                     {categories.map(cat => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
@@ -432,7 +435,7 @@ export default function FindDrill() {
             type="submit"
             size="lg"
             className="w-full"
-            disabled={isLoading || !formData.category}
+            disabled={isLoading || !formData.category || formData.category === 'none'}
           >
             {isLoading ? (
               <>
