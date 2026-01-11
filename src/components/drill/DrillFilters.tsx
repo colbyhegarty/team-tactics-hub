@@ -23,7 +23,7 @@ interface DrillFiltersProps {
 const AGE_GROUPS = ['All', 'U8', 'U10', 'U12', 'U14', 'U16+'];
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard'];
 const DURATIONS = [
-  { value: '', label: 'Any Duration' },
+  { value: 'any', label: 'Any Duration' },
   { value: '10', label: '10 min' },
   { value: '15', label: '15 min' },
   { value: '20', label: '20 min' },
@@ -79,11 +79,13 @@ export function DrillFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="All">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
+            {categories
+              .filter((cat) => cat && cat.trim() !== '')
+              .map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
@@ -147,8 +149,8 @@ export function DrillFilters({
 
             {/* Duration */}
             <Select
-              value={filters.duration?.toString() || ''}
-              onValueChange={(value) => updateFilter('duration', value ? parseInt(value) : undefined)}
+              value={filters.duration?.toString() || 'any'}
+              onValueChange={(value) => updateFilter('duration', value !== 'any' ? parseInt(value) : undefined)}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Duration" />
