@@ -12,6 +12,7 @@ export interface LibraryDrillMeta {
   age_group?: string;
   difficulty?: string;
   description?: string;
+  svg?: string;
 }
 
 export interface LibraryListResponse {
@@ -28,6 +29,7 @@ export interface LibraryDrillDetail {
   duration: string;
   age_group?: string;
   difficulty?: string;
+  description?: string;
   setup?: string;
   instructions?: string;
   variations?: string;
@@ -195,18 +197,21 @@ export function mapLibraryDrillToDrill(
     if (detail.variations) fullDescription += `## Progressions\n${detail.variations}\n\n`;
   }
   
+  // Use description from detail if available, fall back to meta description
+  const description = detail?.description || meta.description || `${meta.category} drill for ${playerCount} players`;
+  
   return {
     id: meta.id,
     name: meta.name,
     category: (meta.category || 'Other') as DrillCategory,
-    description: meta.description || detail?.setup?.slice(0, 150) || `${meta.category} drill for ${playerCount} players`,
+    description,
     playerCount,
     playerCountDisplay: playerCountStr,
     duration,
     intensity,
     ageGroup: (detail?.age_group || meta.age_group) as AgeGroup | undefined,
     difficulty: difficulty,
-    svg,
+    svg: svg || meta.svg,
     fullDescription: fullDescription || undefined,
     source: detail?.source,
     // Structured fields from library API

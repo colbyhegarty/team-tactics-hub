@@ -94,6 +94,7 @@ export default function DrillLibrary() {
             duration: response.drill.duration,
             age_group: response.drill.age_group,
             difficulty: response.drill.difficulty,
+            description: response.drill.description,
           },
           response.drill,
           response.svg
