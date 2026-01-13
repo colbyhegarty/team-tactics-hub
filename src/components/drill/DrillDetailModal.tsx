@@ -1,4 +1,4 @@
-import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Zap, Maximize2, Sparkles, GraduationCap, ExternalLink } from 'lucide-react';
+import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ExternalLink, ClipboardList, Play, RefreshCw, Lightbulb } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 
 interface DrillDetailModalProps {
@@ -20,6 +20,83 @@ interface DrillDetailModalProps {
   onSave: (drill: Drill) => void;
   onUseAsTemplate?: (drill: Drill) => void;
 }
+
+// Helper function to format drill text with bullets and numbered lists
+const formatDrillText = (text?: string): ReactNode => {
+  if (!text) return null;
+  
+  const lines = text.split('\n');
+  const elements: ReactNode[] = [];
+  let listItems: ReactNode[] = [];
+  let listType: 'bullet' | 'numbered' | null = null;
+  
+  const flushList = () => {
+    if (listItems.length > 0) {
+      if (listType === 'numbered') {
+        elements.push(
+          <ol key={`ol-${elements.length}`} className="list-decimal list-inside space-y-2 mb-4">
+            {listItems}
+          </ol>
+        );
+      } else {
+        elements.push(
+          <ul key={`ul-${elements.length}`} className="list-disc list-inside space-y-2 mb-4">
+            {listItems}
+          </ul>
+        );
+      }
+      listItems = [];
+      listType = null;
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+    
+    // Check if it's a bullet point
+    if (trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-')) {
+      if (listType !== 'bullet') {
+        flushList();
+        listType = 'bullet';
+      }
+      listItems.push(
+        <li key={index} className="text-foreground">
+          {trimmed.replace(/^[•*-]\s*/, '')}
+        </li>
+      );
+      return;
+    }
+    
+    // Check if it's a numbered item
+    const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.+)/);
+    if (numberedMatch) {
+      if (listType !== 'numbered') {
+        flushList();
+        listType = 'numbered';
+      }
+      listItems.push(
+        <li key={index} className="text-foreground">
+          <span className="font-semibold text-primary mr-1">{numberedMatch[1]}.</span>
+          {numberedMatch[2]}
+        </li>
+      );
+      return;
+    }
+    
+    // Regular paragraph
+    flushList();
+    elements.push(
+      <p key={index} className="mb-3 text-foreground leading-relaxed">{trimmed}</p>
+    );
+  });
+  
+  flushList();
+  return elements.length > 0 ? elements : null;
+};
 
 export function DrillDetailModal({
   drill,
@@ -48,189 +125,171 @@ export function DrillDetailModal({
     URL.revokeObjectURL(url);
   };
 
-  const parseDescription = (desc?: string) => {
-    if (!desc) return null;
-    
-    const sections: Record<string, string> = {};
-    const lines = desc.split('\n');
-    let currentSection = 'overview';
-    let currentContent: string[] = [];
-
-    for (const line of lines) {
-      if (line.startsWith('## ') || line.startsWith('# ')) {
-        if (currentContent.length) {
-          sections[currentSection] = currentContent.join('\n').trim();
-        }
-        currentSection = line.replace(/^#+\s*/, '').toLowerCase();
-        currentContent = [];
-      } else {
-        currentContent.push(line);
-      }
-    }
-    
-    if (currentContent.length) {
-      sections[currentSection] = currentContent.join('\n').trim();
-    }
-
-    return sections;
-  };
-
-  // Build sections from drill data - prioritize structured fields, fallback to parsed description
-  const buildSections = () => {
-    const sections: Record<string, string> = {};
-    
-    // Check for structured drill data first (from library API)
-    if (drill.setup) sections.setup = drill.setup;
-    if (drill.instructions) sections.instructions = drill.instructions;
-    if (drill.coachingPoints) sections['coaching points'] = drill.coachingPoints;
-    if (drill.variations) sections.progressions = drill.variations;
-    
-    // If we have structured data, return it
-    if (Object.keys(sections).length > 0) {
-      // Add overview from description if available
-      if (drill.description) sections.overview = drill.description;
-      return sections;
-    }
-    
-    // Otherwise, parse from fullDescription markdown
-    return parseDescription(drill.fullDescription);
-  };
-
-  const sections = buildSections();
+  // Get available tabs based on content
+  const hasSetup = !!drill.setup;
+  const hasInstructions = !!drill.instructions;
+  const hasVariations = !!drill.variations;
+  const hasCoachingPoints = !!drill.coachingPoints;
+  
+  const defaultTab = hasSetup ? 'setup' : hasInstructions ? 'instructions' : hasVariations ? 'variations' : 'coaching';
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold pr-8">{drill.name}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <div className="p-6">
+            {/* Header Section */}
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-2xl md:text-3xl font-bold text-foreground">
+                {drill.name}
+              </DialogTitle>
+            </DialogHeader>
 
-          {/* Quick Info Bar */}
-          <div className="flex flex-wrap gap-2 py-2">
-            <span className={cn('badge-pill font-medium', getCategoryColor(drill.category))}>
-              {drill.category}
-            </span>
-            {drill.difficulty && (
-              <span className={cn('badge-pill font-medium', getDifficultyColor(drill.difficulty))}>
-                {drill.difficulty}
+            {/* Badges Bar */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <span className={cn('badge-pill font-medium', getCategoryColor(drill.category))}>
+                {drill.category}
               </span>
-            )}
-            <span className="badge-pill badge-muted">
-              <Users className="h-3 w-3" />
-              {drill.playerCountDisplay || drill.playerCount} players
-            </span>
-            <span className="badge-pill badge-muted">
-              <Clock className="h-3 w-3" />
-              {drill.duration} min
-            </span>
-            {drill.ageGroup && (
+              {drill.difficulty && (
+                <span className={cn('badge-pill font-medium', getDifficultyColor(drill.difficulty))}>
+                  {drill.difficulty}
+                </span>
+              )}
               <span className="badge-pill badge-muted">
-                <GraduationCap className="h-3 w-3" />
-                {drill.ageGroup}
+                <Users className="h-3 w-3" />
+                {drill.playerCountDisplay || drill.playerCount} players
               </span>
-            )}
-          </div>
-
-          {/* Diagram */}
-          <div className="relative aspect-video overflow-hidden rounded-xl bg-field/10 border border-border">
-            {drill.svg ? (
-              <img
-                src={`data:image/svg+xml;base64,${drill.svg}`}
-                alt={drill.name}
-                className="h-full w-full object-contain p-4"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                <p>No diagram available</p>
-              </div>
-            )}
-            
-            {drill.svg && (
-              <div className="absolute bottom-2 right-2 flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsFullscreen(true)}
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleDownloadSvg}
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Description Tabs */}
-          {sections && Object.keys(sections).length > 0 ? (
-            <Tabs defaultValue={sections.overview ? "overview" : sections.setup ? "setup" : "instructions"} className="w-full">
-              <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
-                {sections.overview && <TabsTrigger value="overview">Overview</TabsTrigger>}
-                {sections.setup && <TabsTrigger value="setup">Setup</TabsTrigger>}
-                {sections.instructions && <TabsTrigger value="instructions">Instructions</TabsTrigger>}
-                {sections['coaching points'] && <TabsTrigger value="coaching">Coaching Points</TabsTrigger>}
-                {sections.progressions && <TabsTrigger value="progressions">Progressions</TabsTrigger>}
-              </TabsList>
-              
-              {sections.overview && (
-                <TabsContent value="overview" className="mt-4">
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.overview}</pre>
-                  </div>
-                </TabsContent>
+              <span className="badge-pill badge-muted">
+                <Clock className="h-3 w-3" />
+                {drill.duration} min
+              </span>
+              {drill.ageGroup && (
+                <span className="badge-pill badge-muted">
+                  <GraduationCap className="h-3 w-3" />
+                  {drill.ageGroup}
+                </span>
               )}
-              {sections.setup && (
-                <TabsContent value="setup" className="mt-4">
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.setup}</pre>
-                  </div>
-                </TabsContent>
-              )}
-              {sections.instructions && (
-                <TabsContent value="instructions" className="mt-4">
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.instructions}</pre>
-                  </div>
-                </TabsContent>
-              )}
-              {sections['coaching points'] && (
-                <TabsContent value="coaching" className="mt-4">
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections['coaching points']}</pre>
-                  </div>
-                </TabsContent>
-              )}
-              {sections.progressions && (
-                <TabsContent value="progressions" className="mt-4">
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-transparent p-0 m-0">{sections.progressions}</pre>
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          ) : (
-            <div className="prose prose-sm max-w-none">
-              <p className="text-muted-foreground">{drill.description}</p>
             </div>
-          )}
 
-          {/* Actions */}
-          <div className="flex flex-col gap-4 pt-4 border-t border-border">
             {/* Source Attribution */}
             {drill.source && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <div className="text-xs text-muted-foreground flex items-center gap-1 mb-4">
                 <ExternalLink className="h-3 w-3" />
                 Source: {drill.source}
               </div>
             )}
-            
-            <div className="flex flex-wrap gap-3">
+
+            {/* Diagram Section */}
+            <div className="relative bg-card rounded-xl shadow-md border border-border p-4 mb-6">
+              {drill.svg ? (
+                <img
+                  src={`data:image/svg+xml;base64,${drill.svg}`}
+                  alt={drill.name}
+                  className="w-full max-h-96 object-contain mx-auto"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-48 text-muted-foreground">
+                  <p>No diagram available</p>
+                </div>
+              )}
+              
+              {drill.svg && (
+                <div className="absolute bottom-4 right-4 flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsFullscreen(true)}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleDownloadSvg}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Description/Overview Section */}
+            {drill.description && (
+              <div className="bg-primary/5 rounded-xl p-4 mb-6 border border-primary/10">
+                <h2 className="font-semibold text-lg mb-2 text-foreground flex items-center gap-2">
+                  <span className="text-primary">📋</span> Overview
+                </h2>
+                <p className="text-muted-foreground leading-relaxed">{drill.description}</p>
+              </div>
+            )}
+
+            {/* Tabbed Content Section */}
+            {(hasSetup || hasInstructions || hasVariations || hasCoachingPoints) && (
+              <Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 h-auto">
+                  {hasSetup && (
+                    <TabsTrigger value="setup" className="flex items-center gap-1 py-2">
+                      <ClipboardList className="h-4 w-4" />
+                      <span className="hidden sm:inline">Setup</span>
+                    </TabsTrigger>
+                  )}
+                  {hasInstructions && (
+                    <TabsTrigger value="instructions" className="flex items-center gap-1 py-2">
+                      <Play className="h-4 w-4" />
+                      <span className="hidden sm:inline">Instructions</span>
+                    </TabsTrigger>
+                  )}
+                  {hasVariations && (
+                    <TabsTrigger value="variations" className="flex items-center gap-1 py-2">
+                      <RefreshCw className="h-4 w-4" />
+                      <span className="hidden sm:inline">Variations</span>
+                    </TabsTrigger>
+                  )}
+                  {hasCoachingPoints && (
+                    <TabsTrigger value="coaching" className="flex items-center gap-1 py-2">
+                      <Lightbulb className="h-4 w-4" />
+                      <span className="hidden sm:inline">Coaching</span>
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+                
+                {hasSetup && (
+                  <TabsContent value="setup" className="bg-card rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">
+                      {formatDrillText(drill.setup)}
+                    </div>
+                  </TabsContent>
+                )}
+                
+                {hasInstructions && (
+                  <TabsContent value="instructions" className="bg-card rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">
+                      {formatDrillText(drill.instructions)}
+                    </div>
+                  </TabsContent>
+                )}
+                
+                {hasVariations && (
+                  <TabsContent value="variations" className="bg-secondary/30 rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">
+                      {formatDrillText(drill.variations)}
+                    </div>
+                  </TabsContent>
+                )}
+                
+                {hasCoachingPoints && (
+                  <TabsContent value="coaching" className="bg-accent/30 rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">
+                      {formatDrillText(drill.coachingPoints)}
+                    </div>
+                  </TabsContent>
+                )}
+              </Tabs>
+            )}
+
+            {/* Actions Footer */}
+            <div className="flex flex-wrap gap-3 pt-6 border-t border-border mt-6">
               <Button
                 variant={isSaved ? 'secondary' : 'default'}
                 onClick={() => onSave(drill)}

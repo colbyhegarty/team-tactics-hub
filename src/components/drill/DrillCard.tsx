@@ -1,4 +1,4 @@
-import { Clock, Users, Zap, Bookmark, BookmarkCheck, GraduationCap } from 'lucide-react';
+import { Clock, Users, Bookmark, BookmarkCheck, GraduationCap } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,37 +16,34 @@ export function DrillCard({ drill, isSaved, onView, onSave, className }: DrillCa
   return (
     <div
       className={cn(
-        'group rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-card-lg hover:border-primary/20 cursor-pointer',
+        'group rounded-xl border border-border bg-card shadow-card transition-all hover:shadow-card-lg hover:border-primary/20 cursor-pointer overflow-hidden',
         className
       )}
       onClick={() => onView(drill)}
     >
       {/* Diagram Preview */}
-      <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-field/10 flex items-center justify-center border border-border/50">
+      <div className="w-full h-48 bg-muted/50 flex items-center justify-center border-b border-border/50">
         {drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
-            className="h-full w-full object-contain"
+            className="w-full h-full object-contain p-2"
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Zap className="h-6 w-6 text-primary" />
-            </div>
-            <span className="text-xs">{drill.category}</span>
+            <span className="text-sm">No diagram</span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="space-y-3">
+      <div className="p-4 space-y-3">
         {/* Title */}
         <h3 className="font-bold text-foreground text-lg line-clamp-2 group-hover:text-primary transition-colors">
           {drill.name}
         </h3>
 
-        {/* Category Badge */}
+        {/* Category & Difficulty Badges */}
         <div className="flex flex-wrap gap-2">
           <span className={cn('badge-pill font-medium', getCategoryColor(drill.category))}>
             {drill.category}
