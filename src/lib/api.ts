@@ -30,10 +30,11 @@ export interface LibraryDrillDetail {
   age_group?: string;
   difficulty?: string;
   description?: string;
-  setup?: string;
-  instructions?: string;
-  variations?: string;
-  coaching_points?: string;
+  // API returns these with _text suffix
+  setup_text?: string;
+  instructions_text?: string;
+  variations_text?: string;
+  coaching_points_text?: string;
   source?: string;
 }
 
@@ -191,10 +192,10 @@ export function mapLibraryDrillToDrill(
   
   let fullDescription = '';
   if (detail) {
-    if (detail.setup) fullDescription += `## Setup\n${detail.setup}\n\n`;
-    if (detail.instructions) fullDescription += `## Instructions\n${detail.instructions}\n\n`;
-    if (detail.coaching_points) fullDescription += `## Coaching Points\n${detail.coaching_points}\n\n`;
-    if (detail.variations) fullDescription += `## Progressions\n${detail.variations}\n\n`;
+    if (detail.setup_text) fullDescription += `## Setup\n${detail.setup_text}\n\n`;
+    if (detail.instructions_text) fullDescription += `## Instructions\n${detail.instructions_text}\n\n`;
+    if (detail.coaching_points_text) fullDescription += `## Coaching Points\n${detail.coaching_points_text}\n\n`;
+    if (detail.variations_text) fullDescription += `## Progressions\n${detail.variations_text}\n\n`;
   }
   
   // Use description from detail if available, fall back to meta description
@@ -214,11 +215,11 @@ export function mapLibraryDrillToDrill(
     svg: svg || meta.svg,
     fullDescription: fullDescription || undefined,
     source: detail?.source,
-    // Structured fields from library API
-    setup: detail?.setup,
-    instructions: detail?.instructions,
-    coachingPoints: detail?.coaching_points,
-    variations: detail?.variations,
+    // Structured fields from library API (mapped from _text fields)
+    setup: detail?.setup_text,
+    instructions: detail?.instructions_text,
+    coachingPoints: detail?.coaching_points_text,
+    variations: detail?.variations_text,
   };
 }
 
