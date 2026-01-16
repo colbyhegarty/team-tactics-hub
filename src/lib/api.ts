@@ -44,9 +44,14 @@ export interface LibraryDrillResponse {
   svg: string;
 }
 
+export interface CategoryItem {
+  name: string;
+  count: number;
+}
+
 export interface LibraryCategoriesResponse {
   success: boolean;
-  categories: string[];
+  categories: CategoryItem[];
 }
 
 // Filter parameters for drill search
@@ -101,13 +106,16 @@ export async function fetchLibraryCategories(): Promise<LibraryCategoriesRespons
   try {
     const libraryResponse = await fetchLibraryDrills();
     if (libraryResponse.success && libraryResponse.drills) {
-      const categorySet = new Set<string>();
+      const categoryMap = new Map<string, number>();
       libraryResponse.drills.forEach(drill => {
         if (drill.category && drill.category.trim()) {
-          categorySet.add(drill.category);
+          const count = categoryMap.get(drill.category) || 0;
+          categoryMap.set(drill.category, count + 1);
         }
       });
-      const categories = Array.from(categorySet).sort();
+      const categories: CategoryItem[] = Array.from(categoryMap.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => a.name.localeCompare(b.name));
       return { success: true, categories };
     }
   } catch (e) {

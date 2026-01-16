@@ -8,11 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DrillFilterParams } from '@/lib/api';
+import { DrillFilterParams, CategoryItem } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface DrillFiltersProps {
-  categories: string[];
+  categories: CategoryItem[];
   filters: DrillFilterParams;
   onFilterChange: (filters: DrillFilterParams) => void;
   resultCount?: number;
@@ -80,10 +80,10 @@ export function DrillFilters({
           <SelectContent>
             <SelectItem value="All">All Categories</SelectItem>
             {categories
-              .filter((cat) => cat && cat.trim() !== '')
+              .filter((cat) => cat.name && cat.name.trim() !== '')
               .map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
+                <SelectItem key={cat.name} value={cat.name}>
+                  {cat.name} ({cat.count})
                 </SelectItem>
               ))}
           </SelectContent>
