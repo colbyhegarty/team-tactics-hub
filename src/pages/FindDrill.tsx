@@ -86,8 +86,10 @@ export default function FindDrill() {
       try {
         const res = await fetchLibraryCategories();
         if (res.success) {
-          // Filter out empty/undefined categories
-          const validCategories = res.categories.filter((cat) => cat && cat.trim() !== '');
+          // Filter out empty/undefined categories - handle both string and object formats
+          const validCategories = res.categories
+            .map((cat: any) => typeof cat === 'string' ? cat : cat?.name)
+            .filter((cat: string | undefined) => cat && cat.trim() !== '');
           setCategories(validCategories);
         }
       } catch (err) {

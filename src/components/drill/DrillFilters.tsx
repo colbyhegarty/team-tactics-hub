@@ -80,12 +80,18 @@ export function DrillFilters({
           <SelectContent>
             <SelectItem value="All">All Categories</SelectItem>
             {categories
-              .filter((cat) => cat && cat.trim() !== '')
-              .map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
+              .filter((cat) => {
+                const catName = typeof cat === 'string' ? cat : (cat as any)?.name;
+                return catName && catName.trim() !== '';
+              })
+              .map((cat) => {
+                const catName = typeof cat === 'string' ? cat : (cat as any)?.name;
+                return (
+                  <SelectItem key={catName} value={catName}>
+                    {catName}
+                  </SelectItem>
+                );
+              })}
           </SelectContent>
         </Select>
 
