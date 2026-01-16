@@ -21,32 +21,45 @@ interface DrillDetailModalProps {
   onUseAsTemplate?: (drill: Drill) => void;
 }
 
-// Helper function to format drill text with bullets and numbered lists
-const formatDrillText = (text?: string): ReactNode => {
+// Helper function to filter out equipment section from coaching points
+const filterCoachingPoints = (text?: string): string | undefined => {
+  if (!text) return undefined;
+  
+  const lines = text.split('\n');
+  const filteredLines: string[] = [];
+  let foundEquipmentSection = false;
+  
+  for (const line of lines) {
+    const trimmed = line.trim().toLowerCase();
+    // Stop including content once we hit the equipment section
+    if (trimmed.includes('drill equipment') || trimmed.startsWith('equipment')) {
+      foundEquipmentSection = true;
+      break;
+    }
+    if (!foundEquipmentSection) {
+      filteredLines.push(line);
+    }
+  }
+  
+  return filteredLines.join('\n').trim() || undefined;
+};
+
+// Helper function to format drill text with bullets (always bullet points, not numbered)
+const formatDrillText = (text?: string, useBullets: boolean = true): ReactNode => {
   if (!text) return null;
   
   const lines = text.split('\n');
   const elements: ReactNode[] = [];
   let listItems: ReactNode[] = [];
-  let listType: 'bullet' | 'numbered' | null = null;
   
   const flushList = () => {
     if (listItems.length > 0) {
-      if (listType === 'numbered') {
-        elements.push(
-          <ol key={`ol-${elements.length}`} className="list-decimal list-inside space-y-2 mb-4">
-            {listItems}
-          </ol>
-        );
-      } else {
-        elements.push(
-          <ul key={`ul-${elements.length}`} className="list-disc list-inside space-y-2 mb-4">
-            {listItems}
-          </ul>
-        );
-      }
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="list-disc list-inside space-y-2 mb-4">
+          {listItems}
+        </ul>
+      );
       listItems = [];
-      listType = null;
     }
   };
 
@@ -57,12 +70,11 @@ const formatDrillText = (text?: string): ReactNode => {
       return;
     }
     
-    // Check if it's a bullet point
-    if (trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-')) {
-      if (listType !== 'bullet') {
-        flushList();
-        listType = 'bullet';
-      }
+    // Check if it's a bullet point or numbered item - treat both as bullets
+    const isBullet = trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-');
+    const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.+)/);
+    
+    if (isBullet) {
       listItems.push(
         <li key={index} className="text-foreground">
           {trimmed.replace(/^[•*-]\s*/, '')}
@@ -71,16 +83,10 @@ const formatDrillText = (text?: string): ReactNode => {
       return;
     }
     
-    // Check if it's a numbered item
-    const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.+)/);
     if (numberedMatch) {
-      if (listType !== 'numbered') {
-        flushList();
-        listType = 'numbered';
-      }
+      // Convert numbered items to bullet points
       listItems.push(
         <li key={index} className="text-foreground">
-          <span className="font-semibold text-primary mr-1">{numberedMatch[1]}.</span>
           {numberedMatch[2]}
         </li>
       );
@@ -171,13 +177,7 @@ export function DrillDetailModal({
               )}
             </div>
 
-            {/* Source Attribution */}
-            {drill.source && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1 mb-4">
-                <ExternalLink className="h-3 w-3" />
-                Source: {drill.source}
-              </div>
-            )}
+            {/* Source Attribution - Removed as per request */}
 
             {/* Diagram Section */}
             <div className="relative bg-card rounded-xl shadow-md border border-border p-4 mb-6">
@@ -281,7 +281,7 @@ export function DrillDetailModal({
                 {hasCoachingPoints && (
                   <TabsContent value="coaching" className="bg-accent/30 rounded-xl p-4 mt-4 border border-border">
                     <div className="prose prose-sm max-w-none">
-                      {formatDrillText(drill.coachingPoints)}
+                      {formatDrillText(filterCoachingPoints(drill.coachingPoints))}
                     </div>
                   </TabsContent>
                 )}
@@ -324,7 +324,7 @@ export function DrillDetailModal({
 
       {/* Fullscreen Modal */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0">
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex items-center justify-center">
           <button
             onClick={() => setIsFullscreen(false)}
             className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-2 backdrop-blur-sm"
@@ -332,11 +332,13 @@ export function DrillDetailModal({
             <X className="h-5 w-5" />
           </button>
           {drill.svg && (
-            <img
-              src={`data:image/svg+xml;base64,${drill.svg}`}
-              alt={drill.name}
-              className="h-full w-full object-contain p-8"
-            />
+            <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
+              <img
+                src={`data:image/svg+xml;base64,${drill.svg}`}
+                alt={drill.name}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

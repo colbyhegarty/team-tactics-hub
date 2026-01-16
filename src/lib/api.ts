@@ -84,16 +84,38 @@ export async function fetchLibraryDrill(id: string): Promise<LibraryDrillRespons
   return response.json();
 }
 
-// Fetch available categories
+// Fetch available categories - extracts from drill library since /categories/list endpoint doesn't exist
 export async function fetchLibraryCategories(): Promise<LibraryCategoriesResponse> {
-  const response = await fetch(`${API_URL}/api/library/categories/list`);
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch categories: ${errorText}`);
+  try {
+    // Try the categories endpoint first
+    const response = await fetch(`${API_URL}/api/library/categories`);
+    
+    if (response.ok) {
+      return response.json();
+    }
+  } catch (e) {
+    // Fall through to fallback
   }
   
-  return response.json();
+  // Fallback: extract categories from the drill library
+  try {
+    const libraryResponse = await fetchLibraryDrills();
+    if (libraryResponse.success && libraryResponse.drills) {
+      const categorySet = new Set<string>();
+      libraryResponse.drills.forEach(drill => {
+        if (drill.category && drill.category.trim()) {
+          categorySet.add(drill.category);
+        }
+      });
+      const categories = Array.from(categorySet).sort();
+      return { success: true, categories };
+    }
+  } catch (e) {
+    console.error('Failed to extract categories from library:', e);
+  }
+  
+  // Return empty categories if all else fails
+  return { success: true, categories: [] };
 }
 
 // Fetch filtered drills
