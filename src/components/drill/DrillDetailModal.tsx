@@ -21,22 +21,29 @@ interface DrillDetailModalProps {
   onUseAsTemplate?: (drill: Drill) => void;
 }
 
-// Helper function to filter out equipment section from coaching points
+// Helper function to filter out equipment section and footer content from coaching points
 const filterCoachingPoints = (text?: string): string | undefined => {
   if (!text) return undefined;
   
   const lines = text.split('\n');
   const filteredLines: string[] = [];
-  let foundEquipmentSection = false;
   
   for (const line of lines) {
     const trimmed = line.trim().toLowerCase();
-    // Stop including content once we hit the equipment section
-    if (trimmed.includes('drill equipment') || trimmed.startsWith('equipment')) {
-      foundEquipmentSection = true;
-      break;
+    // Stop including content once we hit footer/equipment content
+    if (trimmed.includes('drill equipment') || 
+        trimmed.includes('drill ages') ||
+        trimmed.includes('drill topic') ||
+        trimmed.includes('soccer drill titled') ||
+        trimmed.includes('created by') ||
+        trimmed.includes('soccerxpert') ||
+        trimmed.includes('subscribe') ||
+        trimmed.includes('privacy policy') ||
+        trimmed.includes('copyright') ||
+        trimmed.startsWith('equipment')) {
+      continue; // Skip this line
     }
-    if (!foundEquipmentSection) {
+    if (trimmed.length > 0) {
       filteredLines.push(line);
     }
   }
@@ -324,7 +331,7 @@ export function DrillDetailModal({
 
       {/* Fullscreen Modal */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex items-center justify-center">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-4">
           <button
             onClick={() => setIsFullscreen(false)}
             className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-2 backdrop-blur-sm"
@@ -332,13 +339,11 @@ export function DrillDetailModal({
             <X className="h-5 w-5" />
           </button>
           {drill.svg && (
-            <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
-              <img
-                src={`data:image/svg+xml;base64,${drill.svg}`}
-                alt={drill.name}
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
+            <img
+              src={`data:image/svg+xml;base64,${drill.svg}`}
+              alt={drill.name}
+              className="w-full h-auto max-h-[85vh] object-contain"
+            />
           )}
         </DialogContent>
       </Dialog>
