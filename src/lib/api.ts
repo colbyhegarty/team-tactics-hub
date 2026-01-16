@@ -44,14 +44,9 @@ export interface LibraryDrillResponse {
   svg: string;
 }
 
-export interface CategoryItem {
-  name: string;
-  count: number;
-}
-
 export interface LibraryCategoriesResponse {
   success: boolean;
-  categories: CategoryItem[];
+  categories: string[];
 }
 
 // Filter parameters for drill search
@@ -89,40 +84,20 @@ export async function fetchLibraryDrill(id: string): Promise<LibraryDrillRespons
   return response.json();
 }
 
-// Fetch available categories - extracts from drill library since /categories/list endpoint doesn't exist
+// Fetch available categories from the simple endpoint
 export async function fetchLibraryCategories(): Promise<LibraryCategoriesResponse> {
   try {
-    // Try the categories endpoint first
-    const response = await fetch(`${API_URL}/api/library/categories`);
+    const response = await fetch(`${API_URL}/api/library/categories/simple`);
     
     if (response.ok) {
-      return response.json();
+      const data = await response.json();
+      return { success: true, categories: data.categories || [] };
     }
   } catch (e) {
-    // Fall through to fallback
+    console.error('Failed to fetch categories:', e);
   }
   
-  // Fallback: extract categories from the drill library
-  try {
-    const libraryResponse = await fetchLibraryDrills();
-    if (libraryResponse.success && libraryResponse.drills) {
-      const categoryMap = new Map<string, number>();
-      libraryResponse.drills.forEach(drill => {
-        if (drill.category && drill.category.trim()) {
-          const count = categoryMap.get(drill.category) || 0;
-          categoryMap.set(drill.category, count + 1);
-        }
-      });
-      const categories: CategoryItem[] = Array.from(categoryMap.entries())
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-      return { success: true, categories };
-    }
-  } catch (e) {
-    console.error('Failed to extract categories from library:', e);
-  }
-  
-  // Return empty categories if all else fails
+  // Return empty categories if request fails
   return { success: true, categories: [] };
 }
 

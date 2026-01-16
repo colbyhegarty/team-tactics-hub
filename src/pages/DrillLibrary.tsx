@@ -12,7 +12,6 @@ import {
   mapLibraryDrillToDrill,
   LibraryDrillMeta,
   DrillFilterParams,
-  CategoryItem
 } from '@/lib/api';
 import { saveDrill, removeDrill, isDrillSaved } from '@/lib/storage';
 import { Drill } from '@/types/drill';
@@ -20,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function DrillLibrary() {
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [filters, setFilters] = useState<DrillFilterParams>({});
   const [drillsMeta, setDrillsMeta] = useState<LibraryDrillMeta[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);

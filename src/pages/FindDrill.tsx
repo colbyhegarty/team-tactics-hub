@@ -19,7 +19,6 @@ import {
   fetchLibraryDrill,
   mapLibraryDrillToDrill,
   LibraryDrillMeta,
-  CategoryItem,
 } from '@/lib/api';
 import { saveDrill, removeDrill, isDrillSaved } from '@/lib/storage';
 import { Drill } from '@/types/drill';
@@ -72,7 +71,7 @@ export default function FindDrill() {
   const location = useLocation();
   const { toast } = useToast();
   
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState<FindDrillFormData>(initialFormData);
   const [results, setResults] = useState<Drill[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -88,7 +87,7 @@ export default function FindDrill() {
         const res = await fetchLibraryCategories();
         if (res.success) {
           // Filter out empty/undefined categories
-          const validCategories = res.categories.filter((cat) => cat.name && cat.name.trim() !== '');
+          const validCategories = res.categories.filter((cat) => cat && cat.trim() !== '');
           setCategories(validCategories);
         }
       } catch (err) {
@@ -280,8 +279,8 @@ export default function FindDrill() {
                   <SelectContent>
                     <SelectItem value="none">Select category...</SelectItem>
                     {categories.map(cat => (
-                      <SelectItem key={cat.name} value={cat.name}>
-                        {cat.name} ({cat.count})
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
                       </SelectItem>
                     ))}
                   </SelectContent>
