@@ -1,3 +1,85 @@
+// Cone line connecting two cones for boundary visualization
+export interface ConeLine {
+  from_cone: number;  // Index of starting cone in cones array
+  to_cone: number;    // Index of ending cone in cones array
+}
+
+// Position in 2D space
+export interface Position {
+  x: number;
+  y: number;
+}
+
+// Animation keyframe for drill playback
+export interface AnimationKeyframe {
+  id: string;
+  label: string;
+  duration: number;  // milliseconds to reach this keyframe
+  easing: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  positions: {
+    [entityId: string]: Position;
+  };
+}
+
+// Animation data for dynamic drills
+export interface Animation {
+  duration: number;  // total duration in milliseconds
+  keyframes: AnimationKeyframe[];
+}
+
+// Player entity in drill JSON
+export interface DrillPlayer {
+  id: string;
+  role: 'attacker' | 'defender' | 'goalkeeper' | 'neutral';
+  position: Position;
+}
+
+// Cone entity in drill JSON
+export interface DrillCone {
+  position: Position;
+  color?: string;
+}
+
+// Ball entity in drill JSON
+export interface DrillBall {
+  position: Position;
+}
+
+// Goal entity in drill JSON
+export interface DrillGoal {
+  position: Position;
+  rotation?: number;
+  size?: 'full' | 'small';
+}
+
+// Movement arrow in drill JSON
+export interface DrillMovement {
+  from: Position;
+  to: Position;
+  type: 'run' | 'pass' | 'dribble' | 'shot';
+  player_id?: string;
+}
+
+// Structured drill JSON data
+export interface DrillJsonData {
+  field?: {
+    type: 'FULL' | 'HALF';
+    show_markings?: boolean;
+  };
+  players?: DrillPlayer[];
+  cones?: DrillCone[];
+  balls?: DrillBall[];
+  goals?: DrillGoal[];
+  movements?: DrillMovement[];
+  cone_lines?: ConeLine[];
+  animation?: Animation;
+  // Top-level metadata (may come from API response)
+  num_players?: number;
+  duration?: number;
+  intensity?: string;
+  category?: string;
+}
+
 export interface Drill {
   id: string;
   name: string;
@@ -11,9 +93,10 @@ export interface Drill {
   difficulty?: string;
   svg?: string;
   fullDescription?: string;
-  drillJson?: Record<string, unknown>;
+  drillJson?: DrillJsonData;
   savedAt?: string;
   source?: string;
+  hasAnimation?: boolean;
   // Structured fields from library API
   setup?: string;
   instructions?: string;
@@ -97,6 +180,6 @@ export interface GenerateDrillResponse {
   drill_name: string;
   svg: string;
   description: string;
-  drill_json: Record<string, unknown>;
+  drill_json: DrillJsonData;
   error: string | null;
 }

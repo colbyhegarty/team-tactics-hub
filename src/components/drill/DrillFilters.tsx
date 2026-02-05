@@ -38,9 +38,9 @@ export function DrillFilters({
   isLoading,
   showAdvanced = true,
 }: DrillFiltersProps) {
-  const updateFilter = (key: keyof DrillFilterParams, value: string | number | undefined) => {
+  const updateFilter = (key: keyof DrillFilterParams, value: string | number | boolean | undefined) => {
     const newFilters = { ...filters };
-    if (value === '' || value === 'All' || value === undefined) {
+    if (value === '' || value === 'All' || value === 'all' || value === undefined) {
       delete newFilters[key];
     } else {
       (newFilters as any)[key] = value;
@@ -167,6 +167,27 @@ export function DrillFilters({
                     {dur.label}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            {/* Animation Filter */}
+            <Select
+              value={filters.has_animation === undefined ? 'all' : filters.has_animation.toString()}
+              onValueChange={(value) => {
+                if (value === 'all') {
+                  updateFilter('has_animation', undefined);
+                } else {
+                  updateFilter('has_animation', value === 'true');
+                }
+              }}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Animation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Drills</SelectItem>
+                <SelectItem value="true">Animated Only</SelectItem>
+                <SelectItem value="false">Static Only</SelectItem>
               </SelectContent>
             </Select>
           </>

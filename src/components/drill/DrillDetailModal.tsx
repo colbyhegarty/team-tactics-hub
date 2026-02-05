@@ -1,6 +1,7 @@
-import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ExternalLink, ClipboardList, Play, RefreshCw, Lightbulb } from 'lucide-react';
-import { Drill } from '@/types/drill';
+import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb } from 'lucide-react';
+import { Drill, DrillJsonData } from '@/types/drill';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
+import { AnimationPlayer } from './AnimationPlayer';
+import { DrillDiagram } from './DrillDiagram';
 
 interface DrillDetailModalProps {
   drill: Drill | null;
@@ -168,6 +171,12 @@ export function DrillDetailModal({
                   {drill.difficulty}
                 </span>
               )}
+              {drill.hasAnimation && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Play className="w-3 h-3" />
+                  Animated
+                </Badge>
+              )}
               <span className="badge-pill badge-muted">
                 <Users className="h-3 w-3" />
                 {drill.playerCountDisplay || drill.playerCount} players
@@ -184,11 +193,14 @@ export function DrillDetailModal({
               )}
             </div>
 
-            {/* Source Attribution - Removed as per request */}
-
             {/* Diagram Section */}
             <div className="relative bg-card rounded-xl shadow-md border border-border p-4 mb-6">
-              {drill.svg ? (
+              {/* Check if drill has animation data in drillJson */}
+              {drill.drillJson?.animation && drill.drillJson.animation.keyframes?.length > 0 ? (
+                <AnimationPlayer drillJson={drill.drillJson} />
+              ) : drill.drillJson && (drill.drillJson.players?.length || drill.drillJson.cones?.length) ? (
+                <DrillDiagram drillJson={drill.drillJson} className="w-full max-h-96" />
+              ) : drill.svg ? (
                 <img
                   src={`data:image/svg+xml;base64,${drill.svg}`}
                   alt={drill.name}
@@ -200,7 +212,7 @@ export function DrillDetailModal({
                 </div>
               )}
               
-              {drill.svg && (
+              {drill.svg && !drill.drillJson?.animation && (
                 <div className="absolute bottom-4 right-4 flex gap-2">
                   <Button
                     variant="secondary"

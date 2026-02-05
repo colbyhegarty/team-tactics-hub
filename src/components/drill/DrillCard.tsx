@@ -1,6 +1,7 @@
-import { Clock, Users, Bookmark, BookmarkCheck, GraduationCap } from 'lucide-react';
+import { Clock, Users, Bookmark, BookmarkCheck, GraduationCap, Play } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 
@@ -52,6 +53,12 @@ export function DrillCard({ drill, isSaved, onView, onSave, className }: DrillCa
             <span className={cn('badge-pill font-medium', getDifficultyColor(drill.difficulty))}>
               {drill.difficulty}
             </span>
+          )}
+          {drill.hasAnimation && (
+            <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+              <Play className="w-3 h-3" />
+              Animated
+            </Badge>
           )}
         </div>
 
