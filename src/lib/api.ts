@@ -13,6 +13,7 @@ export interface LibraryDrillMeta {
   difficulty?: string;
   description?: string;
   svg?: string;
+  has_animation?: boolean;
 }
 
 export interface LibraryListResponse {
@@ -58,6 +59,7 @@ export interface DrillFilterParams {
   difficulty?: string;
   duration?: number;
   search?: string;
+  has_animation?: boolean;
 }
 
 // Fetch all drills from library (metadata only)
@@ -125,6 +127,9 @@ export async function fetchFilteredDrills(filters: DrillFilterParams): Promise<L
   }
   if (filters.search) {
     params.append('search', filters.search);
+  }
+  if (filters.has_animation !== undefined) {
+    params.append('has_animation', filters.has_animation.toString());
   }
 
   const queryString = params.toString();
@@ -220,6 +225,7 @@ export function mapLibraryDrillToDrill(
     svg: svg || meta.svg,
     fullDescription: fullDescription || undefined,
     source: detail?.source,
+    hasAnimation: meta.has_animation,
     // Structured fields from library API (mapped from _text fields)
     setup: detail?.setup_text,
     instructions: detail?.instructions_text,
