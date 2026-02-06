@@ -1,4 +1,4 @@
-import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb } from 'lucide-react';
+import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb, Image, Film } from 'lucide-react';
 import { Drill, DrillJsonData } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
@@ -123,6 +124,9 @@ export function DrillDetailModal({
   onUseAsTemplate,
 }: DrillDetailModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useState<'static' | 'animated'>('animated');
+  
+  const hasAnimation = drill?.drillJson?.animation && drill.drillJson.animation.keyframes?.length > 0;
 
   if (!drill) return null;
 
@@ -195,9 +199,38 @@ export function DrillDetailModal({
 
             {/* Diagram Section */}
             <div className="relative bg-card rounded-xl shadow-md border border-border p-4 mb-6">
-              {/* Check if drill has animation data in drillJson */}
-              {drill.drillJson?.animation && drill.drillJson.animation.keyframes?.length > 0 ? (
-                <AnimationPlayer drillJson={drill.drillJson} />
+              {/* View Toggle - only show if animation is available */}
+              {hasAnimation && (
+                <div className="flex justify-center mb-4">
+                  <ToggleGroup
+                    type="single"
+                    value={viewMode}
+                    onValueChange={(value) => value && setViewMode(value as 'static' | 'animated')}
+                    className="bg-muted p-1 rounded-lg"
+                  >
+                    <ToggleGroupItem 
+                      value="static" 
+                      aria-label="Static View"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
+                    >
+                      <Image className="h-4 w-4 mr-2" />
+                      Static
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="animated" 
+                      aria-label="Animated View"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
+                    >
+                      <Film className="h-4 w-4 mr-2" />
+                      Animated
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              )}
+              
+              {/* Diagram Content */}
+              {hasAnimation && viewMode === 'animated' ? (
+                <AnimationPlayer drillJson={drill.drillJson!} />
               ) : drill.drillJson && (drill.drillJson.players?.length || drill.drillJson.cones?.length) ? (
                 <DrillDiagram drillJson={drill.drillJson} className="w-full max-h-96" />
               ) : drill.svg ? (
@@ -212,7 +245,7 @@ export function DrillDetailModal({
                 </div>
               )}
               
-              {drill.svg && !drill.drillJson?.animation && (
+              {drill.svg && viewMode === 'static' && (
                 <div className="absolute bottom-4 right-4 flex gap-2">
                   <Button
                     variant="secondary"
