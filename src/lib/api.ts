@@ -1,4 +1,4 @@
-import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, Drill, DrillCategory, IntensityLevel, AgeGroup } from '@/types/drill';
+import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, Drill, DrillCategory, IntensityLevel, AgeGroup, DrillJsonData } from '@/types/drill';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://soccer-drill-api.onrender.com';
 
@@ -37,6 +37,8 @@ export interface LibraryDrillDetail {
   variations_text?: string;
   coaching_points_text?: string;
   source?: string;
+  has_animation?: boolean;
+  drill_json?: DrillJsonData;
 }
 
 export interface LibraryDrillResponse {
@@ -225,7 +227,8 @@ export function mapLibraryDrillToDrill(
     svg: svg || meta.svg,
     fullDescription: fullDescription || undefined,
     source: detail?.source,
-    hasAnimation: meta.has_animation,
+    hasAnimation: detail?.has_animation ?? meta.has_animation,
+    drillJson: detail?.drill_json,
     // Structured fields from library API (mapped from _text fields)
     setup: detail?.setup_text,
     instructions: detail?.instructions_text,
