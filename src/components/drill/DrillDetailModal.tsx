@@ -1,5 +1,5 @@
 import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb, Image, Film } from 'lucide-react';
-import { Drill, DrillJsonData } from '@/types/drill';
+import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,7 +13,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
-import { AnimationPlayer } from './AnimationPlayer';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://soccer-drill-api.onrender.com';
 
 interface DrillDetailModalProps {
   drill: Drill | null;
@@ -125,7 +126,7 @@ export function DrillDetailModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'static' | 'animated'>('animated');
   
-  const hasAnimation = drill?.drillJson?.animation && drill.drillJson.animation.keyframes?.length > 0;
+  const hasAnimation = drill?.hasAnimation;
 
   if (!drill) return null;
 
@@ -229,7 +230,12 @@ export function DrillDetailModal({
               
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' ? (
-                <AnimationPlayer drillJson={drill.drillJson!} />
+                <iframe
+                  src={`${API_URL}/api/library/${drill.id}/animation`}
+                  className="w-full h-[600px] border-0 rounded-lg"
+                  title={`${drill.name} Animation`}
+                  allow="fullscreen"
+                />
               ) : drill.svg ? (
                 <img
                   src={`data:image/svg+xml;base64,${drill.svg}`}
