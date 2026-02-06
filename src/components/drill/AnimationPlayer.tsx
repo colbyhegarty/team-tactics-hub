@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Repeat } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Rewind, FastForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -16,6 +16,14 @@ interface AnimationPlayerProps {
   drillJson: DrillJsonData;
   className?: string;
 }
+
+// Format time in mm:ss
+const formatTime = (ms: number): string => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
 
 // Easing functions
 const applyEasing = (t: number, easing: string): number => {
@@ -84,8 +92,8 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
     return positions;
   }, [keyframes, currentKeyframeIndex, progress]);
   
-  // Calculate overall progress (0-100)
-  const calculateOverallProgress = useCallback((): number => {
+  // Calculate current time in milliseconds
+  const calculateCurrentTimeMs = useCallback((): number => {
     if (keyframes.length <= 1) return 0;
     
     let elapsed = 0;
@@ -98,8 +106,13 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
       elapsed += currentSegmentDuration * progress;
     }
     
-    return totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0;
-  }, [keyframes, currentKeyframeIndex, progress, totalDuration]);
+    return elapsed;
+  }, [keyframes, currentKeyframeIndex, progress]);
+  
+  // Calculate overall progress (0-100)
+  const calculateOverallProgress = useCallback((): number => {
+    return totalDuration > 0 ? (calculateCurrentTimeMs() / totalDuration) * 100 : 0;
+  }, [calculateCurrentTimeMs, totalDuration]);
   
   // Seek to a specific overall progress (0-1)
   const seekToProgress = useCallback((targetProgress: number) => {
@@ -216,6 +229,18 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
     return <DrillDiagram drillJson={drillJson} className={className} />;
   }
   
+  const handleGoToStart = () => {
+    setIsPlaying(false);
+    setCurrentKeyframeIndex(0);
+    setProgress(0);
+  };
+  
+  const handleGoToEnd = () => {
+    setIsPlaying(false);
+    setCurrentKeyframeIndex(keyframes.length - 1);
+    setProgress(1);
+  };
+  
   return (
     <div className={className}>
       {/* Animated Drill Diagram */}
@@ -226,14 +251,27 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
         />
       </div>
       
-      {/* Controls */}
-      <div className="flex items-center gap-2 mt-4">
+      {/* Playback Controls */}
+      <div className="flex items-center gap-1 sm:gap-2 mt-4 bg-muted/50 rounded-lg p-2">
+        {/* Go to Start */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleGoToStart}
+          className="h-8 w-8"
+          title="Go to start"
+        >
+          <Rewind className="w-4 h-4" />
+        </Button>
+        
         {/* Previous Keyframe */}
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           onClick={handlePrevKeyframe}
-          disabled={currentKeyframeIndex === 0}
+          disabled={currentKeyframeIndex === 0 && progress === 0}
+          className="h-8 w-8"
+          title="Previous step"
         >
           <SkipBack className="w-4 h-4" />
         </Button>
@@ -243,30 +281,54 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
           variant="default"
           size="icon"
           onClick={handlePlayPause}
+          className="h-10 w-10"
+          title={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
         </Button>
         
         {/* Next Keyframe */}
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           onClick={handleNextKeyframe}
-          disabled={currentKeyframeIndex >= keyframes.length - 1}
+          disabled={currentKeyframeIndex >= keyframes.length - 1 && progress >= 1}
+          className="h-8 w-8"
+          title="Next step"
         >
           <SkipForward className="w-4 h-4" />
         </Button>
         
+        {/* Go to End */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleGoToEnd}
+          className="h-8 w-8"
+          title="Go to end"
+        >
+          <FastForward className="w-4 h-4" />
+        </Button>
+        
         {/* Progress Bar */}
-        <div className="flex-1 mx-4">
+        <div className="flex-1 mx-2 sm:mx-4">
           <Slider
             value={[calculateOverallProgress()]}
             max={100}
-            step={1}
+            step={0.5}
             onValueChange={(value) => seekToProgress(value[0] / 100)}
+            className="cursor-pointer"
           />
         </div>
         
+        {/* Time Display */}
+        <span className="text-xs sm:text-sm text-muted-foreground font-mono min-w-[70px] sm:min-w-[90px] text-right">
+          {formatTime(calculateCurrentTimeMs())} / {formatTime(totalDuration)}
+        </span>
+      </div>
+      
+      {/* Speed Control & Loop Toggle */}
+      <div className="flex items-center justify-between mt-3">
         {/* Speed Control */}
         <Select value={speed.toString()} onValueChange={(v) => setSpeed(parseFloat(v))}>
           <SelectTrigger className="w-20">
@@ -283,10 +345,12 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
         {/* Loop Toggle */}
         <Button
           variant={looping ? 'default' : 'outline'}
-          size="icon"
+          size="sm"
           onClick={() => setLooping(!looping)}
+          className="gap-2"
         >
           <Repeat className="w-4 h-4" />
+          <span className="hidden sm:inline">{looping ? 'Loop On' : 'Loop Off'}</span>
         </Button>
       </div>
       
@@ -299,7 +363,7 @@ export function AnimationPlayer({ drillJson, className }: AnimationPlayerProps) 
               variant={idx === currentKeyframeIndex ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleKeyframeClick(idx)}
-              className="shrink-0"
+              className="shrink-0 text-xs"
             >
               {kf.label || `Step ${idx + 1}`}
             </Button>
