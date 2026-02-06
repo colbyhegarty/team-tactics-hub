@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 import { AnimationPlayer } from './AnimationPlayer';
-import { DrillDiagram } from './DrillDiagram';
 
 interface DrillDetailModalProps {
   drill: Drill | null;
@@ -231,8 +230,6 @@ export function DrillDetailModal({
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' ? (
                 <AnimationPlayer drillJson={drill.drillJson!} />
-              ) : drill.drillJson && (drill.drillJson.players?.length || drill.drillJson.cones?.length) ? (
-                <DrillDiagram drillJson={drill.drillJson} className="w-full max-h-96" />
               ) : drill.svg ? (
                 <img
                   src={`data:image/svg+xml;base64,${drill.svg}`}
