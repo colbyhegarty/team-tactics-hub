@@ -189,7 +189,7 @@ export default function FindDrill() {
             difficulty: response.drill.difficulty,
           },
           response.drill,
-          response.svg
+          response.svg_url
         );
         setSelectedDrill(fullDrill);
       }

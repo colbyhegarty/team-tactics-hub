@@ -24,7 +24,13 @@ export function DrillCard({ drill, isSaved, onView, onSave, className }: DrillCa
     >
       {/* Diagram Preview */}
       <div className="w-full h-48 bg-muted/50 flex items-center justify-center border-b border-border/50">
-        {drill.svg ? (
+        {drill.svgUrl ? (
+          <img
+            src={drill.svgUrl}
+            alt={drill.name}
+            className="w-full h-full object-contain p-2"
+          />
+        ) : drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}

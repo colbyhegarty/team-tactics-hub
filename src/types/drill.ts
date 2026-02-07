@@ -91,12 +91,14 @@ export interface Drill {
   intensity: IntensityLevel;
   ageGroup?: AgeGroup;
   difficulty?: string;
-  svg?: string;
+  svg?: string; // Legacy base64 SVG (deprecated)
+  svgUrl?: string; // URL to SVG image
   fullDescription?: string;
   drillJson?: DrillJsonData;
   savedAt?: string;
   source?: string;
   hasAnimation?: boolean;
+  animationHtmlUrl?: string; // URL to animation HTML page
   // Structured fields from library API
   setup?: string;
   instructions?: string;
