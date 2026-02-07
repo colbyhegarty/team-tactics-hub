@@ -1,8 +1,43 @@
-import { DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, Drill, DrillCategory, IntensityLevel, AgeGroup, DrillJsonData } from '@/types/drill';
+import { supabase } from './supabase';
+import { Drill, DrillCategory, IntensityLevel, AgeGroup, DrillFormData, GenerateDrillResponse, SkillLevel, FieldSize, DrillJsonData } from '@/types/drill';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://soccer-drill-api.onrender.com';
 
-// Library API response types
+// Supabase response types
+export interface DrillListRow {
+  id: string;
+  name: string;
+  category: string;
+  player_count: string;
+  duration: string;
+  age_group?: string;
+  difficulty?: string;
+  description?: string;
+  svg_url?: string;
+  has_animation?: boolean;
+}
+
+export interface DrillDetailRow {
+  id: string;
+  name: string;
+  category: string;
+  player_count: string;
+  duration: string;
+  age_group?: string;
+  difficulty?: string;
+  description?: string;
+  svg_url?: string;
+  setup_text?: string;
+  instructions_text?: string;
+  variations_text?: string;
+  coaching_points_text?: string;
+  source?: string;
+  has_animation?: boolean;
+  animation_html_url?: string;
+  drill_json?: DrillJsonData;
+}
+
+// Legacy types for backward compatibility
 export interface LibraryDrillMeta {
   id: string;
   name: string;
@@ -13,6 +48,7 @@ export interface LibraryDrillMeta {
   difficulty?: string;
   description?: string;
   svg?: string;
+  svg_url?: string;
   has_animation?: boolean;
 }
 
@@ -31,20 +67,20 @@ export interface LibraryDrillDetail {
   age_group?: string;
   difficulty?: string;
   description?: string;
-  // API returns these with _text suffix
   setup_text?: string;
   instructions_text?: string;
   variations_text?: string;
   coaching_points_text?: string;
   source?: string;
   has_animation?: boolean;
+  animation_html_url?: string;
   drill_json?: DrillJsonData;
 }
 
 export interface LibraryDrillResponse {
   success: boolean;
   drill: LibraryDrillDetail;
-  svg: string;
+  svg_url?: string;
 }
 
 export interface LibraryCategoriesResponse {
@@ -64,89 +100,144 @@ export interface DrillFilterParams {
   has_animation?: boolean;
 }
 
-// Fetch all drills from library (metadata only)
+// Fetch all drills from library using Supabase
 export async function fetchLibraryDrills(): Promise<LibraryListResponse> {
-  const response = await fetch(`${API_URL}/api/library`);
+  const { data, error } = await supabase
+    .from('drill_list')
+    .select('*');
   
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch drills: ${errorText}`);
+  if (error) {
+    throw new Error(`Failed to fetch drills: ${error.message}`);
   }
   
-  return response.json();
+  const drills: LibraryDrillMeta[] = (data || []).map((row: DrillListRow) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    player_count: row.player_count,
+    duration: row.duration,
+    age_group: row.age_group,
+    difficulty: row.difficulty,
+    description: row.description,
+    svg_url: row.svg_url,
+    has_animation: row.has_animation,
+  }));
+  
+  return {
+    success: true,
+    count: drills.length,
+    drills,
+  };
 }
 
-// Fetch single drill with full details and SVG
+// Fetch single drill with full details using Supabase
 export async function fetchLibraryDrill(id: string): Promise<LibraryDrillResponse> {
-  const response = await fetch(`${API_URL}/api/library/${id}`);
+  const { data, error } = await supabase
+    .from('drill_detail')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
   
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch drill: ${errorText}`);
+  if (error) {
+    throw new Error(`Failed to fetch drill: ${error.message}`);
   }
   
-  return response.json();
+  if (!data) {
+    throw new Error('Drill not found');
+  }
+  
+  const detail: LibraryDrillDetail = {
+    id: data.id,
+    name: data.name,
+    category: data.category,
+    player_count: data.player_count,
+    duration: data.duration,
+    age_group: data.age_group,
+    difficulty: data.difficulty,
+    description: data.description,
+    setup_text: data.setup_text,
+    instructions_text: data.instructions_text,
+    variations_text: data.variations_text,
+    coaching_points_text: data.coaching_points_text,
+    source: data.source,
+    has_animation: data.has_animation,
+    animation_html_url: data.animation_html_url,
+    drill_json: data.drill_json,
+  };
+  
+  return {
+    success: true,
+    drill: detail,
+    svg_url: data.svg_url,
+  };
 }
 
-// Fetch available categories from the simple endpoint
+// Fetch available categories from Supabase
 export async function fetchLibraryCategories(): Promise<LibraryCategoriesResponse> {
   try {
-    const response = await fetch(`${API_URL}/api/library/categories/simple`);
+    const { data, error } = await supabase
+      .from('drill_list')
+      .select('category');
     
-    if (response.ok) {
-      const data = await response.json();
-      return { success: true, categories: data.categories || [] };
+    if (error) {
+      console.error('Failed to fetch categories:', error);
+      return { success: true, categories: [] };
     }
+    
+    // Extract unique categories
+    const uniqueCategories = [...new Set((data || []).map((row: { category: string }) => row.category))].filter(Boolean).sort();
+    
+    return { success: true, categories: uniqueCategories };
   } catch (e) {
     console.error('Failed to fetch categories:', e);
+    return { success: true, categories: [] };
   }
-  
-  // Return empty categories if request fails
-  return { success: true, categories: [] };
 }
 
-// Fetch filtered drills
+// Fetch filtered drills using Supabase
 export async function fetchFilteredDrills(filters: DrillFilterParams): Promise<LibraryListResponse> {
-  const params = new URLSearchParams();
+  let query = supabase.from('drill_list').select('*');
   
   if (filters.category && filters.category !== 'All') {
-    params.append('category', filters.category);
+    query = query.eq('category', filters.category);
   }
   if (filters.age_group && filters.age_group !== 'All') {
-    params.append('age_group', filters.age_group);
-  }
-  if (filters.min_players !== undefined) {
-    params.append('min_players', filters.min_players.toString());
-  }
-  if (filters.max_players !== undefined) {
-    params.append('max_players', filters.max_players.toString());
+    query = query.eq('age_group', filters.age_group);
   }
   if (filters.difficulty && filters.difficulty !== 'All') {
-    params.append('difficulty', filters.difficulty);
-  }
-  if (filters.duration) {
-    params.append('duration', filters.duration.toString());
+    query = query.eq('difficulty', filters.difficulty);
   }
   if (filters.search) {
-    params.append('search', filters.search);
+    query = query.ilike('name', `%${filters.search}%`);
   }
   if (filters.has_animation !== undefined) {
-    params.append('has_animation', filters.has_animation.toString());
-  }
-
-  const queryString = params.toString();
-  const url = queryString 
-    ? `${API_URL}/api/library/filter?${queryString}`
-    : `${API_URL}/api/library`;
-    
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch filtered drills: ${errorText}`);
+    query = query.eq('has_animation', filters.has_animation);
   }
   
-  return response.json();
+  const { data, error } = await query;
+  
+  if (error) {
+    throw new Error(`Failed to fetch filtered drills: ${error.message}`);
+  }
+  
+  const drills: LibraryDrillMeta[] = (data || []).map((row: DrillListRow) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    player_count: row.player_count,
+    duration: row.duration,
+    age_group: row.age_group,
+    difficulty: row.difficulty,
+    description: row.description,
+    svg_url: row.svg_url,
+    has_animation: row.has_animation,
+  }));
+  
+  return {
+    success: true,
+    count: drills.length,
+    drills,
+  };
 }
 
 // Map difficulty to color
@@ -189,7 +280,7 @@ export function getCategoryColor(category?: string): string {
 export function mapLibraryDrillToDrill(
   meta: LibraryDrillMeta,
   detail?: LibraryDrillDetail,
-  svg?: string
+  svg_url?: string
 ): Drill {
   // Handle player count - preserve original string for display
   const playerCountStr = meta.player_count || '10';
@@ -224,10 +315,12 @@ export function mapLibraryDrillToDrill(
     intensity,
     ageGroup: (detail?.age_group || meta.age_group) as AgeGroup | undefined,
     difficulty: difficulty,
-    svg: svg || meta.svg,
+    svg: undefined, // No longer using base64
+    svgUrl: svg_url || meta.svg_url, // Use URL instead
     fullDescription: fullDescription || undefined,
     source: detail?.source,
     hasAnimation: detail?.has_animation ?? meta.has_animation,
+    animationHtmlUrl: detail?.animation_html_url,
     drillJson: detail?.drill_json,
     // Structured fields from library API (mapped from _text fields)
     setup: detail?.setup_text,

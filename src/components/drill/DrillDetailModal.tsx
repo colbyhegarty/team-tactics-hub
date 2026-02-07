@@ -130,7 +130,27 @@ export function DrillDetailModal({
 
   if (!drill) return null;
 
-  const handleDownloadSvg = () => {
+  const handleDownloadSvg = async () => {
+    // Try URL-based download first
+    if (drill.svgUrl) {
+      try {
+        const response = await fetch(drill.svgUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${drill.name.replace(/\s+/g, '-').toLowerCase()}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      } catch (e) {
+        console.error('Failed to download SVG:', e);
+      }
+    }
+    
+    // Fall back to base64
     if (!drill.svg) return;
     
     const svgContent = atob(drill.svg);
@@ -231,10 +251,16 @@ export function DrillDetailModal({
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' ? (
                 <iframe
-                  src={`${API_URL}/api/library/${drill.id}/animation`}
+                  src={drill.animationHtmlUrl || `${API_URL}/api/library/${drill.id}/animation`}
                   className="w-full h-[600px] border-0 rounded-lg"
                   title={`${drill.name} Animation`}
                   allow="fullscreen"
+                />
+              ) : drill.svgUrl ? (
+                <img
+                  src={drill.svgUrl}
+                  alt={drill.name}
+                  className="w-full max-h-96 object-contain mx-auto"
                 />
               ) : drill.svg ? (
                 <img
@@ -248,7 +274,7 @@ export function DrillDetailModal({
                 </div>
               )}
               
-              {drill.svg && viewMode === 'static' && (
+              {(drill.svgUrl || drill.svg) && viewMode === 'static' && (
                 <div className="absolute bottom-4 right-4 flex gap-2">
                   <Button
                     variant="secondary"
@@ -386,7 +412,13 @@ export function DrillDetailModal({
           >
             <X className="h-5 w-5" />
           </button>
-          {drill.svg && (
+          {drill.svgUrl ? (
+            <img
+              src={drill.svgUrl}
+              alt={drill.name}
+              className="w-full h-auto max-h-[85vh] object-contain"
+            />
+          ) : drill.svg && (
             <img
               src={`data:image/svg+xml;base64,${drill.svg}`}
               alt={drill.name}

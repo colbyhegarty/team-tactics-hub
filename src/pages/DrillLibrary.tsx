@@ -97,7 +97,7 @@ export default function DrillLibrary() {
             description: response.drill.description,
           },
           response.drill,
-          response.svg
+          response.svg_url
         );
         setSelectedDrill(fullDrill);
       }
