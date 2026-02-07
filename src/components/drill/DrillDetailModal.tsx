@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://soccer-drill-api.onrender.com';
+const RENDER_API_URL = 'https://soccer-drill-api.onrender.com';
 
 interface DrillDetailModalProps {
   drill: Drill | null;
@@ -251,7 +251,7 @@ export function DrillDetailModal({
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' ? (
                 <iframe
-                  src={drill.animationHtmlUrl || `${API_URL}/api/library/${drill.id}/animation`}
+                  src={`${RENDER_API_URL}/api/animation/${drill.id}`}
                   className="w-full h-[600px] border-0 rounded-lg"
                   title={`${drill.name} Animation`}
                   allow="fullscreen"

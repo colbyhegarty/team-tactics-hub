@@ -1,12 +1,19 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { BottomNav } from './BottomNav';
 import { DesktopSidebar } from './DesktopSidebar';
+
+const RENDER_API_URL = 'https://soccer-drill-api.onrender.com';
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  // Warm up Render backend to prevent cold start delays
+  useEffect(() => {
+    fetch(`${RENDER_API_URL}/health`).catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <DesktopSidebar />
