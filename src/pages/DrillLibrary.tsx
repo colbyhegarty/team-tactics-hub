@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
 import { DrillFilters } from '@/components/drill/DrillFilters';
+import { QuickPreviewModal } from '@/components/drill/QuickPreviewModal';
 import { 
   fetchLibraryDrills, 
   fetchLibraryDrill, 
@@ -23,6 +24,7 @@ export default function DrillLibrary() {
   const [filters, setFilters] = useState<DrillFilterParams>({});
   const [drillsMeta, setDrillsMeta] = useState<LibraryDrillMeta[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+  const [quickPreviewDrill, setQuickPreviewDrill] = useState<Drill | null>(null);
   const [savedState, setSavedState] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDrill, setIsLoadingDrill] = useState(false);
@@ -134,6 +136,7 @@ export default function DrillLibrary() {
 
   const handleUseAsTemplate = (drill: Drill) => {
     setSelectedDrill(null);
+    setQuickPreviewDrill(null);
     navigate('/', { 
       state: { 
         templateDrill: {
@@ -144,6 +147,15 @@ export default function DrillLibrary() {
         }
       }
     });
+  };
+
+  const handleQuickPreview = (drill: Drill) => {
+    setQuickPreviewDrill(drill);
+  };
+
+  const handleViewFullFromPreview = async (drill: Drill) => {
+    setQuickPreviewDrill(null);
+    await handleViewDrill(drill);
   };
 
   const isDrillCurrentlySaved = (drillId: string) => {
@@ -206,7 +218,7 @@ export default function DrillLibrary() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {drillsForDisplay.map(drill => (
               <DrillCard
                 key={drill.id}
@@ -214,6 +226,7 @@ export default function DrillLibrary() {
                 isSaved={isDrillCurrentlySaved(drill.id)}
                 onView={handleViewDrill}
                 onSave={handleSaveDrill}
+                onQuickView={handleQuickPreview}
               />
             ))}
           </div>
@@ -229,6 +242,16 @@ export default function DrillLibrary() {
           </div>
         </div>
       )}
+
+      {/* Quick Preview Modal */}
+      <QuickPreviewModal
+        drill={quickPreviewDrill}
+        isOpen={quickPreviewDrill !== null}
+        onClose={() => setQuickPreviewDrill(null)}
+        onViewFull={handleViewFullFromPreview}
+        isSaved={quickPreviewDrill ? isDrillCurrentlySaved(quickPreviewDrill.id) : false}
+        onSave={handleSaveDrill}
+      />
 
       {/* Drill Detail Modal */}
       <DrillDetailModal
