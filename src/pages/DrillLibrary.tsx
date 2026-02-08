@@ -8,8 +8,10 @@ import { QuickPreviewModal } from '@/components/drill/QuickPreviewModal';
 import { 
   fetchLibraryDrills, 
   fetchLibraryDrill, 
-  fetchLibraryCategories,
+  fetchFilterOptions,
   fetchFilteredDrills,
+  filterByPlayerCount,
+  filterByDuration,
   mapLibraryDrillToDrill,
   LibraryDrillMeta,
   DrillFilterParams,
@@ -21,6 +23,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function DrillLibrary() {
   const [categories, setCategories] = useState<string[]>([]);
+  const [ageGroups, setAgeGroups] = useState<string[]>([]);
+  const [durations, setDurations] = useState<string[]>([]);
   const [filters, setFilters] = useState<DrillFilterParams>({});
   const [drillsMeta, setDrillsMeta] = useState<LibraryDrillMeta[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
@@ -32,19 +36,21 @@ export default function DrillLibrary() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Fetch categories on mount
+  // Fetch filter options (categories, age groups, durations) on mount
   useEffect(() => {
-    async function loadCategories() {
+    async function loadFilterOptions() {
       try {
-        const categoriesRes = await fetchLibraryCategories();
-        if (categoriesRes.success) {
-          setCategories(categoriesRes.categories);
+        const optionsRes = await fetchFilterOptions();
+        if (optionsRes.success) {
+          setCategories(optionsRes.categories);
+          setAgeGroups(optionsRes.ageGroups);
+          setDurations(optionsRes.durations);
         }
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.error('Failed to load filter options:', err);
       }
     }
-    loadCategories();
+    loadFilterOptions();
   }, []);
 
   // Fetch drills when filters change
@@ -54,13 +60,30 @@ export default function DrillLibrary() {
       setError(null);
       
       try {
-        const hasFilters = Object.keys(filters).length > 0;
-        const drillsRes = hasFilters 
-          ? await fetchFilteredDrills(filters)
+        // Only use server-side filters for exact match fields
+        const serverFilters: DrillFilterParams = {};
+        if (filters.category) serverFilters.category = filters.category;
+        if (filters.age_group) serverFilters.age_group = filters.age_group;
+        if (filters.difficulty) serverFilters.difficulty = filters.difficulty;
+        if (filters.search) serverFilters.search = filters.search;
+        if (filters.has_animation !== undefined) serverFilters.has_animation = filters.has_animation;
+        
+        const hasServerFilters = Object.keys(serverFilters).length > 0;
+        const drillsRes = hasServerFilters 
+          ? await fetchFilteredDrills(serverFilters)
           : await fetchLibraryDrills();
         
         if (drillsRes.success) {
-          setDrillsMeta(drillsRes.drills);
+          // Apply client-side filters for player count and duration
+          let filteredDrills = drillsRes.drills;
+          
+          // Filter by player count (client-side)
+          filteredDrills = filterByPlayerCount(filteredDrills, filters.min_players, filters.max_players);
+          
+          // Filter by duration (client-side)
+          filteredDrills = filterByDuration(filteredDrills, filters.duration);
+          
+          setDrillsMeta(filteredDrills);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load drills');
@@ -184,6 +207,8 @@ export default function DrillLibrary() {
         <div className="px-4 pb-4">
           <DrillFilters
             categories={categories}
+            ageGroups={ageGroups}
+            durations={durations}
             filters={filters}
             onFilterChange={setFilters}
             resultCount={drillsForDisplay.length}
