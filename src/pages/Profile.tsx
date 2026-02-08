@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { User, Settings, Trash2, LogOut, Save, BookmarkX } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Settings, Trash2, Save, BookmarkX, PenTool, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -24,8 +26,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
+import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
+import { CustomDrillDetailModal } from '@/components/drill/CustomDrillDetailModal';
 import { getUserProfile, saveUserProfile, getSavedDrills, removeDrill, clearAllData } from '@/lib/storage';
+import { getCustomDrills, deleteCustomDrill, clearCustomDrills } from '@/lib/customDrillStorage';
 import { UserProfile, Drill, AgeGroup, SkillLevel } from '@/types/drill';
+import { CustomDrill } from '@/types/customDrill';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -37,14 +43,18 @@ const ageGroups: AgeGroup[] = [
 const skillLevels: SkillLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'Elite', 'Not Specified'];
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile>(getUserProfile());
   const [savedDrills, setSavedDrills] = useState<Drill[]>([]);
+  const [customDrills, setCustomDrills] = useState<CustomDrill[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+  const [selectedCustomDrill, setSelectedCustomDrill] = useState<CustomDrill | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     setSavedDrills(getSavedDrills());
+    setCustomDrills(getCustomDrills());
   }, []);
 
   const handleProfileChange = (key: keyof UserProfile, value: string | number) => {
@@ -74,10 +84,25 @@ export default function Profile() {
     });
   };
 
+  const handleDeleteCustomDrill = (id: string) => {
+    deleteCustomDrill(id);
+    setCustomDrills(prev => prev.filter(d => d.id !== id));
+    toast({
+      title: 'Drill Deleted',
+      description: 'Your custom drill has been deleted.',
+    });
+  };
+
+  const handleViewCustomDrill = (drill: CustomDrill) => {
+    setSelectedCustomDrill(drill);
+  };
+
   const handleClearAllData = () => {
     clearAllData();
+    clearCustomDrills();
     setProfile(getUserProfile());
     setSavedDrills([]);
+    setCustomDrills([]);
     toast({
       title: 'Data Cleared',
       description: 'All your data has been deleted.',
@@ -235,34 +260,89 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Saved Drills Section */}
-        <div className="form-section">
-          <div className="form-section-title">
-            <BookmarkX className="h-4 w-4" />
-            Saved Drills ({savedDrills.length})
-          </div>
+        {/* Drills Tabs */}
+        <Tabs defaultValue="custom" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="custom" className="flex items-center gap-2">
+              <PenTool className="h-4 w-4" />
+              My Drills ({customDrills.length})
+            </TabsTrigger>
+            <TabsTrigger value="saved" className="flex items-center gap-2">
+              <BookmarkX className="h-4 w-4" />
+              Saved ({savedDrills.length})
+            </TabsTrigger>
+          </TabsList>
 
-          {savedDrills.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No saved drills yet.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Save drills from the Library or after generating them.
+          {/* Custom Drills Tab */}
+          <TabsContent value="custom" className="mt-4">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">
+                Drills you've created with the diagram editor
               </p>
+              <Button size="sm" onClick={() => navigate('/')}>
+                <Plus className="h-4 w-4 mr-1" />
+                Create New
+              </Button>
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {savedDrills.map(drill => (
-                <DrillCard
-                  key={drill.id}
-                  drill={drill}
-                  isSaved={true}
-                  onView={handleViewDrill}
-                  onSave={handleRemoveDrill}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+
+            {customDrills.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-border rounded-lg">
+                <PenTool className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">No custom drills yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Create your first drill with our visual editor
+                </p>
+                <Button className="mt-4" onClick={() => navigate('/')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Drill
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {customDrills.map(drill => (
+                  <CustomDrillCard
+                    key={drill.id}
+                    drill={drill}
+                    onDelete={handleDeleteCustomDrill}
+                    onView={handleViewCustomDrill}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Saved Drills Tab */}
+          <TabsContent value="saved" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Drills saved from the library
+            </p>
+
+            {savedDrills.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-border rounded-lg">
+                <BookmarkX className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">No saved drills yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Save drills from the Library to access them here
+                </p>
+                <Button variant="outline" className="mt-4" onClick={() => navigate('/library')}>
+                  Browse Library
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {savedDrills.map(drill => (
+                  <DrillCard
+                    key={drill.id}
+                    drill={drill}
+                    isSaved={true}
+                    onView={handleViewDrill}
+                    onSave={handleRemoveDrill}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Account Section */}
         <div className="form-section border-destructive/30">
@@ -283,7 +363,7 @@ export default function Profile() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your profile settings and all saved drills.
+                    This action cannot be undone. This will permanently delete your profile settings, saved drills, and custom drills.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -305,6 +385,13 @@ export default function Profile() {
         onClose={() => setSelectedDrill(null)}
         isSaved={true}
         onSave={handleRemoveDrill}
+      />
+
+      {/* Custom Drill Detail Modal */}
+      <CustomDrillDetailModal
+        drill={selectedCustomDrill}
+        isOpen={selectedCustomDrill !== null}
+        onClose={() => setSelectedCustomDrill(null)}
       />
     </div>
   );

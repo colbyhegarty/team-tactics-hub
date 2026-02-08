@@ -516,3 +516,36 @@ export async function generateDrill(formData: DrillFormData): Promise<GenerateDr
 
   return data;
 }
+
+// Fetch drills with optional filters (wrapper for easy use in components)
+export async function fetchDrills(filters: DrillFilterParams = {}): Promise<Drill[]> {
+  const response = await fetchFilteredDrills(filters);
+  return response.drills.map(meta => mapLibraryDrillToDrill(meta));
+}
+
+// Fetch a single drill by ID with full details
+export async function fetchDrillById(id: string): Promise<Drill | null> {
+  try {
+    const response = await fetchLibraryDrill(id);
+    if (!response.success) return null;
+    
+    // Create a minimal meta object from the detail
+    const meta: LibraryDrillMeta = {
+      id: response.drill.id,
+      name: response.drill.name,
+      category: response.drill.category,
+      player_count: response.drill.player_count,
+      duration: response.drill.duration,
+      age_group: response.drill.age_group,
+      difficulty: response.drill.difficulty,
+      description: response.drill.description,
+      svg_url: response.svg_url,
+      has_animation: response.drill.has_animation,
+    };
+    
+    return mapLibraryDrillToDrill(meta, response.drill, response.svg_url);
+  } catch (error) {
+    console.error('Failed to fetch drill by ID:', error);
+    return null;
+  }
+}
