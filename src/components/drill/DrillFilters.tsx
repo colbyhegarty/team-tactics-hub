@@ -9,10 +9,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DrillFilterParams } from '@/lib/api';
-import { cn } from '@/lib/utils';
+
+// Difficulty values - uppercase to match database
+const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'];
+
+// Format difficulty for display (capitalize first letter)
+function formatDifficulty(difficulty: string): string {
+  return difficulty.charAt(0) + difficulty.slice(1).toLowerCase();
+}
 
 interface DrillFiltersProps {
   categories: string[];
+  ageGroups: string[];
+  durations: string[];
   filters: DrillFilterParams;
   onFilterChange: (filters: DrillFilterParams) => void;
   resultCount?: number;
@@ -20,18 +29,10 @@ interface DrillFiltersProps {
   showAdvanced?: boolean;
 }
 
-const AGE_GROUPS = ['All', 'U8', 'U10', 'U12', 'U14', 'U16+'];
-const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard'];
-const DURATIONS = [
-  { value: 'any', label: 'Any Duration' },
-  { value: '10', label: '10 min' },
-  { value: '15', label: '15 min' },
-  { value: '20', label: '20 min' },
-  { value: '30', label: '30 min' },
-];
-
 export function DrillFilters({
   categories,
+  ageGroups,
+  durations,
   filters,
   onFilterChange,
   resultCount,
@@ -43,7 +44,7 @@ export function DrillFilters({
     if (value === '' || value === 'All' || value === 'all' || value === undefined) {
       delete newFilters[key];
     } else {
-      (newFilters as any)[key] = value;
+      (newFilters as Record<string, unknown>)[key] = value;
     }
     onFilterChange(newFilters);
   };
@@ -69,7 +70,7 @@ export function DrillFilters({
 
       {/* Filter Row */}
       <div className="flex flex-wrap gap-3 items-center">
-        {/* Category */}
+        {/* Category - dynamic from database */}
         <Select
           value={filters.category || 'All'}
           onValueChange={(value) => updateFilter('category', value)}
@@ -79,25 +80,17 @@ export function DrillFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="All">All Categories</SelectItem>
-            {categories
-              .filter((cat) => {
-                const catName = typeof cat === 'string' ? cat : (cat as any)?.name;
-                return catName && catName.trim() !== '';
-              })
-              .map((cat) => {
-                const catName = typeof cat === 'string' ? cat : (cat as any)?.name;
-                return (
-                  <SelectItem key={catName} value={catName}>
-                    {catName}
-                  </SelectItem>
-                );
-              })}
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         {showAdvanced && (
           <>
-            {/* Age Group */}
+            {/* Age Group - dynamic from database */}
             <Select
               value={filters.age_group || 'All'}
               onValueChange={(value) => updateFilter('age_group', value)}
@@ -106,15 +99,16 @@ export function DrillFilters({
                 <SelectValue placeholder="Age Group" />
               </SelectTrigger>
               <SelectContent>
-                {AGE_GROUPS.map((age) => (
+                <SelectItem value="All">All Ages</SelectItem>
+                {ageGroups.map((age) => (
                   <SelectItem key={age} value={age}>
-                    {age === 'All' ? 'All Ages' : age}
+                    {age}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {/* Difficulty */}
+            {/* Difficulty - uppercase values to match database */}
             <Select
               value={filters.difficulty || 'All'}
               onValueChange={(value) => updateFilter('difficulty', value)}
@@ -123,15 +117,16 @@ export function DrillFilters({
                 <SelectValue placeholder="Difficulty" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="All">Any Difficulty</SelectItem>
                 {DIFFICULTIES.map((diff) => (
                   <SelectItem key={diff} value={diff}>
-                    {diff === 'All' ? 'Any Difficulty' : diff}
+                    {formatDifficulty(diff)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {/* Player Count */}
+            {/* Player Count - min/max inputs */}
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -153,18 +148,19 @@ export function DrillFilters({
               <span className="text-sm text-muted-foreground">players</span>
             </div>
 
-            {/* Duration */}
+            {/* Duration - dynamic from database */}
             <Select
-              value={filters.duration?.toString() || 'any'}
-              onValueChange={(value) => updateFilter('duration', value !== 'any' ? parseInt(value) : undefined)}
+              value={filters.duration || 'any'}
+              onValueChange={(value) => updateFilter('duration', value !== 'any' ? value : undefined)}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Duration" />
               </SelectTrigger>
               <SelectContent>
-                {DURATIONS.map((dur) => (
-                  <SelectItem key={dur.value} value={dur.value}>
-                    {dur.label}
+                <SelectItem value="any">Any Duration</SelectItem>
+                {durations.map((dur) => (
+                  <SelectItem key={dur} value={dur}>
+                    {dur}
                   </SelectItem>
                 ))}
               </SelectContent>

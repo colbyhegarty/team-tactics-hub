@@ -88,6 +88,14 @@ export interface LibraryCategoriesResponse {
   categories: string[];
 }
 
+// Response type for filter options
+export interface FilterOptionsResponse {
+  success: boolean;
+  categories: string[];
+  ageGroups: string[];
+  durations: string[];
+}
+
 // Filter parameters for drill search
 export interface DrillFilterParams {
   category?: string;
@@ -95,7 +103,7 @@ export interface DrillFilterParams {
   min_players?: number;
   max_players?: number;
   difficulty?: string;
-  duration?: number;
+  duration?: string; // Changed to string to match actual data format like "10 mins."
   search?: string;
   has_animation?: boolean;
 }
@@ -192,6 +200,89 @@ export async function fetchLibraryCategories(): Promise<LibraryCategoriesRespons
     console.error('Failed to fetch categories:', e);
     return { success: true, categories: [] };
   }
+}
+
+// Fetch all filter options (categories, age groups, durations) in one call
+export async function fetchFilterOptions(): Promise<FilterOptionsResponse> {
+  try {
+    const { data, error } = await supabase
+      .from('drill_list')
+      .select('category, age_group, duration');
+    
+    if (error) {
+      console.error('Failed to fetch filter options:', error);
+      return { success: true, categories: [], ageGroups: [], durations: [] };
+    }
+    
+    if (!data) {
+      return { success: true, categories: [], ageGroups: [], durations: [] };
+    }
+    
+    // Extract unique categories
+    const categories = [...new Set(data.map(d => d.category).filter(Boolean))].sort();
+    
+    // Extract and sort age groups by first number
+    const ageGroups = [...new Set(data.map(d => d.age_group).filter(Boolean))].sort((a, b) => {
+      const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+      const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+      return numA - numB;
+    });
+    
+    // Extract and sort durations by numeric value
+    const durations = [...new Set(data.map(d => d.duration).filter(Boolean))].sort((a, b) => {
+      const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+      const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+      return numA - numB;
+    });
+    
+    return { success: true, categories, ageGroups, durations };
+  } catch (e) {
+    console.error('Failed to fetch filter options:', e);
+    return { success: true, categories: [], ageGroups: [], durations: [] };
+  }
+}
+
+// Client-side filter helper for player count (handles formats like "6+", "4+", "6-12")
+export function filterByPlayerCount(
+  drills: LibraryDrillMeta[],
+  minPlayers?: number,
+  maxPlayers?: number
+): LibraryDrillMeta[] {
+  if (!minPlayers && !maxPlayers) return drills;
+  
+  return drills.filter(drill => {
+    if (!drill.player_count) return true;
+    
+    // Extract first number from strings like "6+", "4+", "6-12"
+    const match = drill.player_count.match(/(\d+)/);
+    if (!match) return true;
+    
+    const drillMinPlayers = parseInt(match[1]);
+    
+    // Check min filter
+    if (minPlayers && drillMinPlayers < minPlayers) return false;
+    
+    // Check max filter
+    if (maxPlayers && drillMinPlayers > maxPlayers) return false;
+    
+    return true;
+  });
+}
+
+// Client-side filter helper for duration (handles formats like "10 mins.", "15 mins.")
+export function filterByDuration(
+  drills: LibraryDrillMeta[],
+  maxDuration?: string
+): LibraryDrillMeta[] {
+  if (!maxDuration) return drills;
+  
+  const maxMins = parseInt(maxDuration.match(/(\d+)/)?.[1] || '999');
+  
+  return drills.filter(drill => {
+    if (!drill.duration) return true;
+    const drillMins = parseInt(drill.duration.match(/(\d+)/)?.[1] || '0');
+    return drillMins <= maxMins;
+  });
 }
 
 // Fetch filtered drills using Supabase

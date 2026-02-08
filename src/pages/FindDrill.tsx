@@ -14,26 +14,25 @@ import {
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
 import {
-  fetchLibraryCategories,
+  fetchFilterOptions,
   fetchFilteredDrills,
   fetchLibraryDrill,
+  filterByPlayerCount,
+  filterByDuration,
   mapLibraryDrillToDrill,
-  LibraryDrillMeta,
 } from '@/lib/api';
 import { saveDrill, removeDrill, isDrillSaved } from '@/lib/storage';
 import { Drill } from '@/types/drill';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
 
-const AGE_GROUPS = ['All', 'U8', 'U10', 'U12', 'U14', 'U16+'];
-const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard'];
-const DURATIONS = [
-  { value: 'any', label: 'Any Duration' },
-  { value: '10', label: '10 minutes' },
-  { value: '15', label: '15 minutes' },
-  { value: '20', label: '20 minutes' },
-  { value: '30', label: '30 minutes' },
-];
+// Difficulty values - uppercase to match database
+const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'];
+
+// Format difficulty for display
+function formatDifficulty(difficulty: string): string {
+  return difficulty.charAt(0) + difficulty.slice(1).toLowerCase();
+}
 
 interface FindDrillFormData {
   category: string;
@@ -72,6 +71,8 @@ export default function FindDrill() {
   const { toast } = useToast();
   
   const [categories, setCategories] = useState<string[]>([]);
+  const [ageGroups, setAgeGroups] = useState<string[]>([]);
+  const [durations, setDurations] = useState<string[]>([]);
   const [formData, setFormData] = useState<FindDrillFormData>(initialFormData);
   const [results, setResults] = useState<Drill[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -80,23 +81,21 @@ export default function FindDrill() {
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [savedState, setSavedState] = useState<Record<string, boolean>>({});
 
-  // Load categories on mount
+  // Load filter options on mount
   useEffect(() => {
-    async function loadCategories() {
+    async function loadFilterOptions() {
       try {
-        const res = await fetchLibraryCategories();
+        const res = await fetchFilterOptions();
         if (res.success) {
-          // Filter out empty/undefined categories - handle both string and object formats
-          const validCategories = res.categories
-            .map((cat: any) => typeof cat === 'string' ? cat : cat?.name)
-            .filter((cat: string | undefined) => cat && cat.trim() !== '');
-          setCategories(validCategories);
+          setCategories(res.categories);
+          setAgeGroups(res.ageGroups);
+          setDurations(res.durations);
         }
       } catch (err) {
-        console.error('Failed to load categories:', err);
+        console.error('Failed to load filter options:', err);
       }
     }
-    loadCategories();
+    loadFilterOptions();
   }, []);
 
   // Pre-fill form from template if navigated with state
@@ -119,33 +118,41 @@ export default function FindDrill() {
     setHasSearched(true);
     
     try {
-      const filters: Record<string, any> = {};
+      // Build server-side filters (exact match fields only)
+      const serverFilters: Record<string, string | boolean> = {};
       
       if (formData.category && formData.category !== 'All' && formData.category !== 'none') {
-        filters.category = formData.category;
+        serverFilters.category = formData.category;
       }
       if (formData.ageGroup && formData.ageGroup !== 'All') {
-        filters.age_group = formData.ageGroup;
+        serverFilters.age_group = formData.ageGroup;
       }
       if (formData.difficulty && formData.difficulty !== 'All') {
-        filters.difficulty = formData.difficulty;
-      }
-      if (formData.duration && formData.duration !== 'any') {
-        filters.duration = parseInt(formData.duration);
-      }
-      if (formData.playerCount) {
-        // For player count, use max_players as the user's available players
-        // This allows drills with "9+" to match when user has 15 players
-        filters.max_players = parseInt(formData.playerCount);
+        // Difficulty is already uppercase from the select
+        serverFilters.difficulty = formData.difficulty;
       }
       if (formData.focusArea) {
-        filters.search = formData.focusArea;
+        serverFilters.search = formData.focusArea;
       }
 
-      const response = await fetchFilteredDrills(filters);
+      const response = await fetchFilteredDrills(serverFilters);
       
       if (response.success) {
-        const drills = response.drills.map(meta => mapLibraryDrillToDrill(meta));
+        // Apply client-side filters for player count and duration
+        let filteredDrills = response.drills;
+        
+        // Filter by player count (client-side)
+        if (formData.playerCount) {
+          const maxPlayers = parseInt(formData.playerCount);
+          filteredDrills = filterByPlayerCount(filteredDrills, undefined, maxPlayers);
+        }
+        
+        // Filter by duration (client-side)
+        if (formData.duration && formData.duration !== 'any') {
+          filteredDrills = filterByDuration(filteredDrills, formData.duration);
+        }
+        
+        const drills = filteredDrills.map(meta => mapLibraryDrillToDrill(meta));
         setResults(drills);
         
         if (drills.length === 0) {
@@ -309,7 +316,7 @@ export default function FindDrill() {
                 </p>
               </div>
 
-              {/* Age Group */}
+              {/* Age Group - dynamic from database */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -323,16 +330,17 @@ export default function FindDrill() {
                     <SelectValue placeholder="Select age group" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AGE_GROUPS.map(age => (
+                    <SelectItem value="All">Any Age Group</SelectItem>
+                    {ageGroups.map(age => (
                       <SelectItem key={age} value={age}>
-                        {age === 'All' ? 'Any Age Group' : age}
+                        {age}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Duration */}
+              {/* Duration - dynamic from database */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
@@ -346,16 +354,17 @@ export default function FindDrill() {
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DURATIONS.map(dur => (
-                      <SelectItem key={dur.value} value={dur.value}>
-                        {dur.label}
+                    <SelectItem value="any">Any Duration</SelectItem>
+                    {durations.map(dur => (
+                      <SelectItem key={dur} value={dur}>
+                        {dur}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Difficulty */}
+              {/* Difficulty - uppercase values to match database */}
               <div className="space-y-2">
                 <Label>Difficulty Level</Label>
                 <Select
@@ -366,9 +375,10 @@ export default function FindDrill() {
                     <SelectValue placeholder="Select difficulty" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="All">Any Difficulty</SelectItem>
                     {DIFFICULTIES.map(diff => (
                       <SelectItem key={diff} value={diff}>
-                        {diff === 'All' ? 'Any Difficulty' : diff}
+                        {formatDifficulty(diff)}
                       </SelectItem>
                     ))}
                   </SelectContent>
