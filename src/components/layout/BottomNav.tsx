@@ -1,9 +1,9 @@
-import { Search, Library, User } from 'lucide-react';
+import { PenTool, Library, User } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { to: '/', icon: Search, label: 'Find' },
+  { to: '/', icon: PenTool, label: 'Create' },
   { to: '/library', icon: Library, label: 'Library' },
   { to: '/profile', icon: User, label: 'Profile' },
 ];
