@@ -125,11 +125,8 @@ export function DiagramCanvas({
         selectedEntity?.type === 'goal' && selectedEntity.id === goal.id);
     });
 
-    // 5. Actions
-    diagram.actions.forEach((action) => {
-      drawAction(ctx, action, diagram.players, toCanvasXY,
-        selectedEntity?.type === 'action' && selectedEntity.id === action.id);
-    });
+    // 5. Actions (with position chaining)
+    drawAllActions(ctx, diagram.actions, diagram.players, toCanvasXY, selectedEntity);
 
     // 6. Players
     diagram.players.forEach((player) => {
@@ -308,8 +305,8 @@ export function DiagramCanvas({
     <div ref={containerRef} className="w-full">
       <canvas
         ref={canvasRef}
-        className="w-full cursor-crosshair rounded-lg border border-border"
-        style={{ height: dimensions.height }}
+        className="w-full h-auto cursor-crosshair rounded-lg border border-border"
+        style={{ aspectRatio: '4 / 3' }}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -616,7 +613,7 @@ function drawConeLine(
   ctx.stroke();
 }
 
-// ─── Action drawing (matching Python renderer) ──────────────────────────────
+// ─── Action drawing (matching Python renderer, with position chaining) ──────
 
 function drawArrowHead(
   ctx: CanvasRenderingContext2D,
@@ -635,99 +632,103 @@ function drawArrowHead(
   ctx.fill();
 }
 
-function drawAction(
+function drawAllActions(
   ctx: CanvasRenderingContext2D,
-  action: CustomAction,
+  actions: CustomAction[],
   players: CustomPlayer[],
   toCanvas: (x: number, y: number) => { x: number; y: number },
-  isSelected: boolean
+  selectedEntity: EditorState['selectedEntity']
 ) {
-  let fromFieldPos: FieldPosition | null = null;
-  let toFieldPos: FieldPosition | null = null;
+  if (!actions || !players) return;
 
-  if (action.type === 'PASS') {
-    const fromPlayer = players.find(p => p.id === action.fromPlayerId);
-    const toPlayer = players.find(p => p.id === action.toPlayerId);
-    if (fromPlayer && toPlayer) {
-      fromFieldPos = fromPlayer.position;
-      toFieldPos = toPlayer.position;
+  // Build current positions map for chaining
+  const currentPositions: Record<string, { x: number; y: number }> = {};
+  players.forEach(p => {
+    currentPositions[p.id] = { x: p.position.x, y: p.position.y };
+  });
+
+  actions.forEach(action => {
+    const isSelected = selectedEntity?.type === 'action' && selectedEntity.id === action.id;
+    let fromFieldPos: { x: number; y: number } | null = null;
+    let toFieldPos: { x: number; y: number } | null = null;
+
+    if (action.type === 'PASS') {
+      fromFieldPos = currentPositions[action.fromPlayerId] || null;
+      toFieldPos = currentPositions[action.toPlayerId] || null;
+    } else {
+      fromFieldPos = currentPositions[action.playerId] || null;
+      toFieldPos = action.toPosition || null;
     }
-  } else {
-    const player = players.find(p => p.id === action.playerId);
-    if (player) {
-      fromFieldPos = player.position;
-      toFieldPos = action.toPosition;
+
+    if (!fromFieldPos || !toFieldPos) return;
+
+    const fromPos = toCanvas(fromFieldPos.x, fromFieldPos.y);
+    const toPos = toCanvas(toFieldPos.x, toFieldPos.y);
+
+    const dx = toPos.x - fromPos.x;
+    const dy = toPos.y - fromPos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return;
+
+    const offset = 15;
+    const startX = fromPos.x + (dx / dist) * offset;
+    const startY = fromPos.y + (dy / dist) * offset;
+
+    const color = ACTION_COLORS[action.type];
+
+    if (action.type === 'PASS') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 4 : 2;
+      ctx.lineCap = 'round';
+      const endX = toPos.x - (dx / dist) * offset;
+      const endY = toPos.y - (dy / dist) * offset;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      drawArrowHead(ctx, endX, endY, Math.atan2(endY - startY, endX - startX), color);
+    } else if (action.type === 'RUN') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 4 : 2;
+      ctx.setLineDash([8, 4]);
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(toPos.x, toPos.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawArrowHead(ctx, toPos.x, toPos.y, Math.atan2(toPos.y - startY, toPos.x - startX), color);
+      // Update position for chaining
+      currentPositions[action.playerId] = { x: toFieldPos.x, y: toFieldPos.y };
+    } else if (action.type === 'DRIBBLE') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 3 : 2;
+      const amplitude = 5;
+      const frequency = 8;
+      ctx.beginPath();
+      for (let t = 0; t <= 1; t += 0.02) {
+        const x = startX + (toPos.x - startX) * t;
+        const y = startY + (toPos.y - startY) * t;
+        const perpX = -(toPos.y - startY) / dist;
+        const perpY = (toPos.x - startX) / dist;
+        const wave = amplitude * Math.sin(frequency * Math.PI * t);
+        const finalX = x + perpX * wave;
+        const finalY = y + perpY * wave;
+        if (t === 0) ctx.moveTo(finalX, finalY);
+        else ctx.lineTo(finalX, finalY);
+      }
+      ctx.stroke();
+      drawArrowHead(ctx, toPos.x, toPos.y, Math.atan2(toPos.y - startY, toPos.x - startX), color);
+      // Update position for chaining
+      currentPositions[action.playerId] = { x: toFieldPos.x, y: toFieldPos.y };
+    } else if (action.type === 'SHOT') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 5 : 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(toPos.x, toPos.y);
+      ctx.stroke();
+      drawArrowHead(ctx, toPos.x, toPos.y, Math.atan2(toPos.y - startY, toPos.x - startX), color, 12);
     }
-  }
-
-  if (!fromFieldPos || !toFieldPos) return;
-
-  const fromPos = toCanvas(fromFieldPos.x, fromFieldPos.y);
-  const toPos = toCanvas(toFieldPos.x, toFieldPos.y);
-
-  const dx = toPos.x - fromPos.x;
-  const dy = toPos.y - fromPos.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist === 0) return;
-
-  const offset = 15;
-  const startX = fromPos.x + (dx / dist) * offset;
-  const startY = fromPos.y + (dy / dist) * offset;
-
-  const color = ACTION_COLORS[action.type];
-
-  if (action.type === 'PASS') {
-    // Solid line
-    ctx.strokeStyle = color;
-    ctx.lineWidth = isSelected ? 4 : 2;
-    ctx.lineCap = 'round';
-    const endX = toPos.x - (dx / dist) * offset;
-    const endY = toPos.y - (dy / dist) * offset;
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(endX, endY);
-    ctx.stroke();
-    drawArrowHead(ctx, endX, endY, Math.atan2(endY - startY, endX - startX), color);
-  } else if (action.type === 'RUN') {
-    // Dashed line
-    ctx.strokeStyle = color;
-    ctx.lineWidth = isSelected ? 4 : 2;
-    ctx.setLineDash([8, 4]);
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(toPos.x, toPos.y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    drawArrowHead(ctx, toPos.x, toPos.y, Math.atan2(toPos.y - startY, toPos.x - startX), color);
-  } else if (action.type === 'DRIBBLE') {
-    // Wavy line
-    ctx.strokeStyle = color;
-    ctx.lineWidth = isSelected ? 3 : 2;
-    const amplitude = 5;
-    const frequency = 8;
-    ctx.beginPath();
-    for (let t = 0; t <= 1; t += 0.02) {
-      const x = startX + (toPos.x - startX) * t;
-      const y = startY + (toPos.y - startY) * t;
-      const perpX = -(toPos.y - startY) / dist;
-      const perpY = (toPos.x - startX) / dist;
-      const wave = amplitude * Math.sin(frequency * Math.PI * t);
-      const finalX = x + perpX * wave;
-      const finalY = y + perpY * wave;
-      if (t === 0) ctx.moveTo(finalX, finalY);
-      else ctx.lineTo(finalX, finalY);
-    }
-    ctx.stroke();
-    drawArrowHead(ctx, toPos.x, toPos.y, Math.atan2(toPos.y - startY, toPos.x - startX), color);
-  } else if (action.type === 'SHOT') {
-    // Thick line
-    ctx.strokeStyle = color;
-    ctx.lineWidth = isSelected ? 5 : 3;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(toPos.x, toPos.y);
-    ctx.stroke();
-    drawArrowHead(ctx, toPos.x, toPos.y, Math.atan2(toPos.y - startY, toPos.x - startX), color, 12);
-  }
+  });
 }
