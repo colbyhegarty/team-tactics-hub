@@ -51,6 +51,16 @@ export function DrillEditor({
     initialDrill?.formData || getEmptyFormData()
   );
 
+  // Sync state when initialDrill prop changes (e.g. loading from existing drill)
+  useEffect(() => {
+    if (initialDrill) {
+      setDiagram(initialDrill.diagramData);
+      setFormData(initialDrill.formData);
+      setSelectedEntity(null);
+      setPendingActionFrom(null);
+    }
+  }, [initialDrill]);
+
   // Filter options
   const [categories, setCategories] = useState<string[]>([]);
 

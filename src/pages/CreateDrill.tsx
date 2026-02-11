@@ -71,40 +71,72 @@ export default function CreateDrill() {
           variationsText: drill.variations || '',
         };
 
-        // Try to extract diagram data from drillJson
+        // Extract diagram data from drillJson
         let diagramData = getEmptyDiagram();
-        if (drill.drillJson) {
+        const dj = drill.drillJson;
+        if (dj) {
+          // Map movements to actions
+          const actions: DiagramData['actions'] = [];
+          if (dj.movements) {
+            dj.movements.forEach((m, i) => {
+              const actionType = m.type?.toUpperCase() as 'PASS' | 'RUN' | 'DRIBBLE' | 'SHOT';
+              if (actionType === 'PASS' && m.player_id) {
+                // Find target player closest to m.to position
+                const targetPlayer = (dj.players || []).find(p => {
+                  const dx = p.position.x - m.to.x;
+                  const dy = p.position.y - m.to.y;
+                  return Math.sqrt(dx * dx + dy * dy) < 5;
+                });
+                if (targetPlayer) {
+                  actions.push({
+                    id: `action-${i}`,
+                    type: 'PASS',
+                    fromPlayerId: m.player_id,
+                    toPlayerId: targetPlayer.id,
+                  });
+                }
+              } else if (m.player_id && (actionType === 'RUN' || actionType === 'DRIBBLE' || actionType === 'SHOT')) {
+                actions.push({
+                  id: `action-${i}`,
+                  type: actionType,
+                  playerId: m.player_id,
+                  toPosition: m.to,
+                });
+              }
+            });
+          }
+
           diagramData = {
             field: {
-              type: drill.drillJson.field?.type || 'FULL',
-              markings: drill.drillJson.field?.show_markings ?? true,
-              goals: 0,
+              type: dj.field?.type || 'FULL',
+              markings: dj.field?.show_markings ?? true,
+              goals: (dj.goals?.length || 0) > 0 ? Math.min(dj.goals!.length, 2) as 0 | 1 | 2 : 0,
             },
-            players: (drill.drillJson.players || []).map((p, i) => ({
+            players: (dj.players || []).map((p, i) => ({
               id: p.id || `P${i + 1}`,
               role: (p.role?.toUpperCase() as any) || 'NEUTRAL',
               position: p.position,
             })),
-            cones: (drill.drillJson.cones || []).map((c, i) => ({
+            cones: (dj.cones || []).map((c, i) => ({
               id: `cone-${i}`,
               position: c.position,
             })),
-            balls: (drill.drillJson.balls || []).map((b, i) => ({
+            balls: (dj.balls || []).map((b, i) => ({
               id: `ball-${i}`,
               position: b.position,
             })),
-            goals: (drill.drillJson.goals || []).map((g, i) => ({
+            goals: (dj.goals || []).map((g, i) => ({
               id: `goal-${i}`,
               position: g.position,
               rotation: g.rotation || 0,
               size: g.size === 'small' ? 'mini' : 'full',
             })),
-            coneLines: (drill.drillJson.cone_lines || []).map((l, i) => ({
+            coneLines: (dj.cone_lines || []).map((l, i) => ({
               id: `line-${i}`,
               fromConeId: `cone-${l.from_cone}`,
               toConeId: `cone-${l.to_cone}`,
             })),
-            actions: [],
+            actions,
           };
         }
 
