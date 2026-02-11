@@ -160,10 +160,10 @@ export const FIELD_COLORS = {
   CONE: '#f4a261',
 } as const;
 
-// Action arrow colors
+// Action arrow colors - matches Python renderer.py
 export const ACTION_COLORS = {
   PASS: '#ffffff',
-  RUN: '#facc15',
+  RUN: '#ffffff',
   DRIBBLE: '#ffffff',
-  SHOT: '#ef4444',
+  SHOT: '#ff6b6b',
 } as const;
