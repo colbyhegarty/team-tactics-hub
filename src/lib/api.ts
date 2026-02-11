@@ -34,7 +34,7 @@ export interface DrillDetailRow {
   source?: string;
   has_animation?: boolean;
   animation_html_url?: string;
-  drill_json?: DrillJsonData;
+  diagram_json?: DrillJsonData;
 }
 
 // Legacy types for backward compatibility
@@ -74,7 +74,7 @@ export interface LibraryDrillDetail {
   source?: string;
   has_animation?: boolean;
   animation_html_url?: string;
-  drill_json?: DrillJsonData;
+  diagram_json?: DrillJsonData;
 }
 
 export interface LibraryDrillResponse {
@@ -170,7 +170,7 @@ export async function fetchLibraryDrill(id: string): Promise<LibraryDrillRespons
     source: data.source,
     has_animation: data.has_animation,
     animation_html_url: data.animation_html_url,
-    drill_json: data.drill_json,
+    diagram_json: data.diagram_json,
   };
   
   return {
@@ -412,7 +412,7 @@ export function mapLibraryDrillToDrill(
     source: detail?.source,
     hasAnimation: detail?.has_animation ?? meta.has_animation,
     animationHtmlUrl: detail?.animation_html_url,
-    drillJson: detail?.drill_json,
+    drillJson: detail?.diagram_json,
     // Structured fields from library API (mapped from _text fields)
     setup: detail?.setup_text,
     instructions: detail?.instructions_text,

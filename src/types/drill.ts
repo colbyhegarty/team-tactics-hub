@@ -52,7 +52,7 @@ export interface DrillGoal {
   size?: 'full' | 'small';
 }
 
-// Movement arrow in drill JSON
+// Movement arrow in drill JSON (legacy format)
 export interface DrillMovement {
   from: Position;
   to: Position;
@@ -60,17 +60,37 @@ export interface DrillMovement {
   player_id?: string;
 }
 
+// Action in drill JSON (current Supabase format)
+export interface DrillAction {
+  type: 'PASS' | 'RUN' | 'DRIBBLE' | 'SHOT';
+  from_player?: string;
+  to_player?: string;
+  player?: string;
+  to_position?: Position;
+}
+
+// Mini goal entity in drill JSON
+export interface DrillMiniGoal {
+  position: Position;
+  rotation?: number;
+}
+
 // Structured drill JSON data
 export interface DrillJsonData {
   field?: {
     type: 'FULL' | 'HALF';
     show_markings?: boolean;
+    markings?: boolean;
+    goals?: number;
+    attacking_direction?: 'NORTH' | 'SOUTH';
   };
   players?: DrillPlayer[];
   cones?: DrillCone[];
   balls?: DrillBall[];
   goals?: DrillGoal[];
+  mini_goals?: DrillMiniGoal[];
   movements?: DrillMovement[];
+  actions?: DrillAction[];
   cone_lines?: ConeLine[];
   animation?: Animation;
   // Top-level metadata (may come from API response)
