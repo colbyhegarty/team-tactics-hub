@@ -71,46 +71,49 @@ export default function CreateDrill() {
           variationsText: drill.variations || '',
         };
 
-        // Extract diagram data from drillJson
+        // Extract diagram data from drillJson (Supabase uses actions, markings, etc.)
         let diagramData = getEmptyDiagram();
         const dj = drill.drillJson;
         if (dj) {
-          // Map movements to actions
+          // Map actions (Supabase format: from_player/to_player/player/to_position)
           const actions: DiagramData['actions'] = [];
-          if (dj.movements) {
-            dj.movements.forEach((m, i) => {
-              const actionType = m.type?.toUpperCase() as 'PASS' | 'RUN' | 'DRIBBLE' | 'SHOT';
-              if (actionType === 'PASS' && m.player_id) {
-                // Find target player closest to m.to position
-                const targetPlayer = (dj.players || []).find(p => {
-                  const dx = p.position.x - m.to.x;
-                  const dy = p.position.y - m.to.y;
-                  return Math.sqrt(dx * dx + dy * dy) < 5;
+          const djActions = dj.actions || dj.movements || [];
+          djActions.forEach((a: any, i: number) => {
+            const actionType = (a.type?.toUpperCase() || '') as 'PASS' | 'RUN' | 'DRIBBLE' | 'SHOT';
+            if (actionType === 'PASS') {
+              const fromPlayer = a.from_player || a.player_id;
+              const toPlayer = a.to_player;
+              if (fromPlayer && toPlayer) {
+                actions.push({
+                  id: `action-${i}`,
+                  type: 'PASS',
+                  fromPlayerId: fromPlayer,
+                  toPlayerId: toPlayer,
                 });
-                if (targetPlayer) {
-                  actions.push({
-                    id: `action-${i}`,
-                    type: 'PASS',
-                    fromPlayerId: m.player_id,
-                    toPlayerId: targetPlayer.id,
-                  });
-                }
-              } else if (m.player_id && (actionType === 'RUN' || actionType === 'DRIBBLE' || actionType === 'SHOT')) {
+              }
+            } else if (actionType === 'RUN' || actionType === 'DRIBBLE' || actionType === 'SHOT') {
+              const playerId = a.player || a.player_id;
+              const toPos = a.to_position || a.to;
+              if (playerId && toPos) {
                 actions.push({
                   id: `action-${i}`,
                   type: actionType,
-                  playerId: m.player_id,
-                  toPosition: m.to,
+                  playerId,
+                  toPosition: toPos,
                 });
               }
-            });
-          }
+            }
+          });
+
+          // Field: support both markings and show_markings
+          const fieldMarkings = dj.field?.markings ?? dj.field?.show_markings ?? true;
+          const fieldGoals = dj.field?.goals ?? ((dj.goals?.length || 0) > 0 ? Math.min(dj.goals!.length, 2) as 0 | 1 | 2 : 0);
 
           diagramData = {
             field: {
               type: dj.field?.type || 'FULL',
-              markings: dj.field?.show_markings ?? true,
-              goals: (dj.goals?.length || 0) > 0 ? Math.min(dj.goals!.length, 2) as 0 | 1 | 2 : 0,
+              markings: fieldMarkings,
+              goals: fieldGoals as 0 | 1 | 2,
             },
             players: (dj.players || []).map((p, i) => ({
               id: p.id || `P${i + 1}`,
