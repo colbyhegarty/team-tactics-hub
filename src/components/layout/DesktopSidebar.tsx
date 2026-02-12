@@ -1,10 +1,11 @@
-import { PenTool, Library, User, Dumbbell } from 'lucide-react';
+import { PenTool, Library, User, Dumbbell, CalendarDays } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/', icon: PenTool, label: 'Create Drill' },
   { to: '/library', icon: Library, label: 'Drill Library' },
+  { to: '/sessions', icon: CalendarDays, label: 'Sessions' },
   { to: '/profile', icon: User, label: 'My Profile' },
 ];
 

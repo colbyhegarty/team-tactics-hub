@@ -1,10 +1,11 @@
-import { PenTool, Library, User } from 'lucide-react';
+import { PenTool, Library, User, CalendarDays } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/', icon: PenTool, label: 'Create' },
   { to: '/library', icon: Library, label: 'Library' },
+  { to: '/sessions', icon: CalendarDays, label: 'Sessions' },
   { to: '/profile', icon: User, label: 'Profile' },
 ];
 

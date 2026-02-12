@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import CreateDrill from "./pages/CreateDrill";
 import DrillLibrary from "./pages/DrillLibrary";
+import Sessions from "./pages/Sessions";
+import SessionEditor from "./pages/SessionEditor";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -21,6 +23,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<CreateDrill />} />
             <Route path="/library" element={<DrillLibrary />} />
+            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/sessions/:id" element={<SessionEditor />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
