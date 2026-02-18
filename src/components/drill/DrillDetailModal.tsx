@@ -1,4 +1,4 @@
-import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Minimize2, Sparkles, GraduationCap, Play, Image, Film } from 'lucide-react';
+import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Minimize2, Sparkles, GraduationCap, Image, Film, ChevronDown } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -74,6 +74,29 @@ const formatDrillText = (text?: string): ReactNode => {
   return elements.length > 0 ? elements : null;
 };
 
+function CollapsibleSection({ id, title, icon, isOpen, onToggle, children }: {
+  id: string; title: string; icon: string; isOpen: boolean; onToggle: () => void; children: ReactNode;
+}) {
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-3 flex items-center justify-between bg-muted/50 hover:bg-muted transition-colors"
+      >
+        <span className="flex items-center gap-2 font-medium text-sm text-foreground">
+          {icon} {title}
+        </span>
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
+      </button>
+      {isOpen && (
+        <div className="px-4 py-3 text-sm text-muted-foreground leading-relaxed">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DrillDetailModal({
   drill,
   isOpen,
@@ -84,6 +107,15 @@ export function DrillDetailModal({
 }: DrillDetailModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'static' | 'animated'>('static');
+  const [openSections, setOpenSections] = useState<string[]>(['overview']);
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev =>
+      prev.includes(section)
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    );
+  };
 
   const hasAnimation = drill?.hasAnimation;
 
@@ -241,8 +273,8 @@ export function DrillDetailModal({
               </div>
             )}
 
-            {/* Diagram Container — matches DrillCard bg-field + aspect-[4/3] */}
-            <div className="bg-field rounded-xl overflow-hidden">
+            {/* Diagram Container */}
+            <div className="bg-[#2d4a2d] rounded-xl overflow-hidden">
               {hasAnimation && viewMode === 'animated' ? (
                 <div className="aspect-[4/3]">
                   <iframe
@@ -286,66 +318,66 @@ export function DrillDetailModal({
             </div>
           </div>
 
-          {/* ── Drill Details Sections ── */}
-          <div className="px-4 pb-6 space-y-5">
-            {/* Overview */}
+          {/* ── Drill Details Sections (Collapsible) ── */}
+          <div className="px-4 pb-6 space-y-3">
             {drill.description && (
-              <section>
-                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  📋 Overview
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {drill.description}
-                </p>
-              </section>
+              <CollapsibleSection
+                id="overview"
+                title="Overview"
+                icon="📋"
+                isOpen={openSections.includes('overview')}
+                onToggle={() => toggleSection('overview')}
+              >
+                <p className="leading-relaxed">{drill.description}</p>
+              </CollapsibleSection>
             )}
 
-            {/* Setup */}
             {drill.setup && (
-              <section>
-                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  ⚙️ Setup
-                </h3>
-                <div className="text-sm text-muted-foreground leading-relaxed">
-                  {formatDrillText(drill.setup)}
-                </div>
-              </section>
+              <CollapsibleSection
+                id="setup"
+                title="Setup"
+                icon="⚙️"
+                isOpen={openSections.includes('setup')}
+                onToggle={() => toggleSection('setup')}
+              >
+                {formatDrillText(drill.setup)}
+              </CollapsibleSection>
             )}
 
-            {/* Instructions */}
             {drill.instructions && (
-              <section>
-                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  📝 Instructions
-                </h3>
-                <div className="text-sm text-muted-foreground leading-relaxed">
-                  {formatDrillText(drill.instructions)}
-                </div>
-              </section>
+              <CollapsibleSection
+                id="instructions"
+                title="Instructions"
+                icon="📝"
+                isOpen={openSections.includes('instructions')}
+                onToggle={() => toggleSection('instructions')}
+              >
+                {formatDrillText(drill.instructions)}
+              </CollapsibleSection>
             )}
 
-            {/* Coaching Points */}
             {filteredCoachingPoints && (
-              <section>
-                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  💡 Coaching Points
-                </h3>
-                <div className="text-sm text-muted-foreground leading-relaxed">
-                  {formatDrillText(filteredCoachingPoints)}
-                </div>
-              </section>
+              <CollapsibleSection
+                id="coaching"
+                title="Coaching Points"
+                icon="💡"
+                isOpen={openSections.includes('coaching')}
+                onToggle={() => toggleSection('coaching')}
+              >
+                {formatDrillText(filteredCoachingPoints)}
+              </CollapsibleSection>
             )}
 
-            {/* Variations */}
             {drill.variations && (
-              <section>
-                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  🔄 Variations
-                </h3>
-                <div className="text-sm text-muted-foreground leading-relaxed">
-                  {formatDrillText(drill.variations)}
-                </div>
-              </section>
+              <CollapsibleSection
+                id="variations"
+                title="Variations"
+                icon="🔄"
+                isOpen={openSections.includes('variations')}
+                onToggle={() => toggleSection('variations')}
+              >
+                {formatDrillText(drill.variations)}
+              </CollapsibleSection>
             )}
           </div>
 
