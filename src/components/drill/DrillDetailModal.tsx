@@ -1,4 +1,4 @@
-import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Minimize2, Sparkles, GraduationCap, Image, Film, ChevronDown } from 'lucide-react';
+import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Minimize2, Sparkles, GraduationCap, Image, Film } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -74,28 +74,7 @@ const formatDrillText = (text?: string): ReactNode => {
   return elements.length > 0 ? elements : null;
 };
 
-function CollapsibleSection({ id, title, icon, isOpen, onToggle, children }: {
-  id: string; title: string; icon: string; isOpen: boolean; onToggle: () => void; children: ReactNode;
-}) {
-  return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between bg-muted/50 hover:bg-muted transition-colors"
-      >
-        <span className="flex items-center gap-2 font-medium text-sm text-foreground">
-          {icon} {title}
-        </span>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
-      </button>
-      {isOpen && (
-        <div className="px-4 py-3 text-sm text-muted-foreground leading-relaxed">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
+type SectionId = 'overview' | 'setup' | 'instructions' | 'coaching' | 'variations';
 
 export function DrillDetailModal({
   drill,
@@ -107,15 +86,7 @@ export function DrillDetailModal({
 }: DrillDetailModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<'static' | 'animated'>('static');
-  const [openSections, setOpenSections] = useState<string[]>(['overview']);
-
-  const toggleSection = (section: string) => {
-    setOpenSections(prev =>
-      prev.includes(section)
-        ? prev.filter(s => s !== section)
-        : [...prev, section]
-    );
-  };
+  const [activeSection, setActiveSection] = useState<SectionId | null>('overview');
 
   const hasAnimation = drill?.hasAnimation;
 
@@ -318,67 +289,44 @@ export function DrillDetailModal({
             </div>
           </div>
 
-          {/* ── Drill Details Sections (Collapsible) ── */}
-          <div className="px-4 pb-6 space-y-3">
-            {drill.description && (
-              <CollapsibleSection
-                id="overview"
-                title="Overview"
-                icon="📋"
-                isOpen={openSections.includes('overview')}
-                onToggle={() => toggleSection('overview')}
-              >
-                <p className="leading-relaxed">{drill.description}</p>
-              </CollapsibleSection>
-            )}
+          {/* ── Section Toggle Row ── */}
+          <div className="px-4 pb-6">
+            {(() => {
+              const sections: { id: SectionId; label: string; icon: string; content: ReactNode }[] = [];
+              if (drill.description) sections.push({ id: 'overview', label: 'Overview', icon: '📋', content: <p className="leading-relaxed">{drill.description}</p> });
+              if (drill.setup) sections.push({ id: 'setup', label: 'Setup', icon: '⚙️', content: formatDrillText(drill.setup) });
+              if (drill.instructions) sections.push({ id: 'instructions', label: 'Instructions', icon: '📝', content: formatDrillText(drill.instructions) });
+              if (filteredCoachingPoints) sections.push({ id: 'coaching', label: 'Coaching Points', icon: '💡', content: formatDrillText(filteredCoachingPoints) });
+              if (drill.variations) sections.push({ id: 'variations', label: 'Variations', icon: '🔄', content: formatDrillText(drill.variations) });
 
-            {drill.setup && (
-              <CollapsibleSection
-                id="setup"
-                title="Setup"
-                icon="⚙️"
-                isOpen={openSections.includes('setup')}
-                onToggle={() => toggleSection('setup')}
-              >
-                {formatDrillText(drill.setup)}
-              </CollapsibleSection>
-            )}
+              if (sections.length === 0) return null;
 
-            {drill.instructions && (
-              <CollapsibleSection
-                id="instructions"
-                title="Instructions"
-                icon="📝"
-                isOpen={openSections.includes('instructions')}
-                onToggle={() => toggleSection('instructions')}
-              >
-                {formatDrillText(drill.instructions)}
-              </CollapsibleSection>
-            )}
+              const active = sections.find(s => s.id === activeSection) || sections[0];
 
-            {filteredCoachingPoints && (
-              <CollapsibleSection
-                id="coaching"
-                title="Coaching Points"
-                icon="💡"
-                isOpen={openSections.includes('coaching')}
-                onToggle={() => toggleSection('coaching')}
-              >
-                {formatDrillText(filteredCoachingPoints)}
-              </CollapsibleSection>
-            )}
-
-            {drill.variations && (
-              <CollapsibleSection
-                id="variations"
-                title="Variations"
-                icon="🔄"
-                isOpen={openSections.includes('variations')}
-                onToggle={() => toggleSection('variations')}
-              >
-                {formatDrillText(drill.variations)}
-              </CollapsibleSection>
-            )}
+              return (
+                <>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {sections.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => setActiveSection(s.id)}
+                        className={cn(
+                          'px-3 py-1.5 text-sm font-medium rounded-full transition-colors',
+                          active.id === s.id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                        )}
+                      >
+                        {s.icon} {s.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed">
+                    {active.content}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* ── Actions Footer ── */}
