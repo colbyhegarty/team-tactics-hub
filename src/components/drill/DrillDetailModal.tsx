@@ -257,17 +257,21 @@ export function DrillDetailModal({
                   allow="fullscreen"
                 />
               ) : drill.svgUrl ? (
-                <img
-                  src={drill.svgUrl}
-                  alt={drill.name}
-                  className="w-full max-h-96 object-contain mx-auto"
-                />
+                <div className="bg-field rounded-lg overflow-hidden">
+                  <img
+                    src={drill.svgUrl}
+                    alt={drill.name}
+                    className="w-full max-h-96 object-contain mx-auto p-2"
+                  />
+                </div>
               ) : drill.svg ? (
-                <img
-                  src={`data:image/svg+xml;base64,${drill.svg}`}
-                  alt={drill.name}
-                  className="w-full max-h-96 object-contain mx-auto"
-                />
+                <div className="bg-field rounded-lg overflow-hidden">
+                  <img
+                    src={`data:image/svg+xml;base64,${drill.svg}`}
+                    alt={drill.name}
+                    className="w-full max-h-96 object-contain mx-auto p-2"
+                  />
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-48 text-muted-foreground">
                   <p>No diagram available</p>
