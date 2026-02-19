@@ -1,4 +1,5 @@
 import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb, Image, Film } from 'lucide-react';
+import DrillAnimationPlayer from '@/components/drill/DrillAnimationPlayer';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 
-const RENDER_API_URL = 'https://soccer-drill-api.onrender.com';
+
 
 interface DrillDetailModalProps {
   drill: Drill | null;
@@ -249,12 +250,19 @@ export function DrillDetailModal({
               )}
               
               {/* Diagram Content */}
-              {hasAnimation && viewMode === 'animated' ? (
-                <iframe
-                  src={`${RENDER_API_URL}/api/animation/${drill.id}`}
-                  className="w-full border-0 rounded-lg aspect-[4/3]"
-                  title={`${drill.name} Animation`}
-                  allow="fullscreen"
+              {hasAnimation && viewMode === 'animated' && drill.drillJson?.animation ? (
+                <DrillAnimationPlayer
+                  drill={{
+                    name: drill.name,
+                    field: drill.drillJson.field,
+                    players: drill.drillJson.players?.map(p => ({ ...p, role: p.role as string })),
+                    cones: drill.drillJson.cones,
+                    cone_lines: drill.drillJson.cone_lines,
+                    balls: drill.drillJson.balls,
+                    goals: drill.drillJson.goals,
+                    mini_goals: drill.drillJson.mini_goals,
+                  }}
+                  animation={drill.drillJson.animation}
                 />
               ) : drill.svgUrl ? (
                 <div className="bg-field rounded-lg overflow-hidden">
