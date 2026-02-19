@@ -176,7 +176,7 @@ export function DrillDetailModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-4xl p-0 max-h-[95vh] overflow-y-auto [&::-webkit-scrollbar]:hidden">
           <div className="p-6">
             {/* Header Section */}
             <DialogHeader className="mb-4">
@@ -252,7 +252,7 @@ export function DrillDetailModal({
               {hasAnimation && viewMode === 'animated' ? (
                 <iframe
                   src={`${RENDER_API_URL}/api/animation/${drill.id}`}
-                  className="w-full h-[600px] border-0 rounded-lg"
+                  className="w-full border-0 rounded-lg aspect-[4/3]"
                   title={`${drill.name} Animation`}
                   allow="fullscreen"
                 />
