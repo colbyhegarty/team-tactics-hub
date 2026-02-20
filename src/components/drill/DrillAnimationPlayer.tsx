@@ -2,13 +2,6 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Play, Pause, SkipBack, SkipForward, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-{
-  console.log("Animation data:", drill.animation_json);
-}
-{
-  console.log("Diagram data:", drill.diagram_json);
-}
-
 // ============================================================
 // TYPES
 // ============================================================
