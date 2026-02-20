@@ -119,6 +119,7 @@ export interface Drill {
   source?: string;
   hasAnimation?: boolean;
   animationHtmlUrl?: string; // URL to animation HTML page
+  animationJson?: { duration: number; keyframes: AnimationKeyframe[] }; // Animation data from Supabase
   // Structured fields from library API
   setup?: string;
   instructions?: string;

@@ -250,30 +250,19 @@ export function DrillDetailModal({
               )}
               
               {/* Diagram Content */}
-              {(() => {
-                if (hasAnimation && viewMode === 'animated') {
-                  console.log('=== ANIMATION DEBUG ===');
-                  console.log('drill.drillJson:', drill.drillJson);
-                  console.log('drill.drillJson?.animation:', drill.drillJson?.animation);
-                  console.log('Has keyframes:', drill.drillJson?.animation?.keyframes?.length);
-                  console.log('Players:', drill.drillJson?.players?.length);
-                  console.log('Balls:', drill.drillJson?.balls?.length);
-                }
-                return null;
-              })()}
-              {hasAnimation && viewMode === 'animated' && drill.drillJson?.animation ? (
+              {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
                 <DrillAnimationPlayer
                   drill={{
                     name: drill.name,
-                    field: drill.drillJson.field,
-                    players: drill.drillJson.players?.map(p => ({ ...p, role: p.role as string })),
-                    cones: drill.drillJson.cones,
-                    cone_lines: drill.drillJson.cone_lines,
-                    balls: drill.drillJson.balls,
-                    goals: drill.drillJson.goals,
-                    mini_goals: drill.drillJson.mini_goals,
+                    field: drill.drillJson?.field,
+                    players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
+                    cones: drill.drillJson?.cones,
+                    cone_lines: drill.drillJson?.cone_lines,
+                    balls: drill.drillJson?.balls,
+                    goals: drill.drillJson?.goals,
+                    mini_goals: drill.drillJson?.mini_goals,
                   }}
-                  animation={drill.drillJson.animation}
+                  animation={drill.animationJson}
                 />
               ) : drill.svgUrl ? (
                 <div className="bg-field rounded-lg overflow-hidden">
