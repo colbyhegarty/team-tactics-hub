@@ -1,6 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
-import { Play, Pause, SkipBack, SkipForward, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 
 // ============================================================
 // TYPES
@@ -13,14 +11,13 @@ interface Position {
 
 interface Player {
   id: string;
-  role: string;
+  role: 'ATTACKER' | 'DEFENDER' | 'GOALKEEPER' | 'NEUTRAL';
   position: Position;
   label?: string;
 }
 
 interface Cone {
   position: Position;
-  color?: string;
 }
 
 interface ConeLine {
@@ -35,7 +32,6 @@ interface Ball {
 interface Goal {
   position: Position;
   rotation?: number;
-  size?: "full" | "small";
 }
 
 interface MiniGoal {
@@ -44,23 +40,20 @@ interface MiniGoal {
 }
 
 interface FieldConfig {
-  type?: "FULL" | "HALF";
+  type?: 'FULL' | 'HALF';
   markings?: boolean;
-  show_markings?: boolean;
   goals?: number;
-  attacking_direction?: "NORTH" | "SOUTH";
+  attacking_direction?: 'NORTH' | 'SOUTH';
 }
 
 interface Keyframe {
-  id?: string;
   label?: string;
-  duration?: number;
-  easing?: "linear" | "ease-in" | "ease-out" | "ease-in-out";
+  duration?: number; // milliseconds
+  easing?: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
   positions?: Record<string, Position>;
 }
 
 interface AnimationData {
-  duration?: number;
   keyframes: Keyframe[];
 }
 
@@ -78,51 +71,134 @@ interface DrillData {
 interface DrillAnimationPlayerProps {
   drill: DrillData;
   animation: AnimationData;
+  width?: number;
+  height?: number;
   className?: string;
+  showStepButtons?: boolean; // Default false - no step buttons
 }
 
 // ============================================================
-// COLORS - Must match Python renderer.py
+// COLORS - Must match Python renderer.py EXACTLY
 // ============================================================
 
 const COLORS = {
-  GRASS_LIGHT: "#6fbf4a",
-  GRASS_DARK: "#63b043",
-  CONE_COLOR: "#f4a261",
-  CONE_LINE_COLOR: "#f4a261",
+  GRASS_LIGHT: '#6fbf4a',
+  GRASS_DARK: '#63b043',
+  LINE_COLOR: 'white',
+  CONE_COLOR: '#f4a261',
+  CONE_LINE_COLOR: '#f4a261',
+  GOAL_COLOR: 'white',
+  
+  // Player roles
+  ATTACKER: '#e63946',
+  DEFENDER: '#457b9d',
+  GOALKEEPER: '#f1fa3c',
+  NEUTRAL: '#f4a261',
 };
 
 const PLAYER_COLORS: Record<string, string> = {
-  attacker: "#e63946",
-  defender: "#457b9d",
-  goalkeeper: "#f1fa3c",
-  neutral: "#f4a261",
+  'ATTACKER': '#e63946',
+  'DEFENDER': '#457b9d',
+  'GOALKEEPER': '#f1fa3c',
+  'NEUTRAL': '#f4a261',
 };
 
-// Canvas logical size (aspect ratio 4:3)
-const CW = 800;
-const CH = 600;
-const FIELD_PADDING = 50;
-const FIELD_WIDTH = CW - FIELD_PADDING * 2;
-const FIELD_HEIGHT = CH - FIELD_PADDING * 2;
+// ============================================================
+// PORTRAIT ROTATION UTILITIES
+// ============================================================
+
+/**
+ * Detect if the drill is in portrait orientation.
+ * Portrait = goals at top/bottom (y near 0 or 100)
+ * Landscape = goals at left/right (x near 0 or 100)
+ */
+function isPortraitDrill(drill: DrillData): boolean {
+  // Check explicit goals - if any goal has y near 0 or 100, it's portrait
+  if (drill.goals && drill.goals.length > 0) {
+    const hasVerticalGoal = drill.goals.some(g => 
+      g.position.y <= 10 || g.position.y >= 90
+    );
+    const hasHorizontalGoal = drill.goals.some(g => 
+      g.position.x <= 10 || g.position.x >= 90
+    );
+    
+    if (hasVerticalGoal && !hasHorizontalGoal) return true;
+    if (hasHorizontalGoal && !hasVerticalGoal) return false;
+  }
+  
+  // Check mini goals
+  if (drill.mini_goals && drill.mini_goals.length > 0) {
+    const hasVerticalGoal = drill.mini_goals.some(g => 
+      g.position.y <= 10 || g.position.y >= 90
+    );
+    const hasHorizontalGoal = drill.mini_goals.some(g => 
+      g.position.x <= 10 || g.position.x >= 90
+    );
+    
+    if (hasVerticalGoal && !hasHorizontalGoal) return true;
+    if (hasHorizontalGoal && !hasVerticalGoal) return false;
+  }
+  
+  // Check field config - if field.goals > 0, the built-in goals are at y=0/100
+  if (drill.field?.goals && drill.field.goals > 0) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Transform position: (x, y) → (y, 100 - x) for 90° clockwise rotation
+ */
+function transformPosition(pos: Position, isPortrait: boolean): Position {
+  if (!isPortrait) return pos;
+  return { x: pos.y, y: 100 - pos.x };
+}
+
+/**
+ * Transform rotation angle: add 90° for portrait drills
+ */
+function transformRotation(rotation: number | undefined, isPortrait: boolean): number {
+  const rot = rotation || 0;
+  if (!isPortrait) return rot;
+  return (rot + 90) % 360;
+}
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
-const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, animation, className = "" }) => {
+const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({
+  drill,
+  animation,
+  width = 800,
+  height = 600,
+  className = '',
+  showStepButtons = false,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
+  
+  // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [looping, setLooping] = useState(true);
-
+  const [selectedKeyframeIndex, setSelectedKeyframeIndex] = useState(0);
+  
   const animationFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
 
-  const keyframes = animation?.keyframes || [];
+  // Detect portrait orientation once
+  const isPortrait = useMemo(() => isPortraitDrill(drill), [drill]);
 
+  // Canvas constants
+  const FIELD_PADDING = 50;
+  const FIELD_WIDTH = width - FIELD_PADDING * 2;
+  const FIELD_HEIGHT = height - FIELD_PADDING * 2;
+
+  const keyframes = animation?.keyframes || [];
+  
+  // Calculate total duration (sum of durations from keyframe 1 onwards)
   const totalDuration = keyframes.reduce((sum, kf, i) => {
     if (i === 0) return sum;
     return sum + (kf.duration || 1000);
@@ -132,13 +208,16 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
   // COORDINATE CONVERSION
   // ============================================================
 
-  const toCanvas = useCallback(
-    (x: number, y: number) => ({
-      x: FIELD_PADDING + (x / 100) * FIELD_WIDTH,
-      y: FIELD_PADDING + ((100 - y) / 100) * FIELD_HEIGHT,
-    }),
-    [],
-  );
+  const toCanvas = useCallback((x: number, y: number) => ({
+    x: FIELD_PADDING + (x / 100) * FIELD_WIDTH,
+    y: FIELD_PADDING + ((100 - y) / 100) * FIELD_HEIGHT,
+  }), [FIELD_WIDTH, FIELD_HEIGHT]);
+
+  // Transform position with portrait rotation if needed
+  const toCanvasTransformed = useCallback((x: number, y: number) => {
+    const transformed = transformPosition({ x, y }, isPortrait);
+    return toCanvas(transformed.x, transformed.y);
+  }, [toCanvas, isPortrait]);
 
   // ============================================================
   // POSITION CALCULATIONS
@@ -146,7 +225,7 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
 
   const getStartingPositions = useCallback((): Record<string, Position> => {
     const pos: Record<string, Position> = {};
-    drill.players?.forEach((p) => {
+    drill.players?.forEach(p => {
       pos[p.id] = { x: p.position.x, y: p.position.y };
     });
     drill.balls?.forEach((b, i) => {
@@ -155,176 +234,255 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     return pos;
   }, [drill.players, drill.balls]);
 
-  const getPositionsAtKeyframe = useCallback(
-    (idx: number): Record<string, Position> => {
-      const pos = getStartingPositions();
-      for (let i = 0; i <= idx && i < keyframes.length; i++) {
-        const kf = keyframes[i];
-        if (kf.positions) {
-          Object.entries(kf.positions).forEach(([id, p]) => {
-            pos[id] = { ...p };
-          });
-        }
+  const getPositionsAtKeyframe = useCallback((idx: number): Record<string, Position> => {
+    let pos = getStartingPositions();
+    for (let i = 0; i <= idx && i < keyframes.length; i++) {
+      const kf = keyframes[i];
+      if (kf.positions) {
+        Object.entries(kf.positions).forEach(([id, p]) => {
+          pos[id] = { ...p };
+        });
       }
-      return pos;
-    },
-    [keyframes, getStartingPositions],
-  );
+    }
+    return pos;
+  }, [keyframes, getStartingPositions]);
 
-  const getPositionsAtTime = useCallback(
-    (time: number): Record<string, Position> => {
-      if (keyframes.length === 0) return getStartingPositions();
-
-      const times: number[] = [];
-      let cum = 0;
-      for (let i = 0; i < keyframes.length; i++) {
-        times.push(cum);
-        if (i < keyframes.length - 1) {
-          cum += keyframes[i + 1].duration || 1000;
-        }
+  const getPositionsAtTime = useCallback((time: number): Record<string, Position> => {
+    if (keyframes.length === 0) return getStartingPositions();
+    
+    // Build cumulative times
+    const times: number[] = [];
+    let cum = 0;
+    for (let i = 0; i < keyframes.length; i++) {
+      times.push(cum);
+      if (i < keyframes.length - 1) {
+        cum += keyframes[i + 1].duration || 1000;
       }
+    }
 
-      let from = 0;
-      for (let i = 0; i < times.length; i++) {
-        if (time >= times[i]) from = i;
-      }
+    // Find which segment we're in
+    let from = 0;
+    for (let i = 0; i < times.length; i++) {
+      if (time >= times[i]) from = i;
+    }
+    
+    let to = Math.min(from + 1, keyframes.length - 1);
+    
+    if (from >= keyframes.length - 1 || from === to) {
+      return getPositionsAtKeyframe(keyframes.length - 1);
+    }
 
-      const to = Math.min(from + 1, keyframes.length - 1);
+    const segDur = times[to] - times[from];
+    if (segDur <= 0) return getPositionsAtKeyframe(from);
 
-      if (from >= keyframes.length - 1 || from === to) {
-        return getPositionsAtKeyframe(keyframes.length - 1);
-      }
+    const prog = Math.min(1, Math.max(0, (time - times[from]) / segDur));
+    const fromPos = getPositionsAtKeyframe(from);
+    const toPos = getPositionsAtKeyframe(to);
+    
+    // Apply easing
+    const ease = keyframes[to]?.easing || 'linear';
+    let e: number;
+    switch (ease) {
+      case 'ease-in':
+        e = prog * prog;
+        break;
+      case 'ease-out':
+        e = 1 - (1 - prog) * (1 - prog);
+        break;
+      case 'ease-in-out':
+        e = prog < 0.5 ? 2 * prog * prog : 1 - Math.pow(-2 * prog + 2, 2) / 2;
+        break;
+      default:
+        e = prog;
+    }
 
-      const segDur = times[to] - times[from];
-      if (segDur <= 0) return getPositionsAtKeyframe(from);
+    // Interpolate positions
+    const interp: Record<string, Position> = {};
+    Object.keys(fromPos).forEach(id => {
+      const f = fromPos[id];
+      const t = toPos[id] || f;
+      interp[id] = {
+        x: f.x + (t.x - f.x) * e,
+        y: f.y + (t.y - f.y) * e,
+      };
+    });
 
-      const prog = Math.min(1, Math.max(0, (time - times[from]) / segDur));
-      const fromPos = getPositionsAtKeyframe(from);
-      const toPos = getPositionsAtKeyframe(to);
-
-      const ease = keyframes[to]?.easing || "linear";
-      let e: number;
-      switch (ease) {
-        case "ease-in":
-          e = prog * prog;
-          break;
-        case "ease-out":
-          e = 1 - (1 - prog) * (1 - prog);
-          break;
-        case "ease-in-out":
-          e = prog < 0.5 ? 2 * prog * prog : 1 - Math.pow(-2 * prog + 2, 2) / 2;
-          break;
-        default:
-          e = prog;
-      }
-
-      const interp: Record<string, Position> = {};
-      Object.keys(fromPos).forEach((id) => {
-        const f = fromPos[id];
-        const t = toPos[id] || f;
-        interp[id] = {
-          x: f.x + (t.x - f.x) * e,
-          y: f.y + (t.y - f.y) * e,
-        };
-      });
-
-      return interp;
-    },
-    [keyframes, getStartingPositions, getPositionsAtKeyframe],
-  );
+    return interp;
+  }, [keyframes, getStartingPositions, getPositionsAtKeyframe]);
 
   // ============================================================
-  // DRAWING
+  // DRAWING FUNCTIONS
   // ============================================================
 
-  const drawGoalArea = useCallback(
-    (ctx: CanvasRenderingContext2D, goalY: number, drawGoal: boolean) => {
-      const into = goalY === 100 ? -1 : 1;
-      ctx.strokeStyle = "white";
+  // Draw goal area rotated (for portrait→landscape conversion)
+  // goalX: 0 = left side, 100 = right side
+  const drawGoalAreaRotated = useCallback((ctx: CanvasRenderingContext2D, goalX: number) => {
+    const into = goalX === 100 ? -1 : 1;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+
+    // After rotation: x becomes the goal line position
+    // 18-yard box (now extends horizontally from goal line)
+    const pen18 = toCanvas(goalX + into * 18, 30);
+    const penGoalTop = toCanvas(goalX, 30);
+    const penGoalBottom = toCanvas(goalX, 70);
+    const pen18Bottom = toCanvas(goalX + into * 18, 70);
+
+    ctx.beginPath();
+    ctx.moveTo(penGoalTop.x, penGoalTop.y);
+    ctx.lineTo(pen18.x, pen18.y);
+    ctx.lineTo(pen18Bottom.x, pen18Bottom.y);
+    ctx.lineTo(penGoalBottom.x, penGoalBottom.y);
+    ctx.stroke();
+
+    // 6-yard box
+    const six6 = toCanvas(goalX + into * 6, 42);
+    const sixGoalTop = toCanvas(goalX, 42);
+    const sixGoalBottom = toCanvas(goalX, 58);
+    const six6Bottom = toCanvas(goalX + into * 6, 58);
+
+    ctx.beginPath();
+    ctx.moveTo(sixGoalTop.x, sixGoalTop.y);
+    ctx.lineTo(six6.x, six6.y);
+    ctx.lineTo(six6Bottom.x, six6Bottom.y);
+    ctx.lineTo(sixGoalBottom.x, sixGoalBottom.y);
+    ctx.stroke();
+
+    // Penalty spot
+    const ps = toCanvas(goalX + into * 12, 50);
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(ps.x, ps.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Built-in goal
+    const gPos = toCanvas(goalX, 50);
+    const gw = (8 / 100) * FIELD_HEIGHT; // Width is now vertical
+    const gd = (3 / 100) * FIELD_WIDTH;  // Depth is now horizontal
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+
+    if (goalX === 100) {
+      // Right side goal (opens left)
+      ctx.beginPath(); ctx.moveTo(gPos.x, gPos.y - gw / 2); ctx.lineTo(gPos.x - gd, gPos.y - gw / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gPos.x, gPos.y + gw / 2); ctx.lineTo(gPos.x - gd, gPos.y + gw / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gPos.x - gd, gPos.y - gw / 2); ctx.lineTo(gPos.x - gd, gPos.y + gw / 2); ctx.stroke();
+    } else {
+      // Left side goal (opens right)
+      ctx.beginPath(); ctx.moveTo(gPos.x, gPos.y - gw / 2); ctx.lineTo(gPos.x + gd, gPos.y - gw / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gPos.x, gPos.y + gw / 2); ctx.lineTo(gPos.x + gd, gPos.y + gw / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gPos.x + gd, gPos.y - gw / 2); ctx.lineTo(gPos.x + gd, gPos.y + gw / 2); ctx.stroke();
+    }
+  }, [toCanvas, FIELD_WIDTH, FIELD_HEIGHT]);
+
+  const drawGoalArea = useCallback((ctx: CanvasRenderingContext2D, goalY: number, drawGoal: boolean) => {
+    const into = goalY === 100 ? -1 : 1;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+
+    // 18-yard box
+    const bt = toCanvas(30, goalY + into * 18);
+    const bb = toCanvas(70, goalY);
+    ctx.strokeRect(
+      bt.x,
+      Math.min(bt.y, bb.y),
+      toCanvas(70, 0).x - toCanvas(30, 0).x,
+      Math.abs(bt.y - bb.y)
+    );
+
+    // 6-yard box
+    const st = toCanvas(42, goalY + into * 6);
+    const sb = toCanvas(58, goalY);
+    ctx.strokeRect(
+      st.x,
+      Math.min(st.y, sb.y),
+      toCanvas(58, 0).x - toCanvas(42, 0).x,
+      Math.abs(st.y - sb.y)
+    );
+
+    // Penalty spot
+    const ps = toCanvas(50, goalY + into * 12);
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(ps.x, ps.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Built-in goal
+    if (drawGoal) {
+      const pos = toCanvas(50, goalY);
+      const gw = (8 / 100) * FIELD_WIDTH;
+      const gd = (3 / 100) * FIELD_HEIGHT;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+
+      if (goalY === 100) {
+        ctx.beginPath(); ctx.moveTo(pos.x - gw / 2, pos.y); ctx.lineTo(pos.x - gw / 2, pos.y - gd); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pos.x + gw / 2, pos.y); ctx.lineTo(pos.x + gw / 2, pos.y - gd); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pos.x - gw / 2, pos.y - gd); ctx.lineTo(pos.x + gw / 2, pos.y - gd); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(pos.x - gw / 2, pos.y); ctx.lineTo(pos.x - gw / 2, pos.y + gd); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pos.x + gw / 2, pos.y); ctx.lineTo(pos.x + gw / 2, pos.y + gd); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pos.x - gw / 2, pos.y + gd); ctx.lineTo(pos.x + gw / 2, pos.y + gd); ctx.stroke();
+      }
+    }
+  }, [toCanvas, FIELD_WIDTH, FIELD_HEIGHT]);
+
+  const drawField = useCallback((ctx: CanvasRenderingContext2D) => {
+    const p = FIELD_PADDING;
+    const w = FIELD_WIDTH;
+    const h = FIELD_HEIGHT;
+
+    // Grass stripes (10 vertical) - ALWAYS vertical regardless of rotation
+    ctx.fillStyle = COLORS.GRASS_DARK;
+    ctx.fillRect(p, p, w, h);
+    for (let i = 0; i < 10; i++) {
+      ctx.fillStyle = i % 2 === 0 ? COLORS.GRASS_LIGHT : COLORS.GRASS_DARK;
+      ctx.fillRect(p + i * (w / 10), p, w / 10, h);
+    }
+
+    // Field outline
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(p, p, w, h);
+
+    // Field markings (rotated if portrait)
+    if (drill.field?.markings !== false) {
+      ctx.strokeStyle = 'white';
       ctx.lineWidth = 1.5;
 
-      // 18-yard box
-      const bt = toCanvas(30, goalY + into * 18);
-      const bb = toCanvas(70, goalY);
-      ctx.strokeRect(bt.x, Math.min(bt.y, bb.y), toCanvas(70, 0).x - toCanvas(30, 0).x, Math.abs(bt.y - bb.y));
+      if (isPortrait) {
+        // PORTRAIT → LANDSCAPE: Draw markings rotated 90°
+        // Halfway line becomes vertical (at x=50 after transform)
+        const cx = toCanvas(50, 50).x;
+        ctx.beginPath();
+        ctx.moveTo(cx, p);
+        ctx.lineTo(cx, p + h);
+        ctx.stroke();
 
-      // 6-yard box
-      const st = toCanvas(42, goalY + into * 6);
-      const sb = toCanvas(58, goalY);
-      ctx.strokeRect(st.x, Math.min(st.y, sb.y), toCanvas(58, 0).x - toCanvas(42, 0).x, Math.abs(st.y - sb.y));
+        // Center circle stays at center
+        const c = toCanvas(50, 50);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, (10 / 100) * Math.min(w, h), 0, Math.PI * 2);
+        ctx.stroke();
 
-      // Penalty spot
-      const ps = toCanvas(50, goalY + into * 12);
-      ctx.fillStyle = "white";
-      ctx.beginPath();
-      ctx.arc(ps.x, ps.y, 3, 0, Math.PI * 2);
-      ctx.fill();
+        // Center spot
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Built-in goal
-      if (drawGoal) {
-        const pos = toCanvas(50, goalY);
-        const gw = (8 / 100) * FIELD_WIDTH;
-        const gd = (3 / 100) * FIELD_HEIGHT;
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-
-        if (goalY === 100) {
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y);
-          ctx.lineTo(pos.x - gw / 2, pos.y - gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x + gw / 2, pos.y);
-          ctx.lineTo(pos.x + gw / 2, pos.y - gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y - gd);
-          ctx.lineTo(pos.x + gw / 2, pos.y - gd);
-          ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y);
-          ctx.lineTo(pos.x - gw / 2, pos.y + gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x + gw / 2, pos.y);
-          ctx.lineTo(pos.x + gw / 2, pos.y + gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y + gd);
-          ctx.lineTo(pos.x + gw / 2, pos.y + gd);
-          ctx.stroke();
+        // Goal areas on left/right (rotated from top/bottom)
+        const fg = drill.field?.goals || 0;
+        if (fg >= 1) {
+          drawGoalAreaRotated(ctx, 100); // Right side (was top)
         }
-      }
-    },
-    [toCanvas],
-  );
-
-  const drawField = useCallback(
-    (ctx: CanvasRenderingContext2D) => {
-      const p = FIELD_PADDING;
-      const w = FIELD_WIDTH;
-      const h = FIELD_HEIGHT;
-
-      // Grass stripes
-      for (let i = 0; i < 10; i++) {
-        ctx.fillStyle = i % 2 === 0 ? COLORS.GRASS_LIGHT : COLORS.GRASS_DARK;
-        ctx.fillRect(p + i * (w / 10), p, w / 10, h);
-      }
-
-      // Field outline
-      ctx.strokeStyle = "rgba(255,255,255,0.5)";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(p, p, w, h);
-
-      // Field markings
-      const showMarkings = drill.field?.markings !== false && drill.field?.show_markings !== false;
-      if (showMarkings) {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 1.5;
-
-        // Halfway line
+        if (drill.field?.type === 'FULL' && fg >= 2) {
+          drawGoalAreaRotated(ctx, 0); // Left side (was bottom)
+        }
+      } else {
+        // LANDSCAPE: Draw markings normally (horizontal halfway line)
         const cy = toCanvas(50, 50).y;
         ctx.beginPath();
         ctx.moveTo(p, cy);
@@ -338,56 +496,46 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
         ctx.stroke();
 
         // Center spot
-        ctx.fillStyle = "white";
+        ctx.fillStyle = 'white';
         ctx.beginPath();
         ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
         ctx.fill();
 
+        // Goal areas on top/bottom
         const fg = drill.field?.goals || 0;
         drawGoalArea(ctx, 100, fg >= 1);
-        if (drill.field?.type === "FULL") {
+        if (drill.field?.type === 'FULL') {
           drawGoalArea(ctx, 0, fg >= 2);
         }
       }
-    },
-    [drill.field, toCanvas, drawGoalArea],
-  );
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const positions = isPlaying || currentTime > 0 ? getPositionsAtTime(currentTime) : getPositionsAtKeyframe(0);
-
-    ctx.clearRect(0, 0, CW, CH);
-
-    // Background
-    ctx.fillStyle = "#2d4a2d";
-    ctx.fillRect(0, 0, CW, CH);
-
-    drawField(ctx);
-
-    // Cone lines
-    if (drill.cone_lines && drill.cones) {
-      ctx.strokeStyle = COLORS.CONE_LINE_COLOR;
-      ctx.lineWidth = 2;
-      drill.cone_lines.forEach((l) => {
-        if (l.from_cone < drill.cones!.length && l.to_cone < drill.cones!.length) {
-          const f = toCanvas(drill.cones![l.from_cone].position.x, drill.cones![l.from_cone].position.y);
-          const t = toCanvas(drill.cones![l.to_cone].position.x, drill.cones![l.to_cone].position.y);
-          ctx.beginPath();
-          ctx.moveTo(f.x, f.y);
-          ctx.lineTo(t.x, t.y);
-          ctx.stroke();
-        }
-      });
     }
+  }, [drill.field, FIELD_WIDTH, FIELD_HEIGHT, toCanvas, isPortrait, drawGoalArea, drawGoalAreaRotated]);
 
-    // Cones
-    drill.cones?.forEach((c) => {
-      const pos = toCanvas(c.position.x, c.position.y);
+
+
+  const drawConeLines = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!drill.cone_lines || !drill.cones) return;
+    
+    ctx.strokeStyle = COLORS.CONE_LINE_COLOR;
+    ctx.lineWidth = 2;
+
+    drill.cone_lines.forEach(l => {
+      if (l.from_cone < drill.cones!.length && l.to_cone < drill.cones!.length) {
+        const f = toCanvasTransformed(drill.cones![l.from_cone].position.x, drill.cones![l.from_cone].position.y);
+        const t = toCanvasTransformed(drill.cones![l.to_cone].position.x, drill.cones![l.to_cone].position.y);
+        ctx.beginPath();
+        ctx.moveTo(f.x, f.y);
+        ctx.lineTo(t.x, t.y);
+        ctx.stroke();
+      }
+    });
+  }, [drill.cone_lines, drill.cones, toCanvas]);
+
+  const drawCones = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!drill.cones) return;
+
+    drill.cones.forEach(c => {
+      const pos = toCanvasTransformed(c.position.x, c.position.y);
       ctx.fillStyle = COLORS.CONE_COLOR;
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y - 8);
@@ -395,47 +543,46 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
       ctx.lineTo(pos.x + 6, pos.y + 5);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = "#000";
+      ctx.strokeStyle = '#000';
       ctx.lineWidth = 0.8;
       ctx.stroke();
     });
+  }, [drill.cones, toCanvas]);
 
-    // Goals
-    drill.goals?.forEach((g) => {
-      const pos = toCanvas(g.position.x, g.position.y);
-      const rot = g.rotation || 0;
+  const drawGoals = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!drill.goals) return;
+
+    drill.goals.forEach(g => {
+      const pos = toCanvasTransformed(g.position.x, g.position.y);
+      const rot = transformRotation(g.rotation, isPortrait);
       const gw = (8 / 100) * FIELD_WIDTH;
       const gd = (3 / 100) * FIELD_HEIGHT;
+
       ctx.save();
       ctx.translate(pos.x, pos.y);
       ctx.rotate((rot * Math.PI) / 180);
-      ctx.strokeStyle = "#fff";
+      ctx.strokeStyle = '#fff';
       ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-gw / 2, gd / 2);
-      ctx.lineTo(-gw / 2, -gd / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(gw / 2, gd / 2);
-      ctx.lineTo(gw / 2, -gd / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-gw / 2, -gd / 2);
-      ctx.lineTo(gw / 2, -gd / 2);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-gw / 2, gd / 2); ctx.lineTo(-gw / 2, -gd / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gw / 2, gd / 2); ctx.lineTo(gw / 2, -gd / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-gw / 2, -gd / 2); ctx.lineTo(gw / 2, -gd / 2); ctx.stroke();
       ctx.restore();
     });
+  }, [drill.goals, toCanvasTransformed, isPortrait, FIELD_WIDTH, FIELD_HEIGHT]);
 
-    // Mini goals
-    drill.mini_goals?.forEach((g) => {
-      const pos = toCanvas(g.position.x, g.position.y);
-      const rot = ((g.rotation || 0) + 180) % 360;
+  const drawMiniGoals = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!drill.mini_goals) return;
+
+    drill.mini_goals.forEach(g => {
+      const pos = toCanvasTransformed(g.position.x, g.position.y);
+      const rot = (transformRotation(g.rotation, isPortrait) + 180) % 360;
       const gw = (4 / 100) * FIELD_WIDTH;
       const gd = (2 / 100) * FIELD_HEIGHT;
+
       ctx.save();
       ctx.translate(pos.x, pos.y);
       ctx.rotate((rot * Math.PI) / 180);
-      ctx.strokeStyle = "#fff";
+      ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(-gw / 2, gd / 2);
@@ -445,43 +592,52 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
       ctx.stroke();
       ctx.restore();
     });
+  }, [drill.mini_goals, toCanvasTransformed, isPortrait, FIELD_WIDTH, FIELD_HEIGHT]);
 
-    // Players
-    drill.players?.forEach((p) => {
+  const drawPlayers = useCallback((ctx: CanvasRenderingContext2D, positions: Record<string, Position>) => {
+    if (!drill.players) return;
+
+    drill.players.forEach(p => {
       const pd = positions[p.id] || p.position;
-      const pos = toCanvas(pd.x, pd.y);
-      ctx.fillStyle = PLAYER_COLORS[p.role.toLowerCase()] || "#888";
-      ctx.strokeStyle = "#fff";
+      const pos = toCanvasTransformed(pd.x, pd.y);
+      
+      ctx.fillStyle = PLAYER_COLORS[p.role] || '#888';
+      ctx.strokeStyle = '#fff';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, 12, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Label
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 9px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
+      // Player ID label
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
       ctx.fillText(p.id, pos.x, pos.y + 16);
     });
+  }, [drill.players, toCanvas]);
 
-    // Balls
-    drill.balls?.forEach((b, i) => {
+  const drawBalls = useCallback((ctx: CanvasRenderingContext2D, positions: Record<string, Position>) => {
+    if (!drill.balls) return;
+
+    drill.balls.forEach((b, i) => {
       const pd = positions[`ball_${i}`] || b.position;
-      const pos = toCanvas(pd.x, pd.y);
-      ctx.fillStyle = "#fff";
-      ctx.strokeStyle = "#000";
+      const pos = toCanvasTransformed(pd.x, pd.y);
+
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#000';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      // Pentagon
-      ctx.fillStyle = "#000";
+
+      // Pentagon pattern
+      ctx.fillStyle = '#000';
       ctx.beginPath();
       for (let j = 0; j < 5; j++) {
-        const a = ((j * 72 - 90) * Math.PI) / 180;
+        const a = (j * 72 - 90) * Math.PI / 180;
         const px = pos.x + 5 * Math.cos(a);
         const py = pos.y + 5 * Math.sin(a);
         if (j === 0) ctx.moveTo(px, py);
@@ -490,41 +646,64 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
       ctx.closePath();
       ctx.fill();
     });
-  }, [drill, isPlaying, currentTime, drawField, toCanvas, getPositionsAtTime, getPositionsAtKeyframe]);
+  }, [drill.balls, toCanvas]);
+
+  const draw = useCallback((positions?: Record<string, Position>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Get positions
+    const pos = positions || (isPlaying 
+      ? getPositionsAtTime(currentTime) 
+      : getPositionsAtKeyframe(selectedKeyframeIndex));
+
+    ctx.clearRect(0, 0, width, height);
+    drawField(ctx);
+    drawConeLines(ctx);
+    drawCones(ctx);
+    drawGoals(ctx);
+    drawMiniGoals(ctx);
+    drawPlayers(ctx, pos);
+    drawBalls(ctx, pos);
+  }, [
+    width, height, isPlaying, currentTime, selectedKeyframeIndex,
+    drawField, drawConeLines, drawCones, drawGoals, drawMiniGoals,
+    drawPlayers, drawBalls, getPositionsAtTime, getPositionsAtKeyframe
+  ]);
 
   // ============================================================
   // ANIMATION LOOP
   // ============================================================
 
-  const animationLoop = useCallback(
-    (timestamp: number) => {
-      if (!isPlaying) return;
+  const animationLoop = useCallback((timestamp: number) => {
+    if (!isPlaying) return;
 
-      if (lastTimestampRef.current === null) {
-        lastTimestampRef.current = timestamp;
-      }
-
-      const delta = (timestamp - lastTimestampRef.current) * playbackSpeed;
+    if (lastTimestampRef.current === null) {
       lastTimestampRef.current = timestamp;
+    }
 
-      setCurrentTime((prev) => {
-        let newTime = prev + delta;
-        if (newTime >= totalDuration) {
-          if (looping) {
-            newTime = 0;
-          } else {
-            setIsPlaying(false);
-            return totalDuration;
-          }
+    const delta = (timestamp - lastTimestampRef.current) * playbackSpeed;
+    lastTimestampRef.current = timestamp;
+
+    setCurrentTime(prev => {
+      let newTime = prev + delta;
+      if (newTime >= totalDuration) {
+        if (looping) {
+          newTime = 0;
+        } else {
+          setIsPlaying(false);
+          return totalDuration;
         }
-        return newTime;
-      });
+      }
+      return newTime;
+    });
 
-      animationFrameRef.current = requestAnimationFrame(animationLoop);
-    },
-    [isPlaying, playbackSpeed, totalDuration, looping],
-  );
+    animationFrameRef.current = requestAnimationFrame(animationLoop);
+  }, [isPlaying, playbackSpeed, totalDuration, looping]);
 
+  // Start/stop animation loop
   useEffect(() => {
     if (isPlaying) {
       lastTimestampRef.current = null;
@@ -542,67 +721,87 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     };
   }, [isPlaying, animationLoop]);
 
+  // Redraw when state changes
   useEffect(() => {
     draw();
-  }, [draw]);
+  }, [draw, currentTime, selectedKeyframeIndex, isPlaying]);
 
   // ============================================================
-  // CONTROLS
+  // PLAYBACK CONTROLS
   // ============================================================
 
   const togglePlay = () => {
     if (keyframes.length < 2) return;
-    if (currentTime >= totalDuration) setCurrentTime(0);
+    if (currentTime >= totalDuration) {
+      setCurrentTime(0);
+    }
     setIsPlaying(!isPlaying);
   };
 
   const goToStart = () => {
     setIsPlaying(false);
     setCurrentTime(0);
+    setSelectedKeyframeIndex(0);
   };
+
   const goToEnd = () => {
     setIsPlaying(false);
     setCurrentTime(totalDuration);
+    setSelectedKeyframeIndex(keyframes.length - 1);
   };
 
   const prevKeyframe = () => {
     setIsPlaying(false);
-    // Find keyframe before current time
+    const newIdx = Math.max(0, selectedKeyframeIndex - 1);
+    setSelectedKeyframeIndex(newIdx);
+    // Calculate time at this keyframe
     let t = 0;
-    let prevT = 0;
-    for (let i = 1; i < keyframes.length; i++) {
+    for (let i = 1; i <= newIdx; i++) {
       t += keyframes[i].duration || 1000;
-      if (t >= currentTime - 50) break;
-      prevT = t;
     }
-    setCurrentTime(currentTime <= 50 ? 0 : prevT);
+    setCurrentTime(t);
   };
 
   const nextKeyframe = () => {
     setIsPlaying(false);
+    const newIdx = Math.min(keyframes.length - 1, selectedKeyframeIndex + 1);
+    setSelectedKeyframeIndex(newIdx);
     let t = 0;
-    for (let i = 1; i < keyframes.length; i++) {
+    for (let i = 1; i <= newIdx; i++) {
       t += keyframes[i].duration || 1000;
-      if (t > currentTime + 50) {
-        setCurrentTime(t);
-        return;
-      }
     }
-    setCurrentTime(totalDuration);
+    setCurrentTime(t);
+  };
+
+  const jumpToKeyframe = (idx: number) => {
+    setIsPlaying(false);
+    setSelectedKeyframeIndex(idx);
+    let t = 0;
+    for (let i = 1; i <= idx; i++) {
+      t += keyframes[i].duration || 1000;
+    }
+    setCurrentTime(t);
   };
 
   const seekProgress = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsPlaying(false);
     const rect = e.currentTarget.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    setCurrentTime(ratio * totalDuration);
+    const newTime = ratio * totalDuration;
+    setCurrentTime(newTime);
   };
+
+  const toggleLoop = () => setLooping(!looping);
+
+  // ============================================================
+  // TIME DISPLAY
+  // ============================================================
 
   const formatTime = (ms: number) => {
     const secs = Math.floor(ms / 1000);
     const mins = Math.floor(secs / 60);
-    const rem = secs % 60;
-    return `${mins}:${rem.toString().padStart(2, "0")}`;
+    const remainingSecs = secs % 60;
+    return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
   const progressPercent = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
@@ -614,76 +813,113 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
   return (
     <div className={className}>
       {/* Canvas */}
-      <canvas
-        ref={canvasRef}
-        width={CW}
-        height={CH}
-        className="w-full h-auto rounded-lg"
-        style={{ aspectRatio: `${CW} / ${CH}` }}
-      />
+      <div className="bg-[#2d4a2d] rounded-xl p-4 mb-4">
+        <canvas
+          ref={canvasRef}
+          width={width}
+          height={height}
+          className="w-full h-auto rounded-lg"
+          style={{ aspectRatio: `${width} / ${height}` }}
+        />
+      </div>
 
       {/* Controls */}
-      <div className="mt-3 space-y-3">
+      <div className="bg-white rounded-xl p-4 shadow-sm">
         {/* Playback row */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <Button variant="outline" size="icon" onClick={goToStart} title="Go to start" className="h-9 w-9">
-            <SkipBack className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={prevKeyframe} title="Previous step" className="h-9 w-9">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="default"
-            size="icon"
-            onClick={togglePlay}
-            title={isPlaying ? "Pause" : "Play"}
-            className="h-11 w-11 rounded-full"
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <button
+            onClick={goToStart}
+            className="w-10 h-10 border-2 border-[#3d5a3d] rounded-lg bg-white text-[#3d5a3d] flex items-center justify-center hover:bg-green-50 transition"
+            title="Go to start"
           >
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-          </Button>
-          <Button variant="outline" size="icon" onClick={nextKeyframe} title="Next step" className="h-9 w-9">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={goToEnd} title="Go to end" className="h-9 w-9">
-            <SkipForward className="h-4 w-4" />
-          </Button>
+            ⏮
+          </button>
+          <button
+            onClick={prevKeyframe}
+            className="w-10 h-10 border-2 border-[#3d5a3d] rounded-lg bg-white text-[#3d5a3d] flex items-center justify-center hover:bg-green-50 transition"
+            title="Previous step"
+          >
+            ⏪
+          </button>
+          <button
+            onClick={togglePlay}
+            className="w-12 h-12 border-2 border-[#3d5a3d] rounded-full bg-[#3d5a3d] text-white flex items-center justify-center hover:bg-[#2d4a2d] transition"
+            title={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? '⏸' : '▶'}
+          </button>
+          <button
+            onClick={nextKeyframe}
+            className="w-10 h-10 border-2 border-[#3d5a3d] rounded-lg bg-white text-[#3d5a3d] flex items-center justify-center hover:bg-green-50 transition"
+            title="Next step"
+          >
+            ⏩
+          </button>
+          <button
+            onClick={goToEnd}
+            className="w-10 h-10 border-2 border-[#3d5a3d] rounded-lg bg-white text-[#3d5a3d] flex items-center justify-center hover:bg-green-50 transition"
+            title="Go to end"
+          >
+            ⏭
+          </button>
 
           {/* Progress bar */}
-          <div className="flex-1 min-w-[120px] flex items-center gap-2">
-            <div className="flex-1 h-2 bg-muted rounded cursor-pointer relative" onClick={seekProgress}>
+          <div className="flex-1 min-w-[150px] flex items-center gap-2">
+            <div
+              className="flex-1 h-2 bg-gray-200 rounded cursor-pointer relative"
+              onClick={seekProgress}
+            >
               <div
-                className="h-full bg-primary rounded transition-all duration-75"
+                className="h-full bg-[#3d5a3d] rounded transition-all duration-50"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <span className="text-xs text-muted-foreground min-w-[70px] text-right font-mono">
+            <span className="text-sm text-gray-600 min-w-[80px] text-right font-mono">
               {formatTime(currentTime)} / {formatTime(totalDuration)}
             </span>
           </div>
         </div>
 
         {/* Options row */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <select
             value={playbackSpeed}
             onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
-            className="px-2 py-1.5 border border-border rounded-md bg-background text-foreground text-sm cursor-pointer"
+            className="px-3 py-2 border-2 border-[#3d5a3d] rounded-lg bg-white text-[#3d5a3d] text-sm cursor-pointer"
           >
             <option value="0.5">0.5x</option>
             <option value="1">1x</option>
             <option value="1.5">1.5x</option>
             <option value="2">2x</option>
           </select>
-          <Button
-            variant={looping ? "default" : "outline"}
-            size="sm"
-            onClick={() => setLooping(!looping)}
-            className="gap-1.5"
+          <button
+            onClick={toggleLoop}
+            className={`px-4 py-2 border-2 border-[#3d5a3d] rounded-lg text-sm flex items-center gap-2 transition ${
+              looping ? 'bg-[#3d5a3d] text-white' : 'bg-white text-[#3d5a3d]'
+            }`}
           >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Loop {looping ? "On" : "Off"}
-          </Button>
+            🔄 Loop {looping ? 'On' : 'Off'}
+          </button>
         </div>
+
+        {/* Step buttons (optional) */}
+        {showStepButtons && keyframes.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {keyframes.map((kf, i) => (
+              <button
+                key={i}
+                onClick={() => jumpToKeyframe(i)}
+                className={`px-4 py-2 border-2 border-[#3d5a3d] rounded-full text-sm whitespace-nowrap transition ${
+                  selectedKeyframeIndex === i && !isPlaying
+                    ? 'bg-[#3d5a3d] text-white'
+                    : 'bg-white text-[#3d5a3d] hover:bg-green-50'
+                }`}
+              >
+                {kf.label || `Step ${i}`}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
