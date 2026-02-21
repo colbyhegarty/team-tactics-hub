@@ -255,7 +255,7 @@ export function DrillDetailModal({
                   drill={{
                     name: drill.name,
                     field: drill.drillJson?.field,
-                    players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as "ATTACKER" | "DEFENDER" | "GOALKEEPER" | "NEUTRAL" })),
+                    players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
                     cones: drill.drillJson?.cones,
                     cone_lines: drill.drillJson?.cone_lines,
                     balls: drill.drillJson?.balls,
