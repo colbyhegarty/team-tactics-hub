@@ -214,29 +214,30 @@ export function DrillEditor({
       </div>
 
       {/* Drill Details Form */}
-      <div className="form-section">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Drill Details</h3>
+      <div className="rounded-xl bg-[#1a2332] p-5 space-y-5">
+        <h3 className="text-base font-semibold text-white">Drill Details</h3>
 
         <div className="grid gap-4">
           {/* Row 1: Name, Category, Difficulty */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Drill Name *</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="text-xs text-gray-400">Drill Name *</Label>
               <Input
                 id="name"
                 placeholder="Enter drill name"
                 value={formData.name}
                 onChange={(e) => handleFormChange('name', e.target.value)}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="category" className="text-xs text-gray-400">Category</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => handleFormChange('category', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#243044] border-[#3d4f6f] text-white">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -248,13 +249,13 @@ export function DrillEditor({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="difficulty">Difficulty</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="difficulty" className="text-xs text-gray-400">Difficulty</Label>
               <Select
                 value={formData.difficulty}
                 onValueChange={(value) => handleFormChange('difficulty', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#243044] border-[#3d4f6f] text-white">
                   <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
                 <SelectContent>
@@ -269,88 +270,96 @@ export function DrillEditor({
           </div>
 
           {/* Row 2: Age, Players, Duration */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="ageGroup">Age Group</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ageGroup" className="text-xs text-gray-400">Age Group</Label>
               <Input
                 id="ageGroup"
                 placeholder="e.g., 8+, U12"
                 value={formData.ageGroup}
                 onChange={(e) => handleFormChange('ageGroup', e.target.value)}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="playerCount">Players</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="playerCount" className="text-xs text-gray-400">Players</Label>
               <Input
                 id="playerCount"
                 placeholder="e.g., 6+, 8-12"
                 value={formData.playerCount}
                 onChange={(e) => handleFormChange('playerCount', e.target.value)}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="duration" className="text-xs text-gray-400">Duration</Label>
               <Input
                 id="duration"
                 placeholder="e.g., 15 min"
                 value={formData.duration}
                 onChange={(e) => handleFormChange('duration', e.target.value)}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-xs text-gray-400">Description</Label>
             <Textarea
               id="description"
               placeholder="Describe the drill objective and flow..."
               value={formData.description}
               onChange={(e) => handleFormChange('description', e.target.value)}
-              rows={3}
+              rows={2}
+              className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
             />
           </div>
 
           {/* Instructions grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="setupText">Setup Instructions</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="setupText" className="text-xs text-gray-400">Setup Instructions</Label>
               <Textarea
                 id="setupText"
                 placeholder="How to set up the drill..."
                 value={formData.setupText}
                 onChange={(e) => handleFormChange('setupText', e.target.value)}
-                rows={3}
+                rows={2}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="instructionsText">How to Run</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="instructionsText" className="text-xs text-gray-400">How to Run</Label>
               <Textarea
                 id="instructionsText"
                 placeholder="Step-by-step instructions..."
                 value={formData.instructionsText}
                 onChange={(e) => handleFormChange('instructionsText', e.target.value)}
-                rows={3}
+                rows={2}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="coachingPointsText">Coaching Points</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="coachingPointsText" className="text-xs text-gray-400">Coaching Points</Label>
               <Textarea
                 id="coachingPointsText"
                 placeholder="Key teaching points..."
                 value={formData.coachingPointsText}
                 onChange={(e) => handleFormChange('coachingPointsText', e.target.value)}
-                rows={3}
+                rows={2}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variationsText">Variations</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variationsText" className="text-xs text-gray-400">Variations</Label>
               <Textarea
                 id="variationsText"
                 placeholder="Alternative ways to run the drill..."
                 value={formData.variationsText}
                 onChange={(e) => handleFormChange('variationsText', e.target.value)}
-                rows={3}
+                rows={2}
+                className="bg-[#243044] border-[#3d4f6f] text-white placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -358,11 +367,11 @@ export function DrillEditor({
       </div>
 
       {/* Bottom Actions */}
-      <div className="flex justify-end gap-3 border-t border-border pt-4">
-        <Button variant="outline" onClick={onCancel}>
+      <div className="flex justify-end gap-3 pt-2">
+        <Button variant="outline" onClick={onCancel} className="border-[#3d4f6f] text-gray-300 hover:bg-[#243044]">
           Cancel
         </Button>
-        <Button onClick={handleSave} disabled={!formData.name.trim()}>
+        <Button onClick={handleSave} disabled={!formData.name.trim()} className="bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
           <Save className="h-4 w-4 mr-2" />
           {initialDrill ? 'Update Drill' : 'Save Drill'}
         </Button>

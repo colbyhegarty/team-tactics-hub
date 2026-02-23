@@ -54,104 +54,102 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
   const setRotation = onGoalRotationChange ?? setLocalRotation;
 
   return (
-    <div className="flex flex-col gap-5 p-4 bg-[#1a2332] rounded-xl">
+    <div className="flex flex-col gap-3 p-3 bg-[#1a2332] rounded-xl">
       {/* Select tool */}
       <button
         onClick={() => onToolChange('select')}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+          'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors',
           activeTool === 'select' ? btnActive : btnBase,
           'text-white'
         )}
       >
-        <MousePointer className="h-4 w-4" />
-        <span className="text-sm font-medium">Select / Move</span>
+        <MousePointer className="h-3.5 w-3.5" />
+        <span className="text-xs font-medium">Select / Move</span>
       </button>
 
       {/* ADD PLAYERS */}
-      <div className="space-y-2">
-        <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Add Players</h4>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1.5">
+        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Players</h4>
+        <div className="grid grid-cols-2 gap-1.5">
           {playerTools.map((tool) => (
             <button
               key={tool.id}
               onClick={() => onToolChange(tool.id)}
               className={cn(
-                'flex flex-col items-center justify-center p-3 rounded-lg transition-colors',
+                'flex flex-col items-center justify-center p-2 rounded-lg transition-colors',
                 activeTool === tool.id ? btnActive : btnBase
               )}
             >
-              <div className="w-4 h-4 rounded-full mb-1.5" style={{ backgroundColor: tool.color }} />
-              <span className="text-white text-xs">{tool.label}</span>
+              <div className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: tool.color }} />
+              <span className="text-white text-[10px]">{tool.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* ADD EQUIPMENT */}
-      <div className="space-y-2">
-        <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Add Equipment</h4>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1.5">
+        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Equipment</h4>
+        <div className="grid grid-cols-2 gap-1.5">
           {equipmentTools.map((tool) => (
             <button
               key={tool.id}
               onClick={() => onToolChange(tool.id)}
               className={cn(
-                'flex flex-col items-center justify-center p-3 rounded-lg transition-colors',
+                'flex flex-col items-center justify-center p-2 rounded-lg transition-colors',
                 activeTool === tool.id ? btnActive : btnBase
               )}
             >
               {tool.id === 'cone' ? (
-                <Triangle className="h-4 w-4 mb-1.5 text-orange-400" />
+                <Triangle className="h-3.5 w-3.5 mb-1 text-orange-400" />
               ) : tool.id === 'ball' ? (
-                <CircleDot className="h-4 w-4 mb-1.5 text-white" />
+                <CircleDot className="h-3.5 w-3.5 mb-1 text-white" />
               ) : tool.id === 'goal' ? (
-                <Crosshair className="h-4 w-4 mb-1.5 text-white" />
+                <Crosshair className="h-3.5 w-3.5 mb-1 text-white" />
               ) : (
-                <Crosshair className="h-4 w-4 mb-1.5 text-slate-400" />
+                <Crosshair className="h-3.5 w-3.5 mb-1 text-slate-400" />
               )}
-              <span className="text-white text-xs">{tool.label}</span>
+              <span className="text-white text-[10px]">{tool.label}</span>
             </button>
           ))}
         </div>
 
         {(activeTool === 'goal' || activeTool === 'minigoal') && (
-          <div className="mt-2 space-y-2">
-            <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Goal Rotation</h4>
-            <button
-              onClick={() => setRotation((rotation + 90) % 360)}
-              className={cn(
-                'w-full flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-colors',
-                btnBase
-              )}
-            >
-              <RotateCw className="h-5 w-5 text-blue-400" />
-              <span className="text-white text-sm">Rotate 90°</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setRotation((rotation + 90) % 360)}
+            className={cn(
+              'w-full flex items-center justify-center gap-2 p-2 rounded-lg transition-colors mt-1',
+              btnBase
+            )}
+          >
+            <RotateCw className="h-3.5 w-3.5 text-blue-400" />
+            <span className="text-white text-xs">Rotate 90°</span>
+            <span className="text-gray-500 text-[10px]">({rotation}°)</span>
+          </button>
         )}
       </div>
 
       {/* BOUNDARIES */}
-      <div className="space-y-2">
-        <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Boundaries</h4>
+      <div className="space-y-1.5">
+        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Boundaries</h4>
         <button
           onClick={() => onToolChange('coneline')}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+            'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors',
             activeTool === 'coneline' ? btnActive : btnBase,
             'text-white'
           )}
         >
-          <Minus className="h-4 w-4 text-orange-400 rotate-[-30deg]" />
-          <span className="text-sm">Cone Line</span>
+          <Minus className="h-3.5 w-3.5 text-orange-400 rotate-[-30deg]" />
+          <span className="text-xs">Cone Line</span>
         </button>
       </div>
 
       {/* ADD ACTIONS */}
-      <div className="space-y-2">
-        <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Add Actions</h4>
-        <div className="flex flex-col gap-1.5">
+      <div className="space-y-1.5">
+        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Actions</h4>
+        <div className="flex flex-col gap-1">
           {actionTools.map((tool) => {
             const Icon = tool.icon;
             return (
@@ -159,13 +157,13 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
                 key={tool.id}
                 onClick={() => onToolChange(tool.id)}
                 className={cn(
-                  'w-full flex items-center gap-3 p-2.5 border border-[#3d4f6f] border-l-4 rounded-lg transition-colors text-left',
+                  'w-full flex items-center gap-2 p-2 border border-[#3d4f6f] border-l-4 rounded-lg transition-colors text-left',
                   tool.borderColor,
                   activeTool === tool.id ? 'bg-[#3d5a3d]' : 'bg-[#243044] hover:bg-[#2d3a4f]'
                 )}
               >
-                <Icon className={cn('h-4 w-4 shrink-0', tool.textColor)} />
-                <span className="text-white text-xs">{tool.label}</span>
+                <Icon className={cn('h-3.5 w-3.5 shrink-0', tool.textColor)} />
+                <span className="text-white text-[11px]">{tool.label}</span>
               </button>
             );
           })}
@@ -174,17 +172,17 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
 
       {/* Pending action indicator */}
       {pendingActionFrom && (
-        <div className="p-2.5 bg-yellow-500/20 border border-yellow-500/40 rounded-lg">
-          <p className="text-xs text-yellow-300 font-medium">
+        <div className="p-2 bg-yellow-500/20 border border-yellow-500/40 rounded-lg">
+          <p className="text-[10px] text-yellow-300 font-medium">
             Click target to complete action
           </p>
         </div>
       )}
 
       {/* Tip */}
-      <div className="border-t border-[#3d4f6f] pt-3">
-        <p className="text-[11px] text-gray-500 leading-relaxed">
-          <strong className="text-gray-400">Tip:</strong> Select a tool, then click on the field to place. Use Select to drag entities.
+      <div className="border-t border-[#3d4f6f] pt-2">
+        <p className="text-[10px] text-gray-500 leading-relaxed">
+          <strong className="text-gray-400">Tip:</strong> Select a tool, click on field to place.
         </p>
       </div>
     </div>
