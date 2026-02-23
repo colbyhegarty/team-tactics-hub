@@ -618,7 +618,7 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
         ref={canvasRef}
         width={CW}
         height={CH}
-        className="w-full h-auto rounded-lg"
+        className="w-full h-auto rounded-xl"
         style={{ aspectRatio: `${CW} / ${CH}` }}
       />
 
