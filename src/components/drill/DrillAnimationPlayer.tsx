@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack, SkipForward, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -99,41 +99,67 @@ const PLAYER_COLORS: Record<string, string> = {
   neutral: "#f4a261",
 };
 
-// Canvas base width – height is computed from drill bounds
+// Canvas base width
 const CW = 900;
-const FIELD_PADDING = 20;
+const CANVAS_PADDING = 15;
 
-function computeCanvasHeight(drill: DrillData): number {
-  const positions: Position[] = [];
-  drill.players?.forEach(p => positions.push(p.position));
-  drill.balls?.forEach(b => positions.push(b.position));
-  drill.cones?.forEach(c => positions.push(c.position));
-  drill.goals?.forEach(g => positions.push(g.position));
-  drill.mini_goals?.forEach(g => positions.push(g.position));
+// ============================================================
+// BOUNDS CALCULATION - matches Python renderer
+// ============================================================
 
-  if (positions.length === 0) return 600;
+interface Bounds {
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+}
 
-  let minX = 100, maxX = 0, minY = 100, maxY = 0;
-  positions.forEach(p => {
-    minX = Math.min(minX, p.x);
-    maxX = Math.max(maxX, p.x);
-    minY = Math.min(minY, p.y);
-    maxY = Math.max(maxY, p.y);
+function calculateDrillBounds(drill: DrillData, padding: number = 8): Bounds {
+  const xCoords: number[] = [];
+  const yCoords: number[] = [];
+
+  drill.players?.forEach(p => {
+    xCoords.push(p.position.x);
+    yCoords.push(p.position.y);
+  });
+  drill.cones?.forEach(c => {
+    xCoords.push(c.position.x);
+    yCoords.push(c.position.y);
+  });
+  drill.balls?.forEach(b => {
+    xCoords.push(b.position.x);
+    yCoords.push(b.position.y);
+  });
+  drill.goals?.forEach(g => {
+    xCoords.push(g.position.x - 4, g.position.x + 4);
+    yCoords.push(g.position.y - 3, g.position.y + 3);
+  });
+  drill.mini_goals?.forEach(g => {
+    xCoords.push(g.position.x - 2, g.position.x + 2);
+    yCoords.push(g.position.y - 2, g.position.y + 2);
   });
 
-  const margin = 10;
-  minX = Math.max(0, minX - margin);
-  maxX = Math.min(100, maxX + margin);
-  minY = Math.max(0, minY - margin);
-  maxY = Math.min(100, maxY + margin);
+  if (xCoords.length === 0) xCoords.push(25, 75);
+  if (yCoords.length === 0) yCoords.push(25, 75);
 
-  const contentWidth = maxX - minX;
-  const contentHeight = maxY - minY;
+  let xMin = Math.max(0, Math.min(...xCoords) - padding);
+  let xMax = Math.min(100, Math.max(...xCoords) + padding);
+  let yMin = Math.max(0, Math.min(...yCoords) - padding);
+  let yMax = Math.min(100, Math.max(...yCoords) + padding);
 
-  if (contentWidth <= 0 || contentHeight <= 0) return 600;
+  const minSize = 30;
+  if (xMax - xMin < minSize) {
+    const cx = (xMin + xMax) / 2;
+    xMin = Math.max(0, cx - minSize / 2);
+    xMax = Math.min(100, cx + minSize / 2);
+  }
+  if (yMax - yMin < minSize) {
+    const cy = (yMin + yMax) / 2;
+    yMin = Math.max(0, cy - minSize / 2);
+    yMax = Math.min(100, cy + minSize / 2);
+  }
 
-  const fieldW = CW - FIELD_PADDING * 2;
-  return Math.round((contentHeight / contentWidth) * fieldW + FIELD_PADDING * 2);
+  return { xMin, xMax, yMin, yMax };
 }
 
 // ============================================================
@@ -143,9 +169,14 @@ function computeCanvasHeight(drill: DrillData): number {
 const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, animation, className = "" }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const CH = computeCanvasHeight(drill);
-  const FIELD_WIDTH = CW - FIELD_PADDING * 2;
-  const FIELD_HEIGHT = CH - FIELD_PADDING * 2;
+  // Dynamic bounds calculation
+  const bounds = useMemo(() => calculateDrillBounds(drill), [drill]);
+  const boundsWidth = bounds.xMax - bounds.xMin;
+  const boundsHeight = bounds.yMax - bounds.yMin;
+
+  const FIELD_WIDTH = CW - CANVAS_PADDING * 2;
+  const CH = Math.round((boundsHeight / boundsWidth) * FIELD_WIDTH + CANVAS_PADDING * 2);
+  const FIELD_HEIGHT = CH - CANVAS_PADDING * 2;
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -163,15 +194,15 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
   }, 0);
 
   // ============================================================
-  // COORDINATE CONVERSION
+  // COORDINATE CONVERSION - maps from field coords to canvas via bounds
   // ============================================================
 
   const toCanvas = useCallback(
     (x: number, y: number) => ({
-      x: FIELD_PADDING + (x / 100) * FIELD_WIDTH,
-      y: FIELD_PADDING + ((100 - y) / 100) * FIELD_HEIGHT,
+      x: CANVAS_PADDING + ((x - bounds.xMin) / boundsWidth) * FIELD_WIDTH,
+      y: CANVAS_PADDING + ((bounds.yMax - y) / boundsHeight) * FIELD_HEIGHT,
     }),
-    [FIELD_WIDTH, FIELD_HEIGHT],
+    [bounds, boundsWidth, boundsHeight, FIELD_WIDTH, FIELD_HEIGHT],
   );
 
   // ============================================================
@@ -297,8 +328,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
       // Built-in goal
       if (drawGoal) {
         const pos = toCanvas(50, goalY);
-        const gw = (8 / 100) * FIELD_WIDTH;
-        const gd = (3 / 100) * FIELD_HEIGHT;
+        const gw = (8 / boundsWidth) * FIELD_WIDTH;
+        const gd = (3 / boundsHeight) * FIELD_HEIGHT;
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
@@ -337,14 +368,26 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
 
   const drawField = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const p = FIELD_PADDING;
+      const p = CANVAS_PADDING;
       const w = FIELD_WIDTH;
       const h = FIELD_HEIGHT;
 
-      // Grass stripes
-      for (let i = 0; i < 10; i++) {
+      // Dark green background
+      ctx.fillStyle = '#2d4a2d';
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Grass stripes aligned to field coordinates (10-unit wide stripes)
+      const stripeWidth = 10;
+      const startStripe = Math.floor(bounds.xMin / stripeWidth);
+      const endStripe = Math.ceil(bounds.xMax / stripeWidth);
+      for (let i = startStripe; i <= endStripe; i++) {
+        const stripeLeft = Math.max(i * stripeWidth, bounds.xMin);
+        const stripeRight = Math.min((i + 1) * stripeWidth, bounds.xMax);
+        if (stripeRight <= stripeLeft) continue;
+        const left = toCanvas(stripeLeft, bounds.yMax);
+        const right = toCanvas(stripeRight, bounds.yMin);
         ctx.fillStyle = i % 2 === 0 ? COLORS.GRASS_LIGHT : COLORS.GRASS_DARK;
-        ctx.fillRect(p + i * (w / 10), p, w / 10, h);
+        ctx.fillRect(left.x, left.y, right.x - left.x, right.y - left.y);
       }
 
       // Field outline
@@ -384,7 +427,7 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
         }
       }
     },
-    [drill.field, toCanvas, drawGoalArea],
+    [drill.field, toCanvas, drawGoalArea, bounds, FIELD_WIDTH, FIELD_HEIGHT, CH],
   );
 
   const draw = useCallback(() => {
@@ -396,10 +439,6 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     const positions = isPlaying || currentTime > 0 ? getPositionsAtTime(currentTime) : getPositionsAtKeyframe(0);
 
     ctx.clearRect(0, 0, CW, CH);
-
-    // Background
-    ctx.fillStyle = "#2d4a2d";
-    ctx.fillRect(0, 0, CW, CH);
 
     drawField(ctx);
 
@@ -441,8 +480,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     drill.goals?.forEach((g) => {
       const pos = toCanvas(g.position.x, g.position.y);
       const rot = g.rotation || 0;
-      const gw = (8 / 100) * FIELD_WIDTH;
-      const gd = (3 / 100) * FIELD_HEIGHT;
+      const gw = (8 / boundsWidth) * FIELD_WIDTH;
+      const gd = (3 / boundsHeight) * FIELD_HEIGHT;
       ctx.save();
       ctx.translate(pos.x, pos.y);
       ctx.rotate((rot * Math.PI) / 180);
@@ -472,8 +511,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
         const pos = toCanvas(g.position.x, g.position.y);
         const inputRotation = g.rotation || 0;
         const rotation = (inputRotation + 180) % 360;
-        const goalWidth = (GOAL_WIDTH_UNITS / 100) * FIELD_WIDTH;
-        const goalDepth = (GOAL_DEPTH_UNITS / 100) * FIELD_HEIGHT;
+        const goalWidth = (GOAL_WIDTH_UNITS / boundsWidth) * FIELD_WIDTH;
+        const goalDepth = (GOAL_DEPTH_UNITS / boundsHeight) * FIELD_HEIGHT;
 
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 3;
