@@ -101,7 +101,7 @@ const PLAYER_COLORS: Record<string, string> = {
 
 // Canvas base width – height is computed from drill bounds
 const CW = 900;
-const FIELD_PADDING = 50;
+const FIELD_PADDING = 20;
 
 function computeCanvasHeight(drill: DrillData): number {
   const positions: Position[] = [];
@@ -422,7 +422,7 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     }
 
     // Cones
-    const CONE_SIZE = 12;
+    const CONE_SIZE = 9;
     drill.cones?.forEach((c) => {
       const pos = toCanvas(c.position.x, c.position.y);
       ctx.fillStyle = COLORS.CONE_COLOR;
@@ -500,8 +500,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     }
 
     // Players
-    const PLAYER_RADIUS = 18;
-    const LABEL_OFFSET = 22;
+    const PLAYER_RADIUS = 14;
+    const LABEL_OFFSET = 18;
     drill.players?.forEach((p) => {
       const pd = positions[p.id] || p.position;
       const pos = toCanvas(pd.x, pd.y);
@@ -521,7 +521,7 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     });
 
     // Balls
-    const BALL_RADIUS = 14;
+    const BALL_RADIUS = 11;
     drill.balls?.forEach((b, i) => {
       const pd = positions[`ball_${i}`] || b.position;
       const pos = toCanvas(pd.x, pd.y);
