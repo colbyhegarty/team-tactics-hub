@@ -120,9 +120,11 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          <span className={cn('badge-pill text-xs font-medium', getCategoryColor(drill.category))}>
-            {drill.category}
-          </span>
+          {drill.category?.split(',').map((cat, index) => (
+            <span key={index} className={cn('badge-pill text-xs font-medium', getCategoryColor(cat.trim()))}>
+              {cat.trim()}
+            </span>
+          ))}
           {drill.difficulty && (
             <span className={cn('badge-pill text-xs font-medium', getDifficultyColor(drill.difficulty))}>
               {drill.difficulty}
