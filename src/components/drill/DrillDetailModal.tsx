@@ -251,21 +251,19 @@ export function DrillDetailModal({
               
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
-                <div className="rounded-xl overflow-hidden bg-field">
-                  <DrillAnimationPlayer
-                    drill={{
-                      name: drill.name,
-                      field: drill.drillJson?.field,
-                      players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
-                      cones: drill.drillJson?.cones,
-                      cone_lines: drill.drillJson?.cone_lines,
-                      balls: drill.drillJson?.balls,
-                      goals: drill.drillJson?.goals,
-                      mini_goals: drill.drillJson?.mini_goals,
-                    }}
-                    animation={drill.animationJson}
-                  />
-                </div>
+                <DrillAnimationPlayer
+                  drill={{
+                    name: drill.name,
+                    field: drill.drillJson?.field,
+                    players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
+                    cones: drill.drillJson?.cones,
+                    cone_lines: drill.drillJson?.cone_lines,
+                    balls: drill.drillJson?.balls,
+                    goals: drill.drillJson?.goals,
+                    mini_goals: drill.drillJson?.mini_goals,
+                  }}
+                  animation={drill.animationJson}
+                />
               ) : drill.svgUrl ? (
                 <div className="bg-field rounded-xl overflow-hidden">
                   <img
