@@ -251,7 +251,7 @@ export function DrillDetailModal({
               
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
-                <div className="rounded-xl overflow-hidden bg-field">
+                <div className="rounded-xl overflow-hidden bg-field max-h-[420px] flex items-center justify-center">
                   <DrillAnimationPlayer
                     drill={{
                       name: drill.name,
@@ -271,7 +271,7 @@ export function DrillDetailModal({
                   <img
                     src={drill.svgUrl}
                     alt={drill.name}
-                    className="w-full h-auto object-contain p-2"
+                    className="w-full max-h-96 object-contain mx-auto p-2"
                     style={{ background: 'transparent' }}
                   />
                 </div>
@@ -280,7 +280,7 @@ export function DrillDetailModal({
                   <img
                     src={`data:image/svg+xml;base64,${drill.svg}`}
                     alt={drill.name}
-                    className="w-full h-auto object-contain p-2"
+                    className="w-full max-h-96 object-contain mx-auto p-2"
                     style={{ background: 'transparent' }}
                   />
                 </div>
