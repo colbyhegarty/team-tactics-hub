@@ -26,7 +26,7 @@ interface DiagramCanvasProps {
   onPendingActionChange: (id: string | null) => void;
 }
 
-const PADDING = 50;
+const PADDING = 0;
 
 // Sizes matching Python renderer (field coordinate units, 0-100 scale)
 const SIZES = {
@@ -304,11 +304,11 @@ export function DiagramCanvas({
   const handleMouseUp = useCallback(() => { setIsDragging(false); }, []);
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div ref={containerRef} className="w-full rounded-xl overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="w-full h-auto cursor-crosshair rounded-lg border border-border"
-        style={{ aspectRatio: '4 / 3' }}
+        className="w-full h-auto cursor-crosshair block"
+        style={{ aspectRatio: '4 / 3', borderRadius: '12px' }}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -337,10 +337,7 @@ function drawField(
     ctx.fillRect(PADDING + i * (fw / stripeCount), PADDING, fw / stripeCount, fh);
   }
 
-  // Field outline
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(PADDING, PADDING, fw, fh);
+  // No field outline - grass fills entire canvas
 
   if (!field.markings) return;
 
