@@ -265,19 +265,21 @@ export function DrillDetailModal({
                   animation={drill.animationJson}
                 />
               ) : drill.svgUrl ? (
-                <div className="bg-field rounded-lg overflow-hidden">
+                <div className="bg-field rounded-xl overflow-hidden">
                   <img
                     src={drill.svgUrl}
                     alt={drill.name}
                     className="w-full max-h-96 object-contain mx-auto p-2"
+                    style={{ background: 'transparent' }}
                   />
                 </div>
               ) : drill.svg ? (
-                <div className="bg-field rounded-lg overflow-hidden">
+                <div className="bg-field rounded-xl overflow-hidden">
                   <img
                     src={`data:image/svg+xml;base64,${drill.svg}`}
                     alt={drill.name}
                     className="w-full max-h-96 object-contain mx-auto p-2"
+                    style={{ background: 'transparent' }}
                   />
                 </div>
               ) : (
