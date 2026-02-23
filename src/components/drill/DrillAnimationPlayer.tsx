@@ -99,10 +99,10 @@ const PLAYER_COLORS: Record<string, string> = {
   neutral: "#f4a261",
 };
 
-// Canvas logical size (aspect ratio 4:3)
-const CW = 800;
-const CH = 600;
-const FIELD_PADDING = 50;
+// Canvas logical size (portrait aspect ratio ~3:4 to match static SVGs)
+const CW = 600;
+const CH = 800;
+const FIELD_PADDING = 40;
 const FIELD_WIDTH = CW - FIELD_PADDING * 2;
 const FIELD_HEIGHT = CH - FIELD_PADDING * 2;
 
