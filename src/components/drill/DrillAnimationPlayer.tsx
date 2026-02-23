@@ -99,12 +99,42 @@ const PLAYER_COLORS: Record<string, string> = {
   neutral: "#f4a261",
 };
 
-// Canvas logical size (aspect ratio 3:2)
+// Canvas base width – height is computed from drill bounds
 const CW = 900;
-const CH = 600;
 const FIELD_PADDING = 50;
-const FIELD_WIDTH = CW - FIELD_PADDING * 2;
-const FIELD_HEIGHT = CH - FIELD_PADDING * 2;
+
+function computeCanvasHeight(drill: DrillData): number {
+  const positions: Position[] = [];
+  drill.players?.forEach(p => positions.push(p.position));
+  drill.balls?.forEach(b => positions.push(b.position));
+  drill.cones?.forEach(c => positions.push(c.position));
+  drill.goals?.forEach(g => positions.push(g.position));
+  drill.mini_goals?.forEach(g => positions.push(g.position));
+
+  if (positions.length === 0) return 600;
+
+  let minX = 100, maxX = 0, minY = 100, maxY = 0;
+  positions.forEach(p => {
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
+  });
+
+  const margin = 10;
+  minX = Math.max(0, minX - margin);
+  maxX = Math.min(100, maxX + margin);
+  minY = Math.max(0, minY - margin);
+  maxY = Math.min(100, maxY + margin);
+
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+
+  if (contentWidth <= 0 || contentHeight <= 0) return 600;
+
+  const fieldW = CW - FIELD_PADDING * 2;
+  return Math.round((contentHeight / contentWidth) * fieldW + FIELD_PADDING * 2);
+}
 
 // ============================================================
 // COMPONENT
@@ -112,6 +142,10 @@ const FIELD_HEIGHT = CH - FIELD_PADDING * 2;
 
 const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, animation, className = "" }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const CH = computeCanvasHeight(drill);
+  const FIELD_WIDTH = CW - FIELD_PADDING * 2;
+  const FIELD_HEIGHT = CH - FIELD_PADDING * 2;
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -137,7 +171,7 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
       x: FIELD_PADDING + (x / 100) * FIELD_WIDTH,
       y: FIELD_PADDING + ((100 - y) / 100) * FIELD_HEIGHT,
     }),
-    [],
+    [FIELD_WIDTH, FIELD_HEIGHT],
   );
 
   // ============================================================
