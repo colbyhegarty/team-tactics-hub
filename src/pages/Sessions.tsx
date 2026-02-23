@@ -69,7 +69,8 @@ export default function Sessions() {
               <SessionCard
                 key={session.id}
                 session={session}
-                onEdit={(id) => navigate(`/sessions/${id}`)}
+                onView={(id) => navigate(`/sessions/${id}`)}
+                onEdit={(id) => navigate(`/sessions/${id}/edit`)}
                 onDuplicate={handleDuplicate}
                 onDelete={handleDelete}
                 onExportPDF={exportSessionToPDF}
