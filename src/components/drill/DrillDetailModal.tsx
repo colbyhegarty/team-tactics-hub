@@ -269,7 +269,7 @@ export function DrillDetailModal({
                   <img
                     src={drill.svgUrl}
                     alt={drill.name}
-                    className="w-full max-h-96 object-contain mx-auto p-2"
+                    className="w-full max-h-96 object-contain mx-auto p-2 rounded-lg"
                     style={{ background: 'transparent' }}
                   />
                 </div>
@@ -278,7 +278,7 @@ export function DrillDetailModal({
                   <img
                     src={`data:image/svg+xml;base64,${drill.svg}`}
                     alt={drill.name}
-                    className="w-full max-h-96 object-contain mx-auto p-2"
+                    className="w-full max-h-96 object-contain mx-auto p-2 rounded-lg"
                     style={{ background: 'transparent' }}
                   />
                 </div>
