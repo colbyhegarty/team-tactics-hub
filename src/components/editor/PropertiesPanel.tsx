@@ -1,5 +1,5 @@
 import { DiagramData, SelectedEntity, FieldConfig, PLAYER_COLORS } from '@/types/customDrill';
-import { Trash2, Settings } from 'lucide-react';
+import { Trash2, Settings, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PropertiesPanelProps {
@@ -135,6 +135,29 @@ export function PropertiesPanel({
               return `${selectedEntity.type}: ${selectedEntity.id}`;
             })()}
           </div>
+          {selectedEntity.type === 'goal' && (() => {
+            const goal = diagram.goals.find(g => g.id === selectedEntity.id);
+            if (!goal) return null;
+            return (
+              <button
+                onClick={() => {
+                  onDiagramChange({
+                    ...diagram,
+                    goals: diagram.goals.map(g =>
+                      g.id === selectedEntity.id
+                        ? { ...g, rotation: (g.rotation + 90) % 360 }
+                        : g
+                    ),
+                  });
+                }}
+                className="w-full flex items-center justify-center gap-2 p-3 bg-[#243044] border border-[#3d4f6f] rounded-lg hover:bg-[#2d3a4f] transition-colors"
+              >
+                <RotateCw className="h-4 w-4 text-blue-400" />
+                <span className="text-white text-sm">Rotate 90°</span>
+                <span className="text-gray-500 text-xs ml-1">({goal.rotation}°)</span>
+              </button>
+            );
+          })()}
           <hr className="border-[#3d4f6f]" />
         </>
       )}
