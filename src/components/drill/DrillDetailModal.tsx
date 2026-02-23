@@ -251,7 +251,7 @@ export function DrillDetailModal({
               
               {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
-                <div className="rounded-xl overflow-hidden bg-field max-h-[420px] flex items-center justify-center">
+                <div className="rounded-xl overflow-hidden bg-field">
                   <DrillAnimationPlayer
                     drill={{
                       name: drill.name,
