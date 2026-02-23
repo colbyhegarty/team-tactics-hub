@@ -10,6 +10,7 @@ import {
   Zap,
   Target,
   Minus,
+  RotateCw,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -42,12 +43,7 @@ const actionTools = [
   { id: 'shot' as const, label: 'Shot', borderColor: 'border-l-red-500', textColor: 'text-red-500', icon: Target },
 ];
 
-const rotations = [
-  { value: 0, label: '↑ N' },
-  { value: 90, label: '→ E' },
-  { value: 180, label: '↓ S' },
-  { value: 270, label: '← W' },
-];
+
 
 const btnBase = 'bg-[#243044] border border-[#3d4f6f] rounded-lg hover:bg-[#2d3a4f] transition-colors';
 const btnActive = 'bg-[#3d5a3d] border-[#5a7a5a]';
@@ -119,26 +115,19 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
           ))}
         </div>
 
-        {/* Goal Rotation */}
         {(activeTool === 'goal' || activeTool === 'minigoal') && (
-          <div className="mt-2 p-3 bg-[#243044] rounded-lg border border-[#3d4f6f]">
-            <label className="text-gray-400 text-[11px] uppercase tracking-widest font-semibold mb-2 block">Goal Rotation</label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {rotations.map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setRotation(r.value)}
-                  className={cn(
-                    'p-1.5 rounded text-xs font-medium transition-colors',
-                    rotation === r.value
-                      ? 'bg-[#3d5a3d] text-white'
-                      : 'bg-[#1a2332] text-gray-400 hover:bg-[#2d3a4f] hover:text-gray-300'
-                  )}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
+          <div className="mt-2 space-y-2">
+            <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Goal Rotation</h4>
+            <button
+              onClick={() => setRotation((rotation + 90) % 360)}
+              className={cn(
+                'w-full flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-colors',
+                btnBase
+              )}
+            >
+              <RotateCw className="h-5 w-5 text-blue-400" />
+              <span className="text-white text-sm">Rotate 90°</span>
+            </button>
           </div>
         )}
       </div>
