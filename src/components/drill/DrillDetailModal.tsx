@@ -218,37 +218,38 @@ export function DrillDetailModal({
               )}
             </div>
 
-            {/* View Toggle - only show if animation is available */}
-            {hasAnimation && (
-              <div className="flex justify-center mb-4">
-                <ToggleGroup
-                  type="single"
-                  value={viewMode}
-                  onValueChange={(value) => value && setViewMode(value as 'static' | 'animated')}
-                  className="bg-muted p-1 rounded-lg"
-                >
-                  <ToggleGroupItem 
-                    value="static" 
-                    aria-label="Static View"
-                    className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
-                  >
-                    <Image className="h-4 w-4 mr-2" />
-                    Static
-                  </ToggleGroupItem>
-                  <ToggleGroupItem 
-                    value="animated" 
-                    aria-label="Animated View"
-                    className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
-                  >
-                    <Film className="h-4 w-4 mr-2" />
-                    Animated
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            )}
-
             {/* Diagram Section */}
-            <div className="relative rounded-xl overflow-hidden mb-6 bg-field">
+            <div className="relative bg-card rounded-xl shadow-md border border-border p-4 mb-6">
+              {/* View Toggle - only show if animation is available */}
+              {hasAnimation && (
+                <div className="flex justify-center mb-4">
+                  <ToggleGroup
+                    type="single"
+                    value={viewMode}
+                    onValueChange={(value) => value && setViewMode(value as 'static' | 'animated')}
+                    className="bg-muted p-1 rounded-lg"
+                  >
+                    <ToggleGroupItem 
+                      value="static" 
+                      aria-label="Static View"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
+                    >
+                      <Image className="h-4 w-4 mr-2" />
+                      Static
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="animated" 
+                      aria-label="Animated View"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
+                    >
+                      <Film className="h-4 w-4 mr-2" />
+                      Animated
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              )}
+              
+              {/* Diagram Content */}
               {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
                 <DrillAnimationPlayer
                   drill={{
@@ -264,19 +265,25 @@ export function DrillDetailModal({
                   animation={drill.animationJson}
                 />
               ) : drill.svgUrl ? (
-                <img
-                  src={drill.svgUrl}
-                  alt={drill.name}
-                  className="w-full block"
-                />
+                <div className="bg-field rounded-xl overflow-hidden">
+                  <img
+                    src={drill.svgUrl}
+                    alt={drill.name}
+                    className="w-full max-h-96 object-contain mx-auto p-2"
+                    style={{ background: 'transparent' }}
+                  />
+                </div>
               ) : drill.svg ? (
-                <img
-                  src={`data:image/svg+xml;base64,${drill.svg}`}
-                  alt={drill.name}
-                  className="w-full block"
-                />
+                <div className="bg-field rounded-xl overflow-hidden">
+                  <img
+                    src={`data:image/svg+xml;base64,${drill.svg}`}
+                    alt={drill.name}
+                    className="w-full max-h-96 object-contain mx-auto p-2"
+                    style={{ background: 'transparent' }}
+                  />
+                </div>
               ) : (
-                <div className="flex items-center justify-center h-48 text-muted-foreground bg-field rounded-xl">
+                <div className="flex items-center justify-center h-48 text-muted-foreground">
                   <p>No diagram available</p>
                 </div>
               )}
