@@ -45,6 +45,7 @@ export function DrillEditor({
   );
   const [selectedEntity, setSelectedEntity] = useState<EditorState['selectedEntity']>(null);
   const [pendingActionFrom, setPendingActionFrom] = useState<string | null>(null);
+  const [goalRotation, setGoalRotation] = useState(0);
 
   // Form state
   const [formData, setFormData] = useState<CustomDrillFormData>(
@@ -182,6 +183,8 @@ export function DrillEditor({
             activeTool={tool}
             onToolChange={setTool}
             pendingActionFrom={pendingActionFrom}
+            goalRotation={goalRotation}
+            onGoalRotationChange={setGoalRotation}
           />
         </div>
 
@@ -192,6 +195,7 @@ export function DrillEditor({
             tool={tool}
             selectedEntity={selectedEntity}
             pendingActionFrom={pendingActionFrom}
+            goalRotation={goalRotation}
             onDiagramChange={setDiagram}
             onSelectEntity={setSelectedEntity}
             onPendingActionChange={setPendingActionFrom}

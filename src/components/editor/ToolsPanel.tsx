@@ -36,10 +36,10 @@ const equipmentTools = [
 ];
 
 const actionTools = [
-  { id: 'pass' as const, label: 'Pass (player → player)', borderColor: 'border-l-blue-400', textColor: 'text-blue-400', icon: ArrowRight },
-  { id: 'run' as const, label: 'Run (player → target)', borderColor: 'border-l-yellow-400', textColor: 'text-yellow-400', icon: MoveRight },
-  { id: 'dribble' as const, label: 'Dribble (player → target)', borderColor: 'border-l-purple-400', textColor: 'text-purple-400', icon: Zap },
-  { id: 'shot' as const, label: 'Shot (player → target)', borderColor: 'border-l-red-500', textColor: 'text-red-500', icon: Target },
+  { id: 'pass' as const, label: 'Pass', borderColor: 'border-l-blue-400', textColor: 'text-blue-400', icon: ArrowRight },
+  { id: 'run' as const, label: 'Run', borderColor: 'border-l-yellow-400', textColor: 'text-yellow-400', icon: MoveRight },
+  { id: 'dribble' as const, label: 'Dribble', borderColor: 'border-l-purple-400', textColor: 'text-purple-400', icon: Zap },
+  { id: 'shot' as const, label: 'Shot', borderColor: 'border-l-red-500', textColor: 'text-red-500', icon: Target },
 ];
 
 const rotations = [
@@ -155,7 +155,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
           )}
         >
           <Minus className="h-4 w-4 text-orange-400 rotate-[-30deg]" />
-          <span className="text-sm">Cone Line (cone → cone)</span>
+          <span className="text-sm">Cone Line</span>
         </button>
       </div>
 
