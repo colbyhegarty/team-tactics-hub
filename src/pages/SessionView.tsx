@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText, Eye } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText, Eye, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
 import { getSession } from '@/lib/sessionStorage';
@@ -8,6 +8,13 @@ import { exportSessionToPDF } from '@/lib/sessionPdf';
 import { fetchDrillById } from '@/lib/api';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
 import { Drill } from '@/types/drill';
+
+function formatBulletPoints(text: string): string[] {
+  return text
+    .split(/\n|(?:\d+\.\s)/)
+    .map(line => line.replace(/^[-•]\s*/, '').trim())
+    .filter(Boolean);
+}
 
 function formatTime(minutes: number) {
   const hrs = Math.floor(minutes / 60);
@@ -33,11 +40,29 @@ export default function SessionView() {
   const [isDrillModalOpen, setIsDrillModalOpen] = useState(false);
   const [loadingDrillId, setLoadingDrillId] = useState<string | null>(null);
 
+  const [drillDetails, setDrillDetails] = useState<Record<string, Drill>>({});
+
   useEffect(() => {
     if (id) {
       const s = getSession(id);
-      if (s) setSession(s);
-      else navigate('/sessions');
+      if (s) {
+        setSession(s);
+        // Fetch drill details for all library drill activities
+        s.activities.forEach(async (activity) => {
+          if (activity.library_drill_id) {
+            try {
+              const drill = await fetchDrillById(activity.library_drill_id);
+              if (drill) {
+                setDrillDetails(prev => ({ ...prev, [activity.library_drill_id!]: drill }));
+              }
+            } catch (e) {
+              console.error('Failed to fetch drill:', e);
+            }
+          }
+        });
+      } else {
+        navigate('/sessions');
+      }
     }
   }, [id, navigate]);
 
@@ -167,6 +192,7 @@ export default function SessionView() {
                 runningTime += activity.duration_minutes;
                 const title = activity.title || activity.drill_name || 'Activity';
                 const hasLibraryDrill = !!activity.library_drill_id;
+                const drillData = activity.library_drill_id ? drillDetails[activity.library_drill_id] : null;
 
                 return (
                   <div key={activity.id} className="relative">
@@ -192,21 +218,73 @@ export default function SessionView() {
                           </span>
                         </div>
 
-                        {activity.description && (
+                        {activity.description && !drillData && (
                           <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                             {activity.description}
                           </p>
                         )}
 
-                        {/* Drill diagram - inline sized to content */}
-                        {activity.drill_svg_url && (
-                          <div className="mt-3 inline-block rounded-xl overflow-hidden bg-field">
-                            <img
-                              src={activity.drill_svg_url}
-                              alt={title}
-                              className="block max-w-full max-h-64 object-contain"
-                              style={{ background: 'transparent' }}
-                            />
+                        {/* Drill diagram + details side by side */}
+                        {(activity.drill_svg_url || drillData) && (
+                          <div className="mt-3 flex flex-col sm:flex-row gap-4">
+                            {/* Diagram with hover overlay */}
+                            {activity.drill_svg_url && (
+                              <div className="group/diagram relative shrink-0 rounded-xl overflow-hidden bg-field self-start">
+                                <img
+                                  src={activity.drill_svg_url}
+                                  alt={title}
+                                  className="block w-full sm:w-56 md:w-64 object-contain"
+                                  style={{ background: 'transparent' }}
+                                />
+                                {/* Hover overlay */}
+                                {hasLibraryDrill && (
+                                  <div className="absolute inset-0 bg-black/0 group-hover/diagram:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover/diagram:opacity-100">
+                                    <Button
+                                      size="sm"
+                                      className="shadow-lg"
+                                      onClick={() => handleViewDrill(activity)}
+                                      disabled={loadingDrillId === activity.id}
+                                    >
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      {loadingDrillId === activity.id ? 'Loading...' : 'View Drill'}
+                                      <ArrowRight className="h-4 w-4 ml-1" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Setup & Instructions */}
+                            {drillData && (drillData.setup || drillData.instructions) && (
+                              <div className="flex-1 space-y-3 min-w-0">
+                                {drillData.setup && (
+                                  <div>
+                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Setup</h4>
+                                    <ul className="space-y-1">
+                                      {formatBulletPoints(drillData.setup).map((point, i) => (
+                                        <li key={i} className="text-sm text-foreground flex gap-2">
+                                          <span className="text-primary mt-1">•</span>
+                                          <span>{point}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {drillData.instructions && (
+                                  <div>
+                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Instructions</h4>
+                                    <ul className="space-y-1">
+                                      {formatBulletPoints(drillData.instructions).map((point, i) => (
+                                        <li key={i} className="text-sm text-foreground flex gap-2">
+                                          <span className="text-primary mt-1">•</span>
+                                          <span>{point}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -215,20 +293,6 @@ export default function SessionView() {
                             <span className="font-medium text-muted-foreground">Notes: </span>
                             {activity.activity_notes}
                           </div>
-                        )}
-
-                        {/* View drill details button */}
-                        {hasLibraryDrill && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-3"
-                            onClick={() => handleViewDrill(activity)}
-                            disabled={loadingDrillId === activity.id}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            {loadingDrillId === activity.id ? 'Loading...' : 'View Drill Details'}
-                          </Button>
                         )}
                       </div>
                     </div>
