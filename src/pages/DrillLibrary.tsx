@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 export default function DrillLibrary() {
   const [categories, setCategories] = useState<string[]>([]);
   const [ageGroups, setAgeGroups] = useState<string[]>([]);
-  const [durations, setDurations] = useState<string[]>([]);
+  const durations = ["10 min.", "15 min.", "20 min.", "30 min."];
   const [filters, setFilters] = useState<DrillFilterParams>({});
   const [drillsMeta, setDrillsMeta] = useState<LibraryDrillMeta[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
@@ -44,7 +44,6 @@ export default function DrillLibrary() {
         if (optionsRes.success) {
           setCategories(optionsRes.categories);
           setAgeGroups(optionsRes.ageGroups);
-          setDurations(optionsRes.durations);
         }
       } catch (err) {
         console.error('Failed to load filter options:', err);

@@ -221,8 +221,17 @@ export async function fetchFilterOptions(): Promise<FilterOptionsResponse> {
       return { success: true, categories: [], ageGroups: [], durations: [] };
     }
     
-    // Extract unique categories
-    const categories = [...new Set(data.map(d => d.category).filter(Boolean))].sort();
+    // Extract unique individual categories (split comma-separated values)
+    const categorySet = new Set<string>();
+    data.forEach(d => {
+      if (d.category) {
+        d.category.split(',').forEach((cat: string) => {
+          const trimmed = cat.trim();
+          if (trimmed) categorySet.add(trimmed.toUpperCase());
+        });
+      }
+    });
+    const categories = Array.from(categorySet).sort();
     
     // Extract and sort age groups by first number
     const ageGroups = [...new Set(data.map(d => d.age_group).filter(Boolean))].sort((a, b) => {
@@ -272,19 +281,20 @@ export function filterByPlayerCount(
   });
 }
 
-// Client-side filter helper for duration (handles formats like "10 mins.", "15 mins.")
+// Client-side filter helper for duration (exact number match)
 export function filterByDuration(
   drills: LibraryDrillMeta[],
-  maxDuration?: string
+  selectedDuration?: string
 ): LibraryDrillMeta[] {
-  if (!maxDuration) return drills;
+  if (!selectedDuration || selectedDuration === 'Any Duration') return drills;
   
-  const maxMins = parseInt(maxDuration.match(/(\d+)/)?.[1] || '999');
+  const targetNum = selectedDuration.match(/(\d+)/)?.[1];
+  if (!targetNum) return drills;
   
   return drills.filter(drill => {
     if (!drill.duration) return true;
-    const drillMins = parseInt(drill.duration.match(/(\d+)/)?.[1] || '0');
-    return drillMins <= maxMins;
+    const drillNum = drill.duration.match(/(\d+)/)?.[1];
+    return drillNum === targetNum;
   });
 }
 
@@ -293,7 +303,7 @@ export async function fetchFilteredDrills(filters: DrillFilterParams): Promise<L
   let query = supabase.from('drill_list').select('*');
   
   if (filters.category && filters.category !== 'All') {
-    query = query.eq('category', filters.category);
+    query = query.ilike('category', `%${filters.category}%`);
   }
   if (filters.age_group && filters.age_group !== 'All') {
     query = query.eq('age_group', filters.age_group);
