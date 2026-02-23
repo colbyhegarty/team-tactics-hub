@@ -406,7 +406,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     // Cone lines
     if (drill.cone_lines && drill.cones) {
       ctx.strokeStyle = COLORS.CONE_LINE_COLOR;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.8;
       drill.cone_lines.forEach((l) => {
         if (l.from_cone < drill.cones!.length && l.to_cone < drill.cones!.length) {
           const f = toCanvas(drill.cones![l.from_cone].position.x, drill.cones![l.from_cone].position.y);
@@ -417,20 +418,22 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
           ctx.stroke();
         }
       });
+      ctx.globalAlpha = 1.0;
     }
 
     // Cones
+    const CONE_SIZE = 12;
     drill.cones?.forEach((c) => {
       const pos = toCanvas(c.position.x, c.position.y);
       ctx.fillStyle = COLORS.CONE_COLOR;
       ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y - 8);
-      ctx.lineTo(pos.x - 6, pos.y + 5);
-      ctx.lineTo(pos.x + 6, pos.y + 5);
+      ctx.moveTo(pos.x, pos.y - CONE_SIZE);
+      ctx.lineTo(pos.x - CONE_SIZE * 0.75, pos.y + CONE_SIZE * 0.6);
+      ctx.lineTo(pos.x + CONE_SIZE * 0.75, pos.y + CONE_SIZE * 0.6);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = "#000";
-      ctx.lineWidth = 0.8;
+      ctx.lineWidth = 1;
       ctx.stroke();
     });
 
@@ -461,63 +464,82 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     });
 
     // Mini goals
-    drill.mini_goals?.forEach((g) => {
-      const pos = toCanvas(g.position.x, g.position.y);
-      const rot = ((g.rotation || 0) + 180) % 360;
-      const gw = (4 / 100) * FIELD_WIDTH;
-      const gd = (2 / 100) * FIELD_HEIGHT;
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
-      ctx.rotate((rot * Math.PI) / 180);
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-gw / 2, gd / 2);
-      ctx.lineTo(-gw / 2, -gd / 2);
-      ctx.lineTo(gw / 2, -gd / 2);
-      ctx.lineTo(gw / 2, gd / 2);
-      ctx.stroke();
-      ctx.restore();
-    });
+    if (drill.mini_goals) {
+      const GOAL_WIDTH_UNITS = 4;
+      const GOAL_DEPTH_UNITS = 2;
+
+      drill.mini_goals.forEach((g) => {
+        const pos = toCanvas(g.position.x, g.position.y);
+        const inputRotation = g.rotation || 0;
+        const rotation = (inputRotation + 180) % 360;
+        const goalWidth = (GOAL_WIDTH_UNITS / 100) * FIELD_WIDTH;
+        const goalDepth = (GOAL_DEPTH_UNITS / 100) * FIELD_HEIGHT;
+
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+
+        if (rotation === 0) {
+          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x - goalWidth/2, pos.y - goalDepth); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x + goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y - goalDepth); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y); ctx.stroke();
+        } else if (rotation === 90) {
+          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x + goalDepth, pos.y - goalWidth/2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x, pos.y + goalWidth/2); ctx.lineTo(pos.x + goalDepth, pos.y + goalWidth/2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x, pos.y + goalWidth/2); ctx.stroke();
+        } else if (rotation === 180) {
+          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x - goalWidth/2, pos.y + goalDepth); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x + goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y + goalDepth); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y); ctx.stroke();
+        } else {
+          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x - goalDepth, pos.y - goalWidth/2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x, pos.y + goalWidth/2); ctx.lineTo(pos.x - goalDepth, pos.y + goalWidth/2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x, pos.y + goalWidth/2); ctx.stroke();
+        }
+      });
+    }
 
     // Players
+    const PLAYER_RADIUS = 18;
+    const LABEL_OFFSET = 22;
     drill.players?.forEach((p) => {
       const pd = positions[p.id] || p.position;
       const pos = toCanvas(pd.x, pd.y);
       ctx.fillStyle = PLAYER_COLORS[p.role.toLowerCase()] || "#888";
       ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 12, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, PLAYER_RADIUS, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Label
       ctx.fillStyle = "#fff";
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = "bold 11px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText(p.id, pos.x, pos.y + 16);
+      ctx.fillText(p.id, pos.x, pos.y + LABEL_OFFSET);
     });
 
     // Balls
+    const BALL_RADIUS = 14;
     drill.balls?.forEach((b, i) => {
       const pd = positions[`ball_${i}`] || b.position;
       const pos = toCanvas(pd.x, pd.y);
       ctx.fillStyle = "#fff";
       ctx.strokeStyle = "#000";
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, BALL_RADIUS, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      // Pentagon
+
       ctx.fillStyle = "#000";
       ctx.beginPath();
+      const pentRadius = BALL_RADIUS * 0.45;
       for (let j = 0; j < 5; j++) {
         const a = ((j * 72 - 90) * Math.PI) / 180;
-        const px = pos.x + 5 * Math.cos(a);
-        const py = pos.y + 5 * Math.sin(a);
+        const px = pos.x + pentRadius * Math.cos(a);
+        const py = pos.y + pentRadius * Math.sin(a);
         if (j === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
