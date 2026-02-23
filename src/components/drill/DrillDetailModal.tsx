@@ -249,44 +249,45 @@ export function DrillDetailModal({
                 </div>
               )}
               
-              {/* Diagram Content */}
-              {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
-                <DrillAnimationPlayer
-                  drill={{
-                    name: drill.name,
-                    field: drill.drillJson?.field,
-                    players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
-                    cones: drill.drillJson?.cones,
-                    cone_lines: drill.drillJson?.cone_lines,
-                    balls: drill.drillJson?.balls,
-                    goals: drill.drillJson?.goals,
-                    mini_goals: drill.drillJson?.mini_goals,
-                  }}
-                  animation={drill.animationJson}
-                />
-              ) : drill.svgUrl ? (
-                <div className="bg-field rounded-xl overflow-hidden">
+              {/* Diagram Content - shared aspect ratio container */}
+              <div className="relative w-full rounded-xl overflow-hidden bg-field" style={{ aspectRatio: '3 / 2' }}>
+                {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
+                  <div className="absolute inset-0">
+                    <DrillAnimationPlayer
+                      drill={{
+                        name: drill.name,
+                        field: drill.drillJson?.field,
+                        players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
+                        cones: drill.drillJson?.cones,
+                        cone_lines: drill.drillJson?.cone_lines,
+                        balls: drill.drillJson?.balls,
+                        goals: drill.drillJson?.goals,
+                        mini_goals: drill.drillJson?.mini_goals,
+                      }}
+                      animation={drill.animationJson}
+                      className="w-full h-full"
+                    />
+                  </div>
+                ) : drill.svgUrl ? (
                   <img
                     src={drill.svgUrl}
                     alt={drill.name}
-                    className="w-full max-h-96 object-contain mx-auto p-2"
+                    className="absolute inset-0 w-full h-full object-contain p-2"
                     style={{ background: 'transparent' }}
                   />
-                </div>
-              ) : drill.svg ? (
-                <div className="bg-field rounded-xl overflow-hidden">
+                ) : drill.svg ? (
                   <img
                     src={`data:image/svg+xml;base64,${drill.svg}`}
                     alt={drill.name}
-                    className="w-full max-h-96 object-contain mx-auto p-2"
+                    className="absolute inset-0 w-full h-full object-contain p-2"
                     style={{ background: 'transparent' }}
                   />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-48 text-muted-foreground">
-                  <p>No diagram available</p>
-                </div>
-              )}
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                    <p>No diagram available</p>
+                  </div>
+                )}
+              </div>
               
               {(drill.svgUrl || drill.svg) && viewMode === 'static' && (
                 <div className="absolute bottom-4 right-4 flex gap-2">

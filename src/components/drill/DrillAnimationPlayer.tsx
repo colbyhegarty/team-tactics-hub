@@ -99,8 +99,8 @@ const PLAYER_COLORS: Record<string, string> = {
   neutral: "#f4a261",
 };
 
-// Canvas logical size (aspect ratio 4:3)
-const CW = 800;
+// Canvas logical size (aspect ratio 3:2)
+const CW = 900;
 const CH = 600;
 const FIELD_PADDING = 50;
 const FIELD_WIDTH = CW - FIELD_PADDING * 2;
