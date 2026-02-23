@@ -647,16 +647,18 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
 
   return (
     <div className={className}>
-      {/* Canvas */}
-      <canvas
-        ref={canvasRef}
-        width={CW}
-        height={CH}
-        className="w-full h-auto rounded-xl max-h-96"
-        style={{ aspectRatio: `${CW} / ${CH}`, objectFit: 'contain' }}
-      />
+      {/* Canvas with field background */}
+      <div className="bg-field rounded-xl overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          width={CW}
+          height={CH}
+          className="w-full h-auto max-h-96 block"
+          style={{ aspectRatio: `${CW} / ${CH}` }}
+        />
+      </div>
 
-      {/* Controls */}
+      {/* Controls - outside the field background */}
       <div className="mt-3 space-y-3">
         {/* Playback row */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
