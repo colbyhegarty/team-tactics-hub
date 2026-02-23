@@ -1,4 +1,4 @@
-import { Calendar, Clock, Users, MoreVertical, Copy, Trash2, FileText } from 'lucide-react';
+import { Calendar, Clock, Users, MoreVertical, Copy, Trash2, FileText, Edit } from 'lucide-react';
 import { Session } from '@/types/session';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,14 @@ import {
 
 interface SessionCardProps {
   session: Session;
+  onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onExportPDF: (session: Session) => void;
 }
 
-export function SessionCard({ session, onEdit, onDuplicate, onDelete, onExportPDF }: SessionCardProps) {
+export function SessionCard({ session, onView, onEdit, onDuplicate, onDelete, onExportPDF }: SessionCardProps) {
   const totalDuration = session.activities.reduce((sum, a) => sum + a.duration_minutes, 0);
   const activityCount = session.activities.length;
 
@@ -30,7 +31,7 @@ export function SessionCard({ session, onEdit, onDuplicate, onDelete, onExportPD
   return (
     <Card
       className="cursor-pointer transition-all hover:shadow-card-lg hover:-translate-y-0.5"
-      onClick={() => onEdit(session.id)}
+      onClick={() => onView(session.id)}
     >
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
@@ -44,6 +45,9 @@ export function SessionCard({ session, onEdit, onDuplicate, onDelete, onExportPD
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={() => onEdit(session.id)}>
+                <Edit className="h-4 w-4 mr-2" /> Edit
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDuplicate(session.id)}>
                 <Copy className="h-4 w-4 mr-2" /> Duplicate
               </DropdownMenuItem>
