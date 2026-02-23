@@ -148,16 +148,16 @@ export function DrillFilters({
               <span className="text-sm text-muted-foreground">players</span>
             </div>
 
-            {/* Duration - dynamic from database */}
+            {/* Duration - fixed options */}
             <Select
-              value={filters.duration || 'any'}
-              onValueChange={(value) => updateFilter('duration', value !== 'any' ? value : undefined)}
+              value={filters.duration || 'Any Duration'}
+              onValueChange={(value) => updateFilter('duration', value !== 'Any Duration' ? value : undefined)}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Duration" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="any">Any Duration</SelectItem>
+                <SelectItem value="Any Duration">Any Duration</SelectItem>
                 {durations.map((dur) => (
                   <SelectItem key={dur} value={dur}>
                     {dur}
