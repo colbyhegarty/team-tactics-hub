@@ -20,6 +20,7 @@ interface DiagramCanvasProps {
   tool: EditorState['tool'];
   selectedEntity: EditorState['selectedEntity'];
   pendingActionFrom: string | null;
+  goalRotation: number;
   onDiagramChange: (diagram: DiagramData) => void;
   onSelectEntity: (entity: EditorState['selectedEntity']) => void;
   onPendingActionChange: (id: string | null) => void;
@@ -40,6 +41,7 @@ export function DiagramCanvas({
   tool,
   selectedEntity,
   pendingActionFrom,
+  goalRotation,
   onDiagramChange,
   onSelectEntity,
   onPendingActionChange,
@@ -202,7 +204,7 @@ export function DiagramCanvas({
     }
 
     if (tool === 'goal' || tool === 'minigoal') {
-      const newGoal: CustomGoal = { id: generateId(), position: fieldPos, rotation: 0, size: tool === 'goal' ? 'full' : 'mini' };
+      const newGoal: CustomGoal = { id: generateId(), position: fieldPos, rotation: goalRotation, size: tool === 'goal' ? 'full' : 'mini' };
       onDiagramChange({ ...diagram, goals: [...diagram.goals, newGoal] });
       return;
     }

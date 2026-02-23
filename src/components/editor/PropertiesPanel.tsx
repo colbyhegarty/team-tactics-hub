@@ -106,7 +106,34 @@ export function PropertiesPanel({
             </button>
           </div>
           <div className="bg-[#243044] rounded-lg p-3 border border-purple-400/30 text-sm text-gray-300">
-            {selectedEntity.type.charAt(0).toUpperCase() + selectedEntity.type.slice(1)}: {selectedEntity.id}
+            {(() => {
+              if (selectedEntity.type === 'player') {
+                return `Player: ${selectedEntity.id}`;
+              }
+              if (selectedEntity.type === 'goal') {
+                const goalIndex = diagram.goals.findIndex(g => g.id === selectedEntity.id);
+                const goal = diagram.goals[goalIndex];
+                return `${goal?.size === 'mini' ? 'Mini Goal' : 'Goal'} ${goalIndex + 1}`;
+              }
+              if (selectedEntity.type === 'cone') {
+                const idx = diagram.cones.findIndex(c => c.id === selectedEntity.id);
+                return `Cone ${idx + 1}`;
+              }
+              if (selectedEntity.type === 'ball') {
+                const idx = diagram.balls.findIndex(b => b.id === selectedEntity.id);
+                return `Ball ${idx + 1}`;
+              }
+              if (selectedEntity.type === 'action') {
+                const idx = diagram.actions.findIndex(a => a.id === selectedEntity.id);
+                const action = diagram.actions[idx];
+                return `Action ${idx + 1}: ${action?.type}`;
+              }
+              if (selectedEntity.type === 'coneline') {
+                const idx = diagram.coneLines.findIndex(l => l.id === selectedEntity.id);
+                return `Cone Line ${idx + 1}`;
+              }
+              return `${selectedEntity.type}: ${selectedEntity.id}`;
+            })()}
           </div>
           <hr className="border-[#3d4f6f]" />
         </>
