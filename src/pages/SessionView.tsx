@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Session } from '@/types/session';
+import { Session, SessionActivity } from '@/types/session';
 import { getSession } from '@/lib/sessionStorage';
 import { exportSessionToPDF } from '@/lib/sessionPdf';
+import { fetchDrillById } from '@/lib/api';
+import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
+import { Drill } from '@/types/drill';
 
 function formatTime(minutes: number) {
   const hrs = Math.floor(minutes / 60);
@@ -26,6 +29,9 @@ export default function SessionView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
+  const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+  const [isDrillModalOpen, setIsDrillModalOpen] = useState(false);
+  const [loadingDrillId, setLoadingDrillId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -44,6 +50,22 @@ export default function SessionView() {
     if (!dateStr) return '';
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  const handleViewDrill = async (activity: SessionActivity) => {
+    if (!activity.library_drill_id) return;
+    setLoadingDrillId(activity.id);
+    try {
+      const drill = await fetchDrillById(activity.library_drill_id);
+      if (drill) {
+        setSelectedDrill(drill);
+        setIsDrillModalOpen(true);
+      }
+    } catch (e) {
+      console.error('Failed to fetch drill details:', e);
+    } finally {
+      setLoadingDrillId(null);
+    }
   };
 
   return (
@@ -144,6 +166,7 @@ export default function SessionView() {
                 const startMin = runningTime;
                 runningTime += activity.duration_minutes;
                 const title = activity.title || activity.drill_name || 'Activity';
+                const hasLibraryDrill = !!activity.library_drill_id;
 
                 return (
                   <div key={activity.id} className="relative">
@@ -175,13 +198,13 @@ export default function SessionView() {
                           </p>
                         )}
 
-                        {/* Drill diagram */}
+                        {/* Drill diagram - inline sized to content */}
                         {activity.drill_svg_url && (
-                          <div className="mt-3 bg-field rounded-xl overflow-hidden">
+                          <div className="mt-3 inline-block rounded-xl overflow-hidden bg-field">
                             <img
                               src={activity.drill_svg_url}
                               alt={title}
-                              className="w-full max-h-48 object-contain"
+                              className="block max-w-full max-h-64 object-contain"
                               style={{ background: 'transparent' }}
                             />
                           </div>
@@ -192,6 +215,20 @@ export default function SessionView() {
                             <span className="font-medium text-muted-foreground">Notes: </span>
                             {activity.activity_notes}
                           </div>
+                        )}
+
+                        {/* View drill details button */}
+                        {hasLibraryDrill && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => handleViewDrill(activity)}
+                            disabled={loadingDrillId === activity.id}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            {loadingDrillId === activity.id ? 'Loading...' : 'View Drill Details'}
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -222,6 +259,18 @@ export default function SessionView() {
           </div>
         )}
       </div>
+
+      {/* Drill Detail Modal */}
+      <DrillDetailModal
+        drill={selectedDrill}
+        isOpen={isDrillModalOpen}
+        onClose={() => {
+          setIsDrillModalOpen(false);
+          setSelectedDrill(null);
+        }}
+        isSaved={false}
+        onSave={() => {}}
+      />
     </div>
   );
 }
