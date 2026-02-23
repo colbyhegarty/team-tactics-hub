@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText, Eye, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText, Eye, ArrowRight, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
 import { getSession } from '@/lib/sessionStorage';
@@ -47,7 +47,6 @@ export default function SessionView() {
       const s = getSession(id);
       if (s) {
         setSession(s);
-        // Fetch drill details for all library drill activities
         s.activities.forEach(async (activity) => {
           if (activity.library_drill_id) {
             try {
@@ -94,73 +93,80 @@ export default function SessionView() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md shadow-sm">
+        <div className="px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/sessions')}>
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate('/sessions')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold text-foreground line-clamp-1">
-              {session.title || 'Untitled Session'}
-            </h1>
+            <div>
+              <h1 className="text-lg font-bold text-foreground line-clamp-1">
+                {session.title || 'Untitled Session'}
+              </h1>
+              {session.session_date && (
+                <p className="text-xs text-muted-foreground">{formatDate(session.session_date)}</p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => exportSessionToPDF(session)}>
+            <Button variant="outline" size="sm" className="rounded-lg" onClick={() => exportSessionToPDF(session)}>
               <FileText className="h-4 w-4 mr-1" /> PDF
             </Button>
-            <Button size="sm" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
+            <Button size="sm" className="rounded-lg" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
               <Edit className="h-4 w-4 mr-1" /> Edit
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container max-w-3xl py-6 px-4 space-y-6">
-        {/* Session Info Card */}
-        <div className="form-section">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="max-w-3xl mx-auto py-6 px-4 space-y-5">
+        {/* Session Overview */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {session.session_date && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                  <Calendar className="h-4 w-4 text-primary" />
+              <div className="flex flex-col items-center gap-2 rounded-xl bg-primary/5 p-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground">
+                  <Calendar className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Date</p>
-                  <p className="font-medium text-foreground">{formatDate(session.session_date)}</p>
+                <div className="text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Date</p>
+                  <p className="text-xs font-semibold text-foreground mt-0.5">
+                    {new Date(session.session_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
                 </div>
               </div>
             )}
             {session.session_time && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                  <Clock className="h-4 w-4 text-primary" />
+              <div className="flex flex-col items-center gap-2 rounded-xl bg-primary/5 p-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground">
+                  <Clock className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Time</p>
-                  <p className="font-medium text-foreground">{formatSessionTime(session.session_time)}</p>
+                <div className="text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Time</p>
+                  <p className="text-xs font-semibold text-foreground mt-0.5">{formatSessionTime(session.session_time)}</p>
                 </div>
               </div>
             )}
             {session.team_name && (
-              <div className="flex items-center gap-3 text-sm">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-4 w-4 text-primary" />
+              <div className="flex flex-col items-center gap-2 rounded-xl bg-primary/5 p-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground">
+                  <Users className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Team</p>
-                  <p className="font-medium text-foreground">{session.team_name}</p>
+                <div className="text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Team</p>
+                  <p className="text-xs font-semibold text-foreground mt-0.5">{session.team_name}</p>
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/20">
-                <Clock className="h-4 w-4 text-accent-foreground" />
+            <div className="flex flex-col items-center gap-2 rounded-xl bg-accent/10 p-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-accent text-accent-foreground">
+                <Clock className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-muted-foreground text-xs">Total Duration</p>
-                <p className="font-medium text-foreground">{formatTime(totalDuration)}</p>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Duration</p>
+                <p className="text-xs font-semibold text-foreground mt-0.5">{formatTime(totalDuration)}</p>
               </div>
             </div>
           </div>
@@ -169,24 +175,34 @@ export default function SessionView() {
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 mb-2">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Goals</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Session Goals</span>
               </div>
-              <p className="text-sm text-foreground leading-relaxed">{session.session_goals}</p>
+              <p className="text-sm text-foreground/80 leading-relaxed pl-6">{session.session_goals}</p>
             </div>
           )}
         </div>
 
-        {/* Activities Timeline */}
-        <div className="form-section">
-          <h2 className="form-section-title">
-            <Clipboard className="h-4 w-4" />
-            Activities ({session.activities.length})
-          </h2>
+        {/* Activities */}
+        <div>
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-primary text-primary-foreground">
+              <Clipboard className="h-3.5 w-3.5" />
+            </div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
+              Activities
+            </h2>
+            <span className="badge-pill badge-primary text-[10px]">{session.activities.length}</span>
+          </div>
 
           {session.activities.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground text-sm">No activities in this session.</p>
+            <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
+              <p className="text-muted-foreground text-sm">No activities in this session.</p>
+            </div>
           ) : (
-            <div className="space-y-0">
+            <div className="space-y-0 relative">
+              {/* Timeline line */}
+              <div className="absolute left-[19px] top-5 bottom-5 w-0.5 bg-gradient-to-b from-primary/30 via-primary/15 to-transparent" />
+
               {session.activities.map((activity, index) => {
                 const startMin = runningTime;
                 runningTime += activity.duration_minutes;
@@ -195,106 +211,84 @@ export default function SessionView() {
                 const drillData = activity.library_drill_id ? drillDetails[activity.library_drill_id] : null;
 
                 return (
-                  <div key={activity.id} className="relative">
-                    {/* Timeline connector */}
-                    {index < session.activities.length - 1 && (
-                      <div className="absolute left-[19px] top-[44px] bottom-0 w-0.5 bg-border" />
-                    )}
+                  <div key={activity.id} className="relative flex gap-4 pb-4">
+                    {/* Time node */}
+                    <div className="flex flex-col items-center shrink-0 z-10">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-primary text-[10px] font-bold border-2 border-primary/30 shadow-sm">
+                        {formatTime(startMin).replace(' min', 'm')}
+                      </div>
+                    </div>
 
-                    <div className="flex gap-4 pb-5">
-                      {/* Time badge */}
-                      <div className="flex flex-col items-center shrink-0">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold border-2 border-primary/20">
-                          {formatTime(startMin).replace(' min', 'm')}
-                        </div>
+                    {/* Activity card */}
+                    <div className="flex-1 rounded-2xl border border-border bg-card p-4 shadow-card hover:shadow-card-lg transition-shadow duration-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+                        <span className="badge-pill bg-primary/10 text-primary text-[10px] font-semibold shrink-0 ml-2">
+                          {activity.duration_minutes} min
+                        </span>
                       </div>
 
-                      {/* Content */}
-                      <div className="flex-1 rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-start justify-between mb-1">
-                          <h3 className="font-semibold text-foreground">{title}</h3>
-                          <span className="badge-pill badge-muted text-xs shrink-0 ml-2">
-                            {activity.duration_minutes} min
-                          </span>
+                      {activity.description && !drillData && (
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {activity.description}
+                        </p>
+                      )}
+
+                      {/* Drill diagram + instructions */}
+                      {(activity.drill_svg_url || drillData) && (
+                        <div className="mt-3 flex flex-col sm:flex-row gap-4">
+                          {/* Diagram */}
+                          {activity.drill_svg_url && (
+                            <div className="group/diagram relative shrink-0 rounded-xl overflow-hidden bg-field self-start shadow-sm">
+                              <img
+                                src={activity.drill_svg_url}
+                                alt={title}
+                                className="block w-full sm:w-52 md:w-60 object-contain"
+                                style={{ background: 'transparent' }}
+                              />
+                              {hasLibraryDrill && (
+                                <div className="absolute inset-0 bg-black/0 group-hover/diagram:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover/diagram:opacity-100">
+                                  <Button
+                                    size="sm"
+                                    className="shadow-lg rounded-lg"
+                                    onClick={() => handleViewDrill(activity)}
+                                    disabled={loadingDrillId === activity.id}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    {loadingDrillId === activity.id ? 'Loading...' : 'View Drill'}
+                                    <ArrowRight className="h-4 w-4 ml-1" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Instructions only */}
+                          {drillData?.instructions && (
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <ListChecks className="h-3.5 w-3.5 text-primary" />
+                                <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">Instructions</h4>
+                              </div>
+                              <ul className="space-y-1.5">
+                                {formatBulletPoints(drillData.instructions).map((point, i) => (
+                                  <li key={i} className="text-sm text-foreground/80 flex gap-2 leading-relaxed">
+                                    <span className="text-primary/60 mt-0.5 text-xs">▸</span>
+                                    <span>{point}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
+                      )}
 
-                        {activity.description && !drillData && (
-                          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                            {activity.description}
-                          </p>
-                        )}
-
-                        {/* Drill diagram + details side by side */}
-                        {(activity.drill_svg_url || drillData) && (
-                          <div className="mt-3 flex flex-col sm:flex-row gap-4">
-                            {/* Diagram with hover overlay */}
-                            {activity.drill_svg_url && (
-                              <div className="group/diagram relative shrink-0 rounded-xl overflow-hidden bg-field self-start">
-                                <img
-                                  src={activity.drill_svg_url}
-                                  alt={title}
-                                  className="block w-full sm:w-56 md:w-64 object-contain"
-                                  style={{ background: 'transparent' }}
-                                />
-                                {/* Hover overlay */}
-                                {hasLibraryDrill && (
-                                  <div className="absolute inset-0 bg-black/0 group-hover/diagram:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover/diagram:opacity-100">
-                                    <Button
-                                      size="sm"
-                                      className="shadow-lg"
-                                      onClick={() => handleViewDrill(activity)}
-                                      disabled={loadingDrillId === activity.id}
-                                    >
-                                      <Eye className="h-4 w-4 mr-1" />
-                                      {loadingDrillId === activity.id ? 'Loading...' : 'View Drill'}
-                                      <ArrowRight className="h-4 w-4 ml-1" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Setup & Instructions */}
-                            {drillData && (drillData.setup || drillData.instructions) && (
-                              <div className="flex-1 space-y-3 min-w-0">
-                                {drillData.setup && (
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Setup</h4>
-                                    <ul className="space-y-1">
-                                      {formatBulletPoints(drillData.setup).map((point, i) => (
-                                        <li key={i} className="text-sm text-foreground flex gap-2">
-                                          <span className="text-primary mt-1">•</span>
-                                          <span>{point}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {drillData.instructions && (
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Instructions</h4>
-                                    <ul className="space-y-1">
-                                      {formatBulletPoints(drillData.instructions).map((point, i) => (
-                                        <li key={i} className="text-sm text-foreground flex gap-2">
-                                          <span className="text-primary mt-1">•</span>
-                                          <span>{point}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {activity.activity_notes && (
-                          <div className="mt-3 rounded-lg bg-accent/10 px-3 py-2 text-sm text-foreground">
-                            <span className="font-medium text-muted-foreground">Notes: </span>
-                            {activity.activity_notes}
-                          </div>
-                        )}
-                      </div>
+                      {activity.activity_notes && (
+                        <div className="mt-3 rounded-xl bg-accent/8 border border-accent/15 px-3 py-2.5 text-sm text-foreground/80">
+                          <span className="font-semibold text-accent-foreground text-xs uppercase tracking-wider">Notes: </span>
+                          <span className="ml-1">{activity.activity_notes}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -305,17 +299,22 @@ export default function SessionView() {
 
         {/* Equipment */}
         {session.equipment.length > 0 && (
-          <div className="form-section">
-            <h2 className="form-section-title">Equipment</h2>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-primary text-primary-foreground">
+                <Clipboard className="h-3.5 w-3.5" />
+              </div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">Equipment</h2>
+            </div>
             <div className="flex flex-wrap gap-2">
               {session.equipment.map((item, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3.5 py-1.5 text-sm font-medium text-secondary-foreground border border-border/50"
                 >
                   {item.name}
                   {item.quantity > 0 && (
-                    <span className="text-muted-foreground">({item.quantity})</span>
+                    <span className="text-muted-foreground text-xs">×{item.quantity}</span>
                   )}
                 </span>
               ))}
