@@ -1,15 +1,5 @@
 import { DiagramData, SelectedEntity, FieldConfig, PLAYER_COLORS } from '@/types/customDrill';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PropertiesPanelProps {
@@ -18,6 +8,26 @@ interface PropertiesPanelProps {
   onDiagramChange: (diagram: DiagramData) => void;
   onDeleteSelected: () => void;
 }
+
+const getEntityColor = (role: string) => {
+  switch (role) {
+    case 'ATTACKER': return 'text-red-400';
+    case 'DEFENDER': return 'text-blue-400';
+    case 'GOALKEEPER': return 'text-yellow-400';
+    case 'NEUTRAL': return 'text-orange-400';
+    default: return 'text-gray-300';
+  }
+};
+
+const getActionColor = (type: string) => {
+  switch (type) {
+    case 'PASS': return 'text-blue-400';
+    case 'RUN': return 'text-yellow-400';
+    case 'DRIBBLE': return 'text-purple-400';
+    case 'SHOT': return 'text-red-400';
+    default: return 'text-gray-300';
+  }
+};
 
 export function PropertiesPanel({
   diagram,
@@ -32,188 +42,233 @@ export function PropertiesPanel({
     });
   };
 
+  const totalEntities = diagram.players.length + diagram.cones.length + diagram.balls.length + diagram.goals.length;
+
   return (
-    <div className="flex flex-col gap-4 p-4 bg-card border border-border rounded-lg">
-      {/* Field Settings */}
-      <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-foreground">Field Settings</h4>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Field Type</Label>
-          <Select
-            value={diagram.field.type}
-            onValueChange={(value: 'FULL' | 'HALF') => updateField({ type: value })}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="FULL">Full Field</SelectItem>
-              <SelectItem value="HALF">Half Field</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Show Markings</Label>
-          <Switch
-            checked={diagram.field.markings}
-            onCheckedChange={(checked) => updateField({ markings: checked })}
-          />
-        </div>
+    <div className="bg-[#1a2332] text-white rounded-lg p-4 overflow-y-auto max-h-[80vh] space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-2">
+        <Settings className="w-5 h-5 text-purple-400" />
+        <h2 className="text-lg font-semibold text-purple-400">Properties</h2>
       </div>
+
+      {/* Field Type */}
+      <div>
+        <label className="text-gray-400 text-sm mb-1.5 block">Field Type</label>
+        <select
+          value={diagram.field.type}
+          onChange={(e) => updateField({ type: e.target.value as 'FULL' | 'HALF' })}
+          className="w-full bg-[#243044] border border-[#3d4f6f] rounded-lg p-2.5 text-white text-sm outline-none focus:border-purple-400 transition-colors"
+        >
+          <option value="FULL">Full Field</option>
+          <option value="HALF">Half Field</option>
+        </select>
+      </div>
+
+      {/* Goals */}
+      <div>
+        <label className="text-gray-400 text-sm mb-1.5 block">Goals</label>
+        <select
+          value={diagram.field.goals}
+          onChange={(e) => updateField({ goals: Number(e.target.value) as 0 | 1 | 2 })}
+          className="w-full bg-[#243044] border border-[#3d4f6f] rounded-lg p-2.5 text-white text-sm outline-none focus:border-purple-400 transition-colors"
+        >
+          <option value={0}>No Goals</option>
+          <option value={1}>1 Goal (Top)</option>
+          <option value={2}>2 Goals</option>
+        </select>
+      </div>
+
+      {/* Show Markings */}
+      <label className="flex items-center gap-3 cursor-pointer py-1">
+        <input
+          type="checkbox"
+          checked={diagram.field.markings}
+          onChange={(e) => updateField({ markings: e.target.checked })}
+          className="w-4 h-4 rounded bg-[#243044] border-[#3d4f6f] text-purple-500 focus:ring-purple-500 accent-purple-500"
+        />
+        <span className="text-gray-300 text-sm">Show Field Markings</span>
+      </label>
+
+      <hr className="border-[#3d4f6f]" />
 
       {/* Selected Entity */}
       {selectedEntity && (
-        <div className="space-y-2 border-t border-border pt-3">
+        <>
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Selected</h4>
-            <Button
-              variant="ghost"
-              size="sm"
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Selected</h3>
+            <button
               onClick={onDeleteSelected}
-              className="h-7 px-2 text-destructive hover:text-destructive"
+              className="flex items-center gap-1 px-2 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded text-xs transition-colors"
             >
-              <Trash2 className="h-3 w-3 mr-1" />
+              <Trash2 className="h-3 w-3" />
               Delete
-            </Button>
+            </button>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="bg-[#243044] rounded-lg p-3 border border-purple-400/30 text-sm text-gray-300">
             {selectedEntity.type.charAt(0).toUpperCase() + selectedEntity.type.slice(1)}: {selectedEntity.id}
           </div>
-        </div>
+          <hr className="border-[#3d4f6f]" />
+        </>
       )}
 
-      {/* Entities List */}
-      <div className="space-y-2 border-t border-border pt-3">
-        <h4 className="text-sm font-semibold text-foreground">
-          Entities ({diagram.players.length + diagram.cones.length + diagram.balls.length + diagram.goals.length})
-        </h4>
-        <div className="max-h-40 overflow-y-auto space-y-1">
-          {diagram.players.map((player) => (
-            <EntityItem
-              key={player.id}
-              label={`${player.id} (${player.role.toLowerCase()})`}
-              color={PLAYER_COLORS[player.role]}
-              isSelected={selectedEntity?.id === player.id}
-              onDelete={() => {
-                onDiagramChange({
-                  ...diagram,
-                  players: diagram.players.filter(p => p.id !== player.id),
-                  actions: diagram.actions.filter(a => {
-                    if (a.type === 'PASS') {
-                      return a.fromPlayerId !== player.id && a.toPlayerId !== player.id;
-                    }
-                    return a.playerId !== player.id;
-                  }),
-                });
-              }}
-            />
-          ))}
-          {diagram.cones.map((cone, index) => (
-            <EntityItem
-              key={cone.id}
-              label={`Cone ${index + 1}`}
-              color="#f4a261"
-              isSelected={selectedEntity?.id === cone.id}
-              onDelete={() => {
-                onDiagramChange({
-                  ...diagram,
-                  cones: diagram.cones.filter(c => c.id !== cone.id),
-                  coneLines: diagram.coneLines.filter(
-                    l => l.fromConeId !== cone.id && l.toConeId !== cone.id
-                  ),
-                });
-              }}
-            />
-          ))}
-          {diagram.balls.map((ball, index) => (
-            <EntityItem
-              key={ball.id}
-              label={`Ball ${index + 1}`}
-              color="#ffffff"
-              isSelected={selectedEntity?.id === ball.id}
-              onDelete={() => {
-                onDiagramChange({
-                  ...diagram,
-                  balls: diagram.balls.filter(b => b.id !== ball.id),
-                });
-              }}
-            />
-          ))}
-          {diagram.goals.map((goal, index) => (
-            <EntityItem
-              key={goal.id}
-              label={`${goal.size === 'full' ? 'Goal' : 'Mini Goal'} ${index + 1}`}
-              color="#ffffff"
-              isSelected={selectedEntity?.id === goal.id}
-              onDelete={() => {
-                onDiagramChange({
-                  ...diagram,
-                  goals: diagram.goals.filter(g => g.id !== goal.id),
-                });
-              }}
-            />
-          ))}
-        </div>
+      {/* Players & Equipment */}
+      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+        Players & Equipment ({totalEntities})
+      </h3>
+
+      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+        {diagram.players.map((player) => (
+          <EntityItem
+            key={player.id}
+            label={player.id}
+            detail={player.role.toLowerCase()}
+            colorClass={getEntityColor(player.role)}
+            dotColor={PLAYER_COLORS[player.role]}
+            isSelected={selectedEntity?.id === player.id}
+            onDelete={() => {
+              onDiagramChange({
+                ...diagram,
+                players: diagram.players.filter(p => p.id !== player.id),
+                actions: diagram.actions.filter(a => {
+                  if (a.type === 'PASS') return a.fromPlayerId !== player.id && a.toPlayerId !== player.id;
+                  return a.playerId !== player.id;
+                }),
+              });
+            }}
+          />
+        ))}
+        {diagram.cones.map((cone, index) => (
+          <EntityItem
+            key={cone.id}
+            label={`Cone ${index + 1}`}
+            colorClass="text-orange-400"
+            dotColor="#f4a261"
+            isSelected={selectedEntity?.id === cone.id}
+            onDelete={() => {
+              onDiagramChange({
+                ...diagram,
+                cones: diagram.cones.filter(c => c.id !== cone.id),
+                coneLines: diagram.coneLines.filter(l => l.fromConeId !== cone.id && l.toConeId !== cone.id),
+              });
+            }}
+          />
+        ))}
+        {diagram.balls.map((ball, index) => (
+          <EntityItem
+            key={ball.id}
+            label={`Ball ${index + 1}`}
+            colorClass="text-white"
+            dotColor="#ffffff"
+            isSelected={selectedEntity?.id === ball.id}
+            onDelete={() => {
+              onDiagramChange({
+                ...diagram,
+                balls: diagram.balls.filter(b => b.id !== ball.id),
+              });
+            }}
+          />
+        ))}
+        {diagram.goals.map((goal, index) => (
+          <EntityItem
+            key={goal.id}
+            label={`${goal.size === 'full' ? 'Goal' : 'Mini Goal'} ${index + 1}`}
+            colorClass="text-gray-300"
+            dotColor="#ffffff"
+            isSelected={selectedEntity?.id === goal.id}
+            onDelete={() => {
+              onDiagramChange({
+                ...diagram,
+                goals: diagram.goals.filter(g => g.id !== goal.id),
+              });
+            }}
+          />
+        ))}
+        {totalEntities === 0 && (
+          <p className="text-gray-500 text-xs italic py-2">No entities placed yet</p>
+        )}
       </div>
 
-      {/* Actions List */}
+      {/* Actions */}
       {diagram.actions.length > 0 && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <h4 className="text-sm font-semibold text-foreground">
+        <>
+          <hr className="border-[#3d4f6f]" />
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
             Actions ({diagram.actions.length})
-          </h4>
-          <div className="max-h-32 overflow-y-auto space-y-1">
-            {diagram.actions.map((action) => {
+          </h3>
+          <div className="space-y-1.5 max-h-40 overflow-y-auto">
+            {diagram.actions.map((action, index) => {
               let label = '';
               if (action.type === 'PASS') {
-                label = `Pass: ${action.fromPlayerId} → ${action.toPlayerId}`;
+                label = `${action.fromPlayerId} → ${action.toPlayerId}`;
               } else {
-                label = `${action.type}: ${action.playerId}`;
+                label = action.playerId;
               }
               return (
-                <EntityItem
+                <div
                   key={action.id}
-                  label={label}
-                  color={action.type === 'RUN' ? '#facc15' : action.type === 'SHOT' ? '#ef4444' : '#ffffff'}
-                  isSelected={selectedEntity?.id === action.id}
-                  onDelete={() => {
-                    onDiagramChange({
-                      ...diagram,
-                      actions: diagram.actions.filter(a => a.id !== action.id),
-                    });
-                  }}
-                />
+                  className={cn(
+                    'flex items-center justify-between bg-[#243044] rounded-lg p-2.5 border border-[#3d4f6f] text-sm',
+                    selectedEntity?.id === action.id && 'border-purple-400/50'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-xs">{index + 1}.</span>
+                    <span className={cn('font-medium', getActionColor(action.type))}>{action.type}</span>
+                    <span className="text-white">{label}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDiagramChange({
+                        ...diagram,
+                        actions: diagram.actions.filter(a => a.id !== action.id),
+                      });
+                    }}
+                    className="w-6 h-6 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded flex items-center justify-center transition-colors flex-shrink-0"
+                  >
+                    ×
+                  </button>
+                </div>
               );
             })}
           </div>
-        </div>
+        </>
       )}
 
-      {/* Cone Lines List */}
+      {/* Cone Lines */}
       {diagram.coneLines.length > 0 && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <h4 className="text-sm font-semibold text-foreground">
+        <>
+          <hr className="border-[#3d4f6f]" />
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
             Cone Lines ({diagram.coneLines.length})
-          </h4>
-          <div className="max-h-24 overflow-y-auto space-y-1">
+          </h3>
+          <div className="space-y-1.5 max-h-24 overflow-y-auto">
             {diagram.coneLines.map((line, index) => (
-              <EntityItem
+              <div
                 key={line.id}
-                label={`Line ${index + 1}`}
-                color="#f4a261"
-                isSelected={selectedEntity?.id === line.id}
-                onDelete={() => {
-                  onDiagramChange({
-                    ...diagram,
-                    coneLines: diagram.coneLines.filter(l => l.id !== line.id),
-                  });
-                }}
-              />
+                className={cn(
+                  'flex items-center justify-between bg-[#243044] rounded-lg p-2.5 border border-[#3d4f6f] text-sm',
+                  selectedEntity?.id === line.id && 'border-purple-400/50'
+                )}
+              >
+                <span className="text-orange-400 font-medium">Line {index + 1}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDiagramChange({
+                      ...diagram,
+                      coneLines: diagram.coneLines.filter(l => l.id !== line.id),
+                    });
+                  }}
+                  className="w-6 h-6 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded flex items-center justify-center transition-colors flex-shrink-0"
+                >
+                  ×
+                </button>
+              </div>
             ))}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -221,37 +276,42 @@ export function PropertiesPanel({
 
 function EntityItem({
   label,
-  color,
+  detail,
+  colorClass,
+  dotColor,
   isSelected,
   onDelete,
 }: {
   label: string;
-  color: string;
+  detail?: string;
+  colorClass: string;
+  dotColor: string;
   isSelected: boolean;
   onDelete: () => void;
 }) {
   return (
     <div
       className={cn(
-        'flex items-center justify-between px-2 py-1 rounded text-xs',
-        isSelected ? 'bg-primary/20' : 'hover:bg-secondary'
+        'flex items-center justify-between bg-[#243044] rounded-lg p-2.5 border border-[#3d4f6f] text-sm',
+        isSelected && 'border-purple-400/50'
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: color }}
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: dotColor }}
         />
-        <span className="text-foreground">{label}</span>
+        <span className={cn('font-medium', colorClass)}>{label}</span>
+        {detail && <span className="text-gray-500 text-xs">({detail})</span>}
       </div>
       <button
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
-        className="text-muted-foreground hover:text-destructive transition-colors"
+        className="w-6 h-6 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded flex items-center justify-center transition-colors flex-shrink-0"
       >
-        <Trash2 className="h-3 w-3" />
+        ×
       </button>
     </div>
   );
