@@ -28,6 +28,7 @@ import {
   PLAYER_COLORS as SHARED_PLAYER_COLORS,
   ACTION_COLORS as SHARED_ACTION_COLORS,
   RenderContext,
+  CANVAS_PADDING,
 } from '@/utils/drillRenderer';
 
 interface DiagramCanvasProps {
@@ -57,16 +58,21 @@ export function DiagramCanvas({
   const [isDragging, setIsDragging] = React.useState(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
-  // Use the shared fixed render context (full 0-100 field)
+  // Use the shared fixed render context with padding (matches library renderer)
   const rc = React.useMemo(
-    () => createFixedRenderContext(dimensions.width, dimensions.height),
+    () => createFixedRenderContext(dimensions.width, dimensions.height, CANVAS_PADDING),
     [dimensions.width, dimensions.height]
   );
 
-  const toField = useCallback((canvasX: number, canvasY: number): FieldPosition => ({
-    x: Math.max(0, Math.min(100, (canvasX / dimensions.width) * 100)),
-    y: Math.max(0, Math.min(100, 100 - (canvasY / dimensions.height) * 100)),
-  }), [dimensions.width, dimensions.height]);
+  const toField = useCallback((canvasX: number, canvasY: number): FieldPosition => {
+    const p = CANVAS_PADDING;
+    const fw = dimensions.width - p * 2;
+    const fh = dimensions.height - p * 2;
+    return {
+      x: Math.max(0, Math.min(100, ((canvasX - p) / fw) * 100)),
+      y: Math.max(0, Math.min(100, 100 - ((canvasY - p) / fh) * 100)),
+    };
+  }, [dimensions.width, dimensions.height]);
 
   // Resize observer
   useEffect(() => {
