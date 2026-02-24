@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, Trash2, Save, BookmarkX, PenTool, Plus, ChevronDown, Camera, Users as UsersIcon } from 'lucide-react';
+import { User, Settings, Save, BookmarkX, PenTool, Plus, Camera, Users as UsersIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,17 +14,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
 import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
@@ -120,12 +115,79 @@ export default function Profile() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary md:hidden">
               <User className="h-5 w-5 text-primary-foreground" />
             </div>
-            <div>
+          <div className="flex-1">
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">My Profile</h1>
               <p className="text-sm text-muted-foreground hidden md:block">
                 Manage your settings and saved drills
               </p>
             </div>
+            {/* Settings gear icon */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Settings className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Settings</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4 mt-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Your name"
+                      value={profile.name}
+                      onChange={(e) => handleProfileChange('name', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={profile.email}
+                      onChange={(e) => handleProfileChange('email', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="teamName">Team / Organization</Label>
+                    <Input
+                      id="teamName"
+                      placeholder="Your team name"
+                      value={profile.teamName}
+                      onChange={(e) => handleProfileChange('teamName', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
+                    <Select
+                      value={profile.defaultAgeGroup}
+                      onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ageGroups.map(age => (
+                          <SelectItem key={age} value={age}>{age}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={!hasChanges}
+                    className="w-full"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Settings
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
@@ -187,76 +249,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Settings - Collapsible (contains name, email, team, age group) */}
-        <Collapsible>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors">
-            <span className="flex items-center gap-2 font-semibold text-foreground">
-              <Settings className="h-4 w-4" />
-              Settings
-            </span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="border border-t-0 border-border rounded-b-xl bg-card px-4 pb-4 pt-3 -mt-2">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Your name"
-                  value={profile.name}
-                  onChange={(e) => handleProfileChange('name', e.target.value)}
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={profile.email}
-                  onChange={(e) => handleProfileChange('email', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="teamName">Team / Organization</Label>
-                <Input
-                  id="teamName"
-                  placeholder="Your team name"
-                  value={profile.teamName}
-                  onChange={(e) => handleProfileChange('teamName', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
-                <Select
-                  value={profile.defaultAgeGroup}
-                  onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ageGroups.map(age => (
-                      <SelectItem key={age} value={age}>{age}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={handleSaveProfile}
-                disabled={!hasChanges}
-                className="w-full"
-              >
-                <Save className="h-4 w-4" />
-                Save Settings
-              </Button>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
 
         {/* Drills Tabs */}
         <Tabs defaultValue="custom" className="w-full">
@@ -326,37 +319,6 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
 
-        {/* Danger Zone */}
-        <div className="form-section border-destructive/30">
-          <div className="form-section-title text-destructive">
-            <Trash2 className="h-4 w-4" />
-            Danger Zone
-          </div>
-          <div className="space-y-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
-                  <Trash2 className="h-4 w-4" />
-                  Delete All Data
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your profile settings, saved drills, and custom drills.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearAllData}>
-                    Delete Everything
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
       </div>
 
       <DrillDetailModal

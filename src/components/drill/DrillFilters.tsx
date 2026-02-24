@@ -16,6 +16,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 // Difficulty values - uppercase to match database
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'];
 
+// Grouped age categories for filtering
+const AGE_GROUP_CATEGORIES = ['U6-U8', 'U10-U12', 'U14-U16', 'U17+'];
+
 // Format difficulty for display (capitalize first letter)
 function formatDifficulty(difficulty: string): string {
   return difficulty.charAt(0) + difficulty.slice(1).toLowerCase();
@@ -63,13 +66,13 @@ export function DrillFilters({
   const activeFilterCount = Object.keys(filters).filter(k => k !== 'search').length;
 
   const filterControls = (
-    <div className="flex flex-wrap gap-2 md:gap-3 items-center">
+    <div className="flex flex-wrap gap-2 items-center">
       {/* Category */}
       <Select
         value={filters.category || 'All'}
         onValueChange={(value) => updateFilter('category', value)}
       >
-        <SelectTrigger className="w-[130px] md:w-[160px] h-9 text-xs md:text-sm">
+        <SelectTrigger className="w-[120px] md:w-[150px] h-9 text-xs md:text-sm">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>
@@ -88,12 +91,12 @@ export function DrillFilters({
             value={filters.age_group || 'All'}
             onValueChange={(value) => updateFilter('age_group', value)}
           >
-            <SelectTrigger className="w-[110px] md:w-[130px] h-9 text-xs md:text-sm">
-              <SelectValue placeholder="Age Group" />
+            <SelectTrigger className="w-[105px] md:w-[120px] h-9 text-xs md:text-sm">
+              <SelectValue placeholder="Age" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All Ages</SelectItem>
-              {ageGroups.map((age) => (
+              {AGE_GROUP_CATEGORIES.map((age) => (
                 <SelectItem key={age} value={age}>
                   {age}
                 </SelectItem>
@@ -105,7 +108,7 @@ export function DrillFilters({
             value={filters.difficulty || 'All'}
             onValueChange={(value) => updateFilter('difficulty', value)}
           >
-            <SelectTrigger className="w-[110px] md:w-[130px] h-9 text-xs md:text-sm">
+            <SelectTrigger className="w-[130px] md:w-[140px] h-9 text-xs md:text-sm">
               <SelectValue placeholder="Difficulty" />
             </SelectTrigger>
             <SelectContent>
@@ -118,32 +121,32 @@ export function DrillFilters({
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Input
               type="number"
               placeholder="Min"
               value={filters.min_players || ''}
               onChange={(e) => updateFilter('min_players', e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-20 h-9 text-xs md:text-sm"
+              className="w-16 h-9 text-xs md:text-sm"
               min={1}
             />
-            <span className="text-muted-foreground">-</span>
+            <span className="text-muted-foreground text-xs">-</span>
             <Input
               type="number"
               placeholder="Max"
               value={filters.max_players || ''}
               onChange={(e) => updateFilter('max_players', e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-20 h-9 text-xs md:text-sm"
+              className="w-16 h-9 text-xs md:text-sm"
               min={1}
             />
-            <span className="text-sm text-muted-foreground">players</span>
+            <span className="text-xs text-muted-foreground">players</span>
           </div>
 
           <Select
             value={filters.duration || 'Any Duration'}
             onValueChange={(value) => updateFilter('duration', value !== 'Any Duration' ? value : undefined)}
           >
-            <SelectTrigger className="w-[120px] md:w-[140px] h-9 text-xs md:text-sm">
+            <SelectTrigger className="w-[110px] md:w-[130px] h-9 text-xs md:text-sm">
               <SelectValue placeholder="Duration" />
             </SelectTrigger>
             <SelectContent>
@@ -160,8 +163,8 @@ export function DrillFilters({
       )}
 
       {hasActiveFilters && (
-        <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 h-9 text-xs md:text-sm">
-          <X className="h-4 w-4" />
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 h-9 text-xs">
+          <X className="h-3.5 w-3.5" />
           Clear
         </Button>
       )}
@@ -203,8 +206,8 @@ export function DrillFilters({
 
       {/* Results Count */}
       {resultCount !== undefined && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Filter className="h-4 w-4" />
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Filter className="h-3 w-3" />
           <span>
             {isLoading ? 'Searching...' : `${resultCount} drills found`}
           </span>
