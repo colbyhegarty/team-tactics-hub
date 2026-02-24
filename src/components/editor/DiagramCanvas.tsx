@@ -303,17 +303,77 @@ export function DiagramCanvas({
 
   const handleMouseUp = useCallback(() => { setIsDragging(false); }, []);
 
+  // Touch handlers for mobile drag support
+  const getTouchFieldPos = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const touch = e.touches[0];
+    if (!touch) return null;
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    const canvasY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    return toField(canvasX, canvasY);
+  }, [toField]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (tool !== 'select') return;
+    const fieldPos = getTouchFieldPos(e);
+    if (!fieldPos) return;
+
+    const entity = findEntityAt(fieldPos);
+    if (entity) {
+      e.preventDefault(); // Prevent scrolling when dragging entities
+      onSelectEntity(entity);
+      setIsDragging(true);
+      let entityPos: FieldPosition | null = null;
+      if (entity.type === 'player') entityPos = diagram.players.find(p => p.id === entity.id)?.position || null;
+      else if (entity.type === 'cone') entityPos = diagram.cones.find(c => c.id === entity.id)?.position || null;
+      else if (entity.type === 'ball') entityPos = diagram.balls.find(b => b.id === entity.id)?.position || null;
+      else if (entity.type === 'goal') entityPos = diagram.goals.find(g => g.id === entity.id)?.position || null;
+      if (entityPos) {
+        dragOffsetRef.current = { x: fieldPos.x - entityPos.x, y: fieldPos.y - entityPos.y };
+      }
+    }
+  }, [tool, getTouchFieldPos, findEntityAt, diagram, onSelectEntity]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDragging || !selectedEntity) return;
+    e.preventDefault();
+    const fieldPos = getTouchFieldPos(e);
+    if (!fieldPos) return;
+    const newPos = {
+      x: Math.max(0, Math.min(100, fieldPos.x - dragOffsetRef.current.x)),
+      y: Math.max(0, Math.min(100, fieldPos.y - dragOffsetRef.current.y)),
+    };
+
+    if (selectedEntity.type === 'player') {
+      onDiagramChange({ ...diagram, players: diagram.players.map(p => p.id === selectedEntity.id ? { ...p, position: newPos } : p) });
+    } else if (selectedEntity.type === 'cone') {
+      onDiagramChange({ ...diagram, cones: diagram.cones.map(c => c.id === selectedEntity.id ? { ...c, position: newPos } : c) });
+    } else if (selectedEntity.type === 'ball') {
+      onDiagramChange({ ...diagram, balls: diagram.balls.map(b => b.id === selectedEntity.id ? { ...b, position: newPos } : b) });
+    } else if (selectedEntity.type === 'goal') {
+      onDiagramChange({ ...diagram, goals: diagram.goals.map(g => g.id === selectedEntity.id ? { ...g, position: newPos } : g) });
+    }
+  }, [isDragging, selectedEntity, getTouchFieldPos, diagram, onDiagramChange]);
+
+  const handleTouchEnd = useCallback(() => { setIsDragging(false); }, []);
+
   return (
     <div ref={containerRef} className="w-full rounded-xl overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="w-full h-auto cursor-crosshair block"
+        className="w-full h-auto cursor-crosshair block touch-none"
         style={{ aspectRatio: '4 / 3', borderRadius: '12px' }}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       />
     </div>
   );
