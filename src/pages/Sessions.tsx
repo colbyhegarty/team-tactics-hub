@@ -42,7 +42,7 @@ export default function Sessions() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">My Sessions</h1>
-              <p className="text-sm text-muted-foreground">Plan and manage training sessions</p>
+              <p className="text-sm text-muted-foreground hidden md:block">Plan and manage training sessions</p>
             </div>
           </div>
           <Button onClick={() => navigate('/sessions/new')} className="hidden md:inline-flex">
