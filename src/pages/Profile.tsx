@@ -262,13 +262,13 @@ export default function Profile() {
 
         {/* Drills Tabs */}
         <Tabs defaultValue="custom" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="custom" className="flex items-center gap-2">
-              <PenTool className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+            <TabsTrigger value="custom" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2 py-2">
+              <PenTool className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               My Drills ({customDrills.length})
             </TabsTrigger>
-            <TabsTrigger value="saved" className="flex items-center gap-2">
-              <BookmarkX className="h-4 w-4" />
+            <TabsTrigger value="saved" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2 py-2">
+              <BookmarkX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Saved ({savedDrills.length})
             </TabsTrigger>
           </TabsList>
