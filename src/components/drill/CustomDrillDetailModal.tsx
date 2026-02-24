@@ -1,10 +1,22 @@
-import { CustomDrill, PLAYER_COLORS } from '@/types/customDrill';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CustomDrill } from '@/types/customDrill';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRef, useEffect } from 'react';
+import { DrillCanvasRenderer, DrillData } from '@/components/editor/DrillCanvasRenderer';
 import { cn } from '@/lib/utils';
+import { useState, ReactNode } from 'react';
+import { getCategoryColor, getDifficultyColor } from '@/lib/api';
+import {
+  Clock, Users, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb,
+  Maximize2, Download, Edit, X,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface CustomDrillDetailModalProps {
   drill: CustomDrill | null;
@@ -12,270 +24,265 @@ interface CustomDrillDetailModalProps {
   onClose: () => void;
 }
 
-export function CustomDrillDetailModal({ drill, isOpen, onClose }: CustomDrillDetailModalProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// Convert CustomDrill diagram data to DrillCanvasRenderer format
+function toRendererData(drill: CustomDrill): DrillData {
+  const { diagramData } = drill;
 
-  // Render diagram
-  useEffect(() => {
-    if (!drill) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  // Build cone index map for cone lines
+  const coneIdToIndex: Record<string, number> = {};
+  diagramData.cones.forEach((c, i) => { coneIdToIndex[c.id] = i; });
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const padding = 20;
+  // Separate goals and mini goals
+  const goals = diagramData.goals.filter(g => g.size === 'full');
+  const miniGoals = diagramData.goals.filter(g => g.size === 'mini');
 
-    // Clear
-    ctx.clearRect(0, 0, width, height);
-
-    // Draw field background
-    const stripeCount = 10;
-    const stripeHeight = (height - padding * 2) / stripeCount;
-    for (let i = 0; i < stripeCount; i++) {
-      ctx.fillStyle = i % 2 === 0 ? '#6fbf4a' : '#63b043';
-      ctx.fillRect(padding, padding + i * stripeHeight, width - padding * 2, stripeHeight);
+  // Convert actions
+  const actions = diagramData.actions.map(action => {
+    if (action.type === 'PASS') {
+      return { type: 'PASS' as const, from_player: action.fromPlayerId, to_player: action.toPlayerId };
     }
+    return {
+      type: action.type as 'RUN' | 'DRIBBLE' | 'SHOT',
+      player: action.playerId,
+      to_position: action.toPosition,
+    };
+  });
 
-    // Draw field border
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(padding, padding, width - padding * 2, height - padding * 2);
+  return {
+    field: {
+      type: diagramData.field.type,
+      markings: diagramData.field.markings,
+      goals: diagramData.field.goals,
+    },
+    players: diagramData.players.map(p => ({
+      id: p.id,
+      role: p.role,
+      position: p.position,
+    })),
+    cones: diagramData.cones.map(c => ({ position: c.position })),
+    cone_lines: diagramData.coneLines.map(cl => ({
+      from_cone: coneIdToIndex[cl.fromConeId] ?? 0,
+      to_cone: coneIdToIndex[cl.toConeId] ?? 0,
+    })),
+    balls: diagramData.balls.map(b => ({ position: b.position })),
+    goals: goals.map(g => ({ position: g.position, rotation: g.rotation })),
+    mini_goals: miniGoals.map(g => ({ position: g.position, rotation: g.rotation })),
+    actions,
+  };
+}
 
-    // Convert field coords to canvas
-    const toCanvas = (x: number, y: number) => ({
-      x: padding + (x / 100) * (width - padding * 2),
-      y: padding + ((100 - y) / 100) * (height - padding * 2),
-    });
+// Format text with bullet points (matches DrillDetailModal)
+const formatDrillText = (text?: string): ReactNode => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const elements: ReactNode[] = [];
+  let listItems: ReactNode[] = [];
 
-    // Draw cone lines
-    drill.diagramData.coneLines.forEach((line) => {
-      const fromCone = drill.diagramData.cones.find(c => c.id === line.fromConeId);
-      const toCone = drill.diagramData.cones.find(c => c.id === line.toConeId);
-      if (fromCone && toCone) {
-        const from = toCanvas(fromCone.position.x, fromCone.position.y);
-        const to = toCanvas(toCone.position.x, toCone.position.y);
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.strokeStyle = '#f4a261';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-    });
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="list-disc list-inside space-y-2 mb-4">
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
 
-    // Draw goals
-    drill.diagramData.goals.forEach((goal) => {
-      const pos = toCanvas(goal.position.x, goal.position.y);
-      const goalWidth = goal.size === 'full' ? 50 : 25;
-      const goalDepth = goal.size === 'full' ? 12 : 6;
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
-      ctx.rotate((goal.rotation * Math.PI) / 180);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-goalWidth / 2, 0);
-      ctx.lineTo(-goalWidth / 2, -goalDepth);
-      ctx.lineTo(goalWidth / 2, -goalDepth);
-      ctx.lineTo(goalWidth / 2, 0);
-      ctx.stroke();
-      ctx.restore();
-    });
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed) { flushList(); return; }
+    const isBullet = trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-');
+    const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.+)/);
+    if (isBullet) {
+      listItems.push(<li key={index} className="text-foreground">{trimmed.replace(/^[•*-]\s*/, '')}</li>);
+      return;
+    }
+    if (numberedMatch) {
+      listItems.push(<li key={index} className="text-foreground">{numberedMatch[2]}</li>);
+      return;
+    }
+    flushList();
+    elements.push(<p key={index} className="mb-3 text-foreground leading-relaxed">{trimmed}</p>);
+  });
+  flushList();
+  return elements.length > 0 ? elements : null;
+};
 
-    // Draw cones
-    drill.diagramData.cones.forEach((cone) => {
-      const pos = toCanvas(cone.position.x, cone.position.y);
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y - 8);
-      ctx.lineTo(pos.x - 8, pos.y + 8);
-      ctx.lineTo(pos.x + 8, pos.y + 8);
-      ctx.closePath();
-      ctx.fillStyle = '#f4a261';
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-
-    // Draw balls
-    drill.diagramData.balls.forEach((ball) => {
-      const pos = toCanvas(ball.position.x, ball.position.y);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-
-    // Draw players
-    drill.diagramData.players.forEach((player) => {
-      const pos = toCanvas(player.position.x, player.position.y);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 12, 0, Math.PI * 2);
-      ctx.fillStyle = PLAYER_COLORS[player.role];
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Player ID
-      ctx.fillStyle = player.role === 'GOALKEEPER' ? '#000000' : '#ffffff';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(player.id, pos.x, pos.y);
-    });
-
-    // Draw actions
-    drill.diagramData.actions.forEach((action) => {
-      let fromPos: { x: number; y: number } | null = null;
-      let toPos: { x: number; y: number } | null = null;
-
-      if (action.type === 'PASS') {
-        const fromPlayer = drill.diagramData.players.find(p => p.id === action.fromPlayerId);
-        const toPlayer = drill.diagramData.players.find(p => p.id === action.toPlayerId);
-        if (fromPlayer && toPlayer) {
-          fromPos = toCanvas(fromPlayer.position.x, fromPlayer.position.y);
-          toPos = toCanvas(toPlayer.position.x, toPlayer.position.y);
-        }
-      } else {
-        const player = drill.diagramData.players.find(p => p.id === action.playerId);
-        if (player) {
-          fromPos = toCanvas(player.position.x, player.position.y);
-          toPos = toCanvas(action.toPosition.x, action.toPosition.y);
-        }
-      }
-
-      if (!fromPos || !toPos) return;
-
-      const colors = {
-        PASS: '#ffffff',
-        RUN: '#facc15',
-        DRIBBLE: '#ffffff',
-        SHOT: '#ef4444',
-      };
-
-      ctx.strokeStyle = colors[action.type];
-      ctx.lineWidth = 2;
-      if (action.type === 'PASS' || action.type === 'DRIBBLE') {
-        ctx.setLineDash([6, 4]);
-      } else {
-        ctx.setLineDash([]);
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(fromPos.x, fromPos.y);
-      ctx.lineTo(toPos.x, toPos.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Arrow head
-      const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x);
-      ctx.beginPath();
-      ctx.moveTo(toPos.x, toPos.y);
-      ctx.lineTo(toPos.x - 10 * Math.cos(angle - Math.PI / 6), toPos.y - 10 * Math.sin(angle - Math.PI / 6));
-      ctx.moveTo(toPos.x, toPos.y);
-      ctx.lineTo(toPos.x - 10 * Math.cos(angle + Math.PI / 6), toPos.y - 10 * Math.sin(angle + Math.PI / 6));
-      ctx.stroke();
-    });
-  }, [drill]);
+export function CustomDrillDetailModal({ drill, isOpen, onClose }: CustomDrillDetailModalProps) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const navigate = useNavigate();
 
   if (!drill) return null;
 
-  const { formData, diagramData } = drill;
+  const { formData } = drill;
+  const drillData = toRendererData(drill);
+
+  const hasSetup = !!formData.setupText;
+  const hasInstructions = !!formData.instructionsText;
+  const hasVariations = !!formData.variationsText;
+  const hasCoachingPoints = !!formData.coachingPointsText;
+  const defaultTab = hasSetup ? 'setup' : hasInstructions ? 'instructions' : hasVariations ? 'variations' : 'coaching';
+
+  const handleEdit = () => {
+    onClose();
+    navigate(`/?edit=${drill.id}`);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{formData.name || 'Untitled Drill'}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-4xl p-0 max-h-[95vh] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+          <div className="p-6">
+            {/* Header */}
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-2xl md:text-3xl font-bold text-foreground">
+                {formData.name || 'Untitled Drill'}
+              </DialogTitle>
+            </DialogHeader>
 
-        <ScrollArea className="h-[calc(90vh-120px)]">
-          <div className="space-y-6 pr-4">
-            {/* Diagram */}
-            <div className="bg-field rounded-lg overflow-hidden">
-              <canvas
-                ref={canvasRef}
-                width={600}
-                height={450}
-                className="w-full h-auto"
-              />
-            </div>
-
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2">
+            {/* Badges Bar */}
+            <div className="flex flex-wrap gap-2 mb-6">
               {formData.category && (
-                <Badge variant="secondary">{formData.category}</Badge>
+                <span className={cn('badge-pill font-medium', getCategoryColor(formData.category))}>
+                  {formData.category}
+                </span>
               )}
               {formData.difficulty && (
-                <Badge
-                  className={cn(
-                    formData.difficulty === 'EASY'
-                      ? 'bg-emerald-500/10 text-emerald-600'
-                      : formData.difficulty === 'MEDIUM'
-                      ? 'bg-amber-500/10 text-amber-600'
-                      : 'bg-red-500/10 text-red-600'
-                  )}
-                >
+                <span className={cn('badge-pill font-medium', getDifficultyColor(formData.difficulty))}>
                   {formData.difficulty.charAt(0) + formData.difficulty.slice(1).toLowerCase()}
-                </Badge>
+                </span>
               )}
               {formData.playerCount && (
-                <Badge variant="outline">👥 {formData.playerCount}</Badge>
+                <span className="badge-pill badge-muted">
+                  <Users className="h-3 w-3" />
+                  {formData.playerCount} players
+                </span>
               )}
               {formData.duration && (
-                <Badge variant="outline">⏱ {formData.duration}</Badge>
+                <span className="badge-pill badge-muted">
+                  <Clock className="h-3 w-3" />
+                  {formData.duration} min
+                </span>
               )}
               {formData.ageGroup && (
-                <Badge variant="outline">🎯 {formData.ageGroup}</Badge>
+                <span className="badge-pill badge-muted">
+                  <GraduationCap className="h-3 w-3" />
+                  {formData.ageGroup}
+                </span>
               )}
             </div>
 
-            {/* Description */}
+            {/* Diagram Section */}
+            <div className="relative bg-card rounded-xl shadow-md border border-border p-4 mb-6">
+              <div className="bg-field rounded-xl overflow-hidden">
+                <DrillCanvasRenderer
+                  drill={drillData}
+                  width={900}
+                  height={600}
+                  className="w-full h-auto rounded-xl"
+                />
+              </div>
+              <div className="absolute bottom-4 right-4 flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setIsFullscreen(true)}>
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Overview */}
             {formData.description && (
-              <div>
-                <h4 className="font-semibold text-foreground mb-2">Overview</h4>
-                <p className="text-muted-foreground">{formData.description}</p>
+              <div className="bg-primary/5 rounded-xl p-4 mb-6 border border-primary/10">
+                <h2 className="font-semibold text-lg mb-2 text-foreground flex items-center gap-2">
+                  <span className="text-primary">📋</span> Overview
+                </h2>
+                <p className="text-muted-foreground leading-relaxed">{formData.description}</p>
               </div>
             )}
 
-            {/* Tabs for details */}
-            <Tabs defaultValue="setup" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="setup">Setup</TabsTrigger>
-                <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                <TabsTrigger value="coaching">Coaching</TabsTrigger>
-                <TabsTrigger value="variations">Variations</TabsTrigger>
-              </TabsList>
-              <TabsContent value="setup" className="mt-4">
-                <div className="text-muted-foreground whitespace-pre-wrap">
-                  {formData.setupText || 'No setup instructions provided.'}
-                </div>
-              </TabsContent>
-              <TabsContent value="instructions" className="mt-4">
-                <div className="text-muted-foreground whitespace-pre-wrap">
-                  {formData.instructionsText || 'No instructions provided.'}
-                </div>
-              </TabsContent>
-              <TabsContent value="coaching" className="mt-4">
-                <div className="text-muted-foreground whitespace-pre-wrap">
-                  {formData.coachingPointsText || 'No coaching points provided.'}
-                </div>
-              </TabsContent>
-              <TabsContent value="variations" className="mt-4">
-                <div className="text-muted-foreground whitespace-pre-wrap">
-                  {formData.variationsText || 'No variations provided.'}
-                </div>
-              </TabsContent>
-            </Tabs>
+            {/* Tabbed Content */}
+            {(hasSetup || hasInstructions || hasVariations || hasCoachingPoints) && (
+              <Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 h-auto">
+                  {hasSetup && (
+                    <TabsTrigger value="setup" className="flex items-center gap-1 py-2">
+                      <ClipboardList className="h-4 w-4" />
+                      <span className="hidden sm:inline">Setup</span>
+                    </TabsTrigger>
+                  )}
+                  {hasInstructions && (
+                    <TabsTrigger value="instructions" className="flex items-center gap-1 py-2">
+                      <Play className="h-4 w-4" />
+                      <span className="hidden sm:inline">Instructions</span>
+                    </TabsTrigger>
+                  )}
+                  {hasVariations && (
+                    <TabsTrigger value="variations" className="flex items-center gap-1 py-2">
+                      <RefreshCw className="h-4 w-4" />
+                      <span className="hidden sm:inline">Variations</span>
+                    </TabsTrigger>
+                  )}
+                  {hasCoachingPoints && (
+                    <TabsTrigger value="coaching" className="flex items-center gap-1 py-2">
+                      <Lightbulb className="h-4 w-4" />
+                      <span className="hidden sm:inline">Coaching</span>
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+
+                {hasSetup && (
+                  <TabsContent value="setup" className="bg-card rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">{formatDrillText(formData.setupText)}</div>
+                  </TabsContent>
+                )}
+                {hasInstructions && (
+                  <TabsContent value="instructions" className="bg-card rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">{formatDrillText(formData.instructionsText)}</div>
+                  </TabsContent>
+                )}
+                {hasVariations && (
+                  <TabsContent value="variations" className="bg-secondary/30 rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">{formatDrillText(formData.variationsText)}</div>
+                  </TabsContent>
+                )}
+                {hasCoachingPoints && (
+                  <TabsContent value="coaching" className="bg-accent/30 rounded-xl p-4 mt-4 border border-border">
+                    <div className="prose prose-sm max-w-none">{formatDrillText(formData.coachingPointsText)}</div>
+                  </TabsContent>
+                )}
+              </Tabs>
+            )}
+
+            {/* Actions Footer */}
+            <div className="flex gap-3 pt-6 border-t border-border mt-6">
+              <Button variant="outline" onClick={handleEdit} className="flex-1">
+                <Edit className="h-4 w-4" />
+                Edit Drill
+              </Button>
+            </div>
           </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen Modal */}
+      <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-4">
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-2 backdrop-blur-sm"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="bg-field rounded-xl overflow-hidden">
+            <DrillCanvasRenderer
+              drill={drillData}
+              width={900}
+              height={600}
+              className="w-full h-auto max-h-[85vh] object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

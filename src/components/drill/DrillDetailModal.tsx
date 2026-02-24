@@ -384,10 +384,11 @@ export function DrillDetailModal({
             )}
 
             {/* Actions Footer */}
-            <div className="flex flex-wrap gap-3 pt-6 border-t border-border mt-6">
+            <div className="flex gap-3 pt-6 border-t border-border mt-6">
               <Button
                 variant={isSaved ? 'secondary' : 'default'}
                 onClick={() => onSave(drill)}
+                className="flex-1"
               >
                 {isSaved ? (
                   <>
@@ -403,15 +404,11 @@ export function DrillDetailModal({
               </Button>
               
               {onUseAsTemplate && (
-                <Button variant="outline" onClick={() => onUseAsTemplate(drill)}>
+                <Button variant="outline" onClick={() => onUseAsTemplate(drill)} className="flex-1">
                   <Sparkles className="h-4 w-4" />
                   Use as Template
                 </Button>
               )}
-              
-              <Button variant="ghost" onClick={onClose}>
-                Back to Library
-              </Button>
             </div>
           </div>
         </DialogContent>
