@@ -12,6 +12,7 @@ import {
   fetchFilteredDrills,
   filterByPlayerCount,
   filterByDuration,
+  filterByAgeGroup,
   mapLibraryDrillToDrill,
   LibraryDrillMeta,
   DrillFilterParams,
@@ -65,7 +66,7 @@ export default function DrillLibrary() {
         // Only use server-side filters for exact match fields
         const serverFilters: DrillFilterParams = {};
         if (filters.category) serverFilters.category = filters.category;
-        if (filters.age_group) serverFilters.age_group = filters.age_group;
+        // age_group is now filtered client-side with grouped categories
         if (filters.difficulty) serverFilters.difficulty = filters.difficulty;
         if (filters.search) serverFilters.search = filters.search;
         if (filters.has_animation !== undefined) serverFilters.has_animation = filters.has_animation;
@@ -84,6 +85,9 @@ export default function DrillLibrary() {
           
           // Filter by duration (client-side)
           filteredDrills = filterByDuration(filteredDrills, filters.duration);
+          
+          // Filter by age group category (client-side)
+          filteredDrills = filterByAgeGroup(filteredDrills, filters.age_group);
           
           setDrillsMeta(filteredDrills);
         }

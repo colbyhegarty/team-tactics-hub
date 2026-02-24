@@ -298,6 +298,41 @@ export function filterByDuration(
   });
 }
 
+// Client-side filter for grouped age categories (U6-U8, U10-U12, U14-U16, U17+)
+export function filterByAgeGroup(
+  drills: LibraryDrillMeta[],
+  selectedAgeGroup?: string
+): LibraryDrillMeta[] {
+  if (!selectedAgeGroup || selectedAgeGroup === 'All') return drills;
+
+  // Define max age for each group (drills with age_group number <= max are included)
+  const groupMaxAge: Record<string, number> = {
+    'U6-U8': 8,
+    'U10-U12': 12,
+    'U14-U16': 16,
+    'U17+': 999,
+  };
+  const groupMinAge: Record<string, number> = {
+    'U6-U8': 0,
+    'U10-U12': 9,
+    'U14-U16': 13,
+    'U17+': 17,
+  };
+
+  const maxAge = groupMaxAge[selectedAgeGroup];
+  const minAge = groupMinAge[selectedAgeGroup];
+  if (maxAge === undefined) return drills;
+
+  return drills.filter(drill => {
+    if (!drill.age_group) return true;
+    // Extract first number from age_group string like "9+", "6+", "13+", "U12", etc.
+    const match = drill.age_group.match(/(\d+)/);
+    if (!match) return true;
+    const ageNum = parseInt(match[1]);
+    return ageNum >= minAge && ageNum <= maxAge;
+  });
+}
+
 // Fetch filtered drills using Supabase
 export async function fetchFilteredDrills(filters: DrillFilterParams): Promise<LibraryListResponse> {
   let query = supabase.from('drill_list').select('*');
@@ -305,9 +340,7 @@ export async function fetchFilteredDrills(filters: DrillFilterParams): Promise<L
   if (filters.category && filters.category !== 'All') {
     query = query.ilike('category', `%${filters.category}%`);
   }
-  if (filters.age_group && filters.age_group !== 'All') {
-    query = query.eq('age_group', filters.age_group);
-  }
+  // age_group is now filtered client-side with grouped categories
   if (filters.difficulty && filters.difficulty !== 'All') {
     query = query.eq('difficulty', filters.difficulty);
   }
