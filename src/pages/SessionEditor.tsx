@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ActivityCard } from '@/components/session/ActivityCard';
 import { AddActivityModal } from '@/components/session/AddActivityModal';
 import { Session, SessionActivity, EquipmentItem } from '@/types/session';
 import { getSession, saveSession, updateSession } from '@/lib/sessionStorage';
 import { exportSessionToPDF } from '@/lib/sessionPdf';
 import { useToast } from '@/hooks/use-toast';
+import { ChevronDown } from 'lucide-react';
 
 const emptySession = (): Omit<Session, 'id' | 'created_at' | 'updated_at'> => ({
   title: '',
@@ -39,6 +41,8 @@ export default function SessionEditor() {
   const [newEquipName, setNewEquipName] = useState('');
   const [newEquipQty, setNewEquipQty] = useState('');
   const [existingId, setExistingId] = useState<string | null>(null);
+  const [equipOpen, setEquipOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
 
   useEffect(() => {
     if (!isNew && id) {
@@ -133,23 +137,23 @@ export default function SessionEditor() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="px-4 py-4 flex items-center gap-3">
+        <div className="px-4 py-3 sm:py-4 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/sessions')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
             {isNew ? 'New Session' : 'Edit Session'}
           </h1>
         </div>
       </header>
 
-      <div className="container max-w-3xl py-6 px-4 space-y-6">
+      <div className="container max-w-3xl py-4 sm:py-6 px-3 sm:px-4 space-y-4 sm:space-y-6">
         {/* Session Details */}
         <div className="form-section">
-          <h2 className="form-section-title">Session Details</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <h2 className="form-section-title text-sm sm:text-base">Session Details</h2>
+          <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <Label>Session Title</Label>
+              <Label className="text-xs sm:text-sm">Session Title</Label>
               <Input
                 value={session.title}
                 onChange={(e) => setSession({ ...session, title: e.target.value })}
@@ -158,7 +162,7 @@ export default function SessionEditor() {
               />
             </div>
             <div>
-              <Label>Team / Group</Label>
+              <Label className="text-xs sm:text-sm">Team / Group</Label>
               <Input
                 value={session.team_name}
                 onChange={(e) => setSession({ ...session, team_name: e.target.value })}
@@ -167,9 +171,9 @@ export default function SessionEditor() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <Label>Date</Label>
+              <Label className="text-xs sm:text-sm">Date</Label>
               <Input
                 type="date"
                 value={session.session_date}
@@ -178,7 +182,7 @@ export default function SessionEditor() {
               />
             </div>
             <div>
-              <Label>Time</Label>
+              <Label className="text-xs sm:text-sm">Time</Label>
               <Input
                 type="time"
                 value={session.session_time}
@@ -188,11 +192,11 @@ export default function SessionEditor() {
             </div>
           </div>
           <div>
-            <Label>Session Goals</Label>
+            <Label className="text-xs sm:text-sm">Session Goals</Label>
             <Textarea
               value={session.session_goals}
               onChange={(e) => setSession({ ...session, session_goals: e.target.value })}
-              placeholder="What do you want to achieve in this session?"
+              placeholder="What do you want to achieve?"
               rows={2}
               className="mt-1"
             />
@@ -201,14 +205,14 @@ export default function SessionEditor() {
 
         {/* Activities */}
         <div className="form-section">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="form-section-title mb-0">Activities</h2>
-            <span className="text-sm text-muted-foreground">Total: {totalDuration} min</span>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="form-section-title mb-0 text-sm sm:text-base">Activities</h2>
+            <span className="text-xs sm:text-sm text-muted-foreground">{totalDuration} min</span>
           </div>
 
           {activities.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">
-              No activities yet. Add your first activity below.
+            <p className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
+              No activities yet. Add your first below.
             </p>
           ) : (
             <div className="space-y-3">
@@ -237,85 +241,116 @@ export default function SessionEditor() {
               setEditingActivity(null);
               setShowAddModal(true);
             }}
-            className="mt-4 w-full rounded-lg border-2 border-dashed border-border py-3 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="mt-3 sm:mt-4 w-full rounded-lg border-2 border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             <Plus className="inline h-4 w-4 mr-1" /> Add Activity
           </button>
         </div>
 
-        {/* Equipment */}
-        <div className="form-section">
-          <h2 className="form-section-title">Equipment Checklist</h2>
-          {equipment.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {equipment.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm"
-                >
-                  <Checkbox
-                    checked={item.checked}
-                    onCheckedChange={() =>
-                      setEquipment(prev =>
-                        prev.map((e, i) => (i === index ? { ...e, checked: !e.checked } : e))
-                      )
-                    }
-                  />
-                  <span className="text-foreground">{item.name}</span>
-                  {item.quantity > 0 && (
-                    <span className="text-muted-foreground">({item.quantity})</span>
-                  )}
-                  <button
-                    onClick={() => setEquipment(prev => prev.filter((_, i) => i !== index))}
-                    className="text-muted-foreground hover:text-destructive"
+        {/* Equipment - collapsible on mobile */}
+        <Collapsible open={equipOpen} onOpenChange={setEquipOpen}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-3 sm:p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors sm:cursor-default"
+            onClick={(e) => {
+              if (window.innerWidth >= 640) {
+                e.preventDefault();
+                setEquipOpen(true);
+              }
+            }}
+          >
+            <span className="flex items-center gap-2 font-semibold text-foreground text-sm sm:text-base">
+              Equipment Checklist
+              {equipment.length > 0 && (
+                <span className="text-xs text-muted-foreground">({equipment.length})</span>
+              )}
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 sm:hidden [[data-state=open]>&]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border border-t-0 border-border rounded-b-xl bg-card px-3 sm:px-4 pb-3 sm:pb-4 pt-3 -mt-2 sm:border-t sm:mt-2 sm:rounded-xl">
+            {equipment.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {equipment.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm"
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                    <Checkbox
+                      checked={item.checked}
+                      onCheckedChange={() =>
+                        setEquipment(prev =>
+                          prev.map((e, i) => (i === index ? { ...e, checked: !e.checked } : e))
+                        )
+                      }
+                    />
+                    <span className="text-foreground">{item.name}</span>
+                    {item.quantity > 0 && (
+                      <span className="text-muted-foreground">({item.quantity})</span>
+                    )}
+                    <button
+                      onClick={() => setEquipment(prev => prev.filter((_, i) => i !== index))}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={newEquipName}
+                onChange={(e) => setNewEquipName(e.target.value)}
+                placeholder="Add equipment..."
+                className="flex-1"
+                onKeyDown={(e) => e.key === 'Enter' && addEquipment()}
+              />
+              <Input
+                type="number"
+                value={newEquipQty}
+                onChange={(e) => setNewEquipQty(e.target.value)}
+                placeholder="Qty"
+                className="w-16 sm:w-20"
+              />
+              <Button variant="secondary" size="sm" onClick={addEquipment}>
+                Add
+              </Button>
             </div>
-          )}
-          <div className="flex gap-2">
-            <Input
-              value={newEquipName}
-              onChange={(e) => setNewEquipName(e.target.value)}
-              placeholder="Add equipment..."
-              className="flex-1"
-              onKeyDown={(e) => e.key === 'Enter' && addEquipment()}
-            />
-            <Input
-              type="number"
-              value={newEquipQty}
-              onChange={(e) => setNewEquipQty(e.target.value)}
-              placeholder="Qty"
-              className="w-20"
-            />
-            <Button variant="secondary" onClick={addEquipment}>
-              Add
-            </Button>
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* Coach Notes */}
-        <div className="form-section">
-          <h2 className="form-section-title">Coach Notes</h2>
-          <p className="text-xs text-muted-foreground mb-2">
-            Private notes — not included in PDF export
-          </p>
-          <Textarea
-            value={session.coach_notes}
-            onChange={(e) => setSession({ ...session, coach_notes: e.target.value })}
-            placeholder="Notes about players, things to remember, etc."
-            rows={3}
-          />
-        </div>
+        {/* Coach Notes - collapsible on mobile */}
+        <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-3 sm:p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors sm:cursor-default"
+            onClick={(e) => {
+              if (window.innerWidth >= 640) {
+                e.preventDefault();
+                setNotesOpen(true);
+              }
+            }}
+          >
+            <span className="flex items-center gap-2 font-semibold text-foreground text-sm sm:text-base">
+              Coach Notes
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 sm:hidden [[data-state=open]>&]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border border-t-0 border-border rounded-b-xl bg-card px-3 sm:px-4 pb-3 sm:pb-4 pt-3 -mt-2 sm:border-t sm:mt-2 sm:rounded-xl">
+            <p className="text-xs text-muted-foreground mb-2">
+              Private notes — not included in PDF export
+            </p>
+            <Textarea
+              value={session.coach_notes}
+              onChange={(e) => setSession({ ...session, coach_notes: e.target.value })}
+              placeholder="Notes about players, things to remember, etc."
+              rows={3}
+            />
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pb-8">
-          <Button variant="outline" onClick={handleExport}>
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8">
+          <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
             📄 Export PDF
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
             {saving ? 'Saving...' : 'Save Session'}
           </Button>
         </div>

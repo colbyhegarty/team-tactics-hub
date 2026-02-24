@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, Trash2, Save, BookmarkX, PenTool, Plus, ChevronDown, Mail, Users as UsersIcon } from 'lucide-react';
+import { User, Settings, Trash2, Save, BookmarkX, PenTool, Plus, ChevronDown, Camera, Users as UsersIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,7 @@ import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
 import { CustomDrillDetailModal } from '@/components/drill/CustomDrillDetailModal';
 import { getUserProfile, saveUserProfile, getSavedDrills, removeDrill, clearAllData } from '@/lib/storage';
 import { getCustomDrills, deleteCustomDrill, clearCustomDrills } from '@/lib/customDrillStorage';
-import { UserProfile, Drill, AgeGroup, SkillLevel } from '@/types/drill';
+import { UserProfile, Drill, AgeGroup } from '@/types/drill';
 import { CustomDrill } from '@/types/customDrill';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -40,8 +40,6 @@ const ageGroups: AgeGroup[] = [
   'U8', 'U10', 'U12', 'U14', 'U16', 'U18',
   'College', 'Semi-Pro', 'Professional', 'Recreational Adult', 'Not Specified',
 ];
-
-const skillLevels: SkillLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'Elite', 'Not Specified'];
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -52,6 +50,7 @@ export default function Profile() {
   const [selectedCustomDrill, setSelectedCustomDrill] = useState<CustomDrill | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSavedDrills(getSavedDrills());
@@ -72,31 +71,33 @@ export default function Profile() {
     });
   };
 
-  const handleViewDrill = (drill: Drill) => {
-    setSelectedDrill(drill);
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      setProfile(prev => ({ ...prev, avatarUrl: dataUrl }));
+      setHasChanges(true);
+    };
+    reader.readAsDataURL(file);
   };
+
+  const handleViewDrill = (drill: Drill) => setSelectedDrill(drill);
 
   const handleRemoveDrill = (drill: Drill) => {
     removeDrill(drill.id);
     setSavedDrills(prev => prev.filter(d => d.id !== drill.id));
-    toast({
-      title: 'Drill Removed',
-      description: 'Removed from your saved drills.',
-    });
+    toast({ title: 'Drill Removed', description: 'Removed from your saved drills.' });
   };
 
   const handleDeleteCustomDrill = (id: string) => {
     deleteCustomDrill(id);
     setCustomDrills(prev => prev.filter(d => d.id !== id));
-    toast({
-      title: 'Drill Deleted',
-      description: 'Your custom drill has been deleted.',
-    });
+    toast({ title: 'Drill Deleted', description: 'Your custom drill has been deleted.' });
   };
 
-  const handleViewCustomDrill = (drill: CustomDrill) => {
-    setSelectedCustomDrill(drill);
-  };
+  const handleViewCustomDrill = (drill: CustomDrill) => setSelectedCustomDrill(drill);
 
   const handleClearAllData = () => {
     clearAllData();
@@ -104,21 +105,11 @@ export default function Profile() {
     setProfile(getUserProfile());
     setSavedDrills([]);
     setCustomDrills([]);
-    toast({
-      title: 'Data Cleared',
-      description: 'All your data has been deleted.',
-      variant: 'destructive',
-    });
+    toast({ title: 'Data Cleared', description: 'All your data has been deleted.', variant: 'destructive' });
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || 'DF';
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'DF';
 
   return (
     <div className="min-h-screen">
@@ -139,18 +130,34 @@ export default function Profile() {
         </div>
       </header>
 
-      <div className="container max-w-2xl py-6 px-4 space-y-8">
-        {/* User Info Section - Enhanced Profile Card */}
+      <div className="container max-w-2xl py-6 px-4 space-y-6">
+        {/* Profile Card */}
         <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
           <div className="h-24 bg-gradient-to-r from-primary/80 to-primary/40" />
           <div className="px-6 pb-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-10">
-              <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
-                <AvatarImage src={profile.avatarUrl} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                  {getInitials(profile.name)}
-                </AvatarFallback>
-              </Avatar>
+              {/* Avatar with upload */}
+              <div className="relative group">
+                <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
+                  <AvatarImage src={profile.avatarUrl} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                    {getInitials(profile.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <Camera className="h-5 w-5 text-white" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
               <div className="text-center sm:text-left pb-1 flex-1">
                 <h3 className="text-xl font-bold text-foreground">
                   {profile.name || 'Coach'}
@@ -177,9 +184,20 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground">Age Group</p>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Editable fields */}
-            <div className="space-y-3 mt-5">
+        {/* Settings - Collapsible (contains name, email, team, age group) */}
+        <Collapsible>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors">
+            <span className="flex items-center gap-2 font-semibold text-foreground">
+              <Settings className="h-4 w-4" />
+              Settings
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border border-t-0 border-border rounded-b-xl bg-card px-4 pb-4 pt-3 -mt-2">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Input
@@ -210,71 +228,22 @@ export default function Profile() {
                   onChange={(e) => handleProfileChange('teamName', e.target.value)}
                 />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Default Settings - Collapsible */}
-        <Collapsible>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors">
-            <span className="flex items-center gap-2 font-semibold text-foreground">
-              <Settings className="h-4 w-4" />
-              Default Settings
-            </span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="border border-t-0 border-border rounded-b-xl bg-card px-4 pb-4 pt-3 -mt-2">
-            <p className="text-sm text-muted-foreground mb-4">
-              These will pre-fill the Generate Drill form
-            </p>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
-                  <Select
-                    value={profile.defaultAgeGroup}
-                    onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ageGroups.map(age => (
-                        <SelectItem key={age} value={age}>{age}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="defaultSkillLevel">Default Skill Level</Label>
-                  <Select
-                    value={profile.defaultSkillLevel}
-                    onValueChange={(value) => handleProfileChange('defaultSkillLevel', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {skillLevels.map(level => (
-                        <SelectItem key={level} value={level}>{level}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultPlayerCount">Typical Player Count</Label>
-                <Input
-                  id="defaultPlayerCount"
-                  type="number"
-                  min={2}
-                  max={30}
-                  value={profile.defaultPlayerCount}
-                  onChange={(e) => handleProfileChange('defaultPlayerCount', parseInt(e.target.value) || 12)}
-                />
+                <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
+                <Select
+                  value={profile.defaultAgeGroup}
+                  onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ageGroups.map(age => (
+                      <SelectItem key={age} value={age}>{age}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button
@@ -303,7 +272,6 @@ export default function Profile() {
           </TabsList>
 
           <TabsContent value="custom" className="mt-4">
-
             {customDrills.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-border rounded-lg">
                 <PenTool className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
@@ -330,9 +298,7 @@ export default function Profile() {
             )}
           </TabsContent>
 
-          {/* Saved Drills Tab */}
           <TabsContent value="saved" className="mt-4">
-
             {savedDrills.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-border rounded-lg">
                 <BookmarkX className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
@@ -360,13 +326,12 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
 
-        {/* Account Section */}
+        {/* Danger Zone */}
         <div className="form-section border-destructive/30">
           <div className="form-section-title text-destructive">
             <Trash2 className="h-4 w-4" />
             Danger Zone
           </div>
-
           <div className="space-y-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -394,7 +359,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Drill Detail Modal */}
       <DrillDetailModal
         drill={selectedDrill}
         isOpen={selectedDrill !== null}
@@ -402,8 +366,6 @@ export default function Profile() {
         isSaved={true}
         onSave={handleRemoveDrill}
       />
-
-      {/* Custom Drill Detail Modal */}
       <CustomDrillDetailModal
         drill={selectedCustomDrill}
         isOpen={selectedCustomDrill !== null}
