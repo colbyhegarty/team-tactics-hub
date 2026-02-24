@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Loader2, Library } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2, Library, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
@@ -21,6 +21,8 @@ import { Drill } from '@/types/drill';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
+const DRILLS_PER_PAGE = 12;
+
 export default function DrillLibrary() {
   const [categories, setCategories] = useState<string[]>([]);
   const [ageGroups, setAgeGroups] = useState<string[]>([]);
@@ -33,6 +35,7 @@ export default function DrillLibrary() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDrill, setIsLoadingDrill] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -101,6 +104,16 @@ export default function DrillLibrary() {
 
   // Convert meta to Drill for display
   const drillsForDisplay: Drill[] = drillsMeta.map(meta => mapLibraryDrillToDrill(meta));
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(drillsForDisplay.length / DRILLS_PER_PAGE));
+  const paginatedDrills = useMemo(() => {
+    const start = (currentPage - 1) * DRILLS_PER_PAGE;
+    return drillsForDisplay.slice(start, start + DRILLS_PER_PAGE);
+  }, [drillsForDisplay, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [filters]);
 
   const handleViewDrill = async (drill: Drill) => {
     setIsLoadingDrill(true);
@@ -186,8 +199,8 @@ export default function DrillLibrary() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
+      {/* Header - not sticky on mobile so filters scroll away */}
+      <header className="border-b border-border bg-background md:sticky md:top-0 md:z-40 md:bg-background/95 md:backdrop-blur-sm">
         <div className="px-4 py-4">
           <div className="flex items-center gap-3 mb-1">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary md:hidden">
@@ -212,6 +225,7 @@ export default function DrillLibrary() {
             onFilterChange={setFilters}
             resultCount={drillsForDisplay.length}
             isLoading={isLoading}
+            showAdvanced={false}
           />
         </div>
       </header>
@@ -242,18 +256,70 @@ export default function DrillLibrary() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {drillsForDisplay.map(drill => (
-              <DrillCard
-                key={drill.id}
-                drill={drill}
-                isSaved={isDrillCurrentlySaved(drill.id)}
-                onView={handleViewDrill}
-                onSave={handleSaveDrill}
-                onQuickView={handleQuickPreview}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {paginatedDrills.map(drill => (
+                <DrillCard
+                  key={drill.id}
+                  drill={drill}
+                  isSaved={isDrillCurrentlySaved(drill.id)}
+                  onView={handleViewDrill}
+                  onSave={handleSaveDrill}
+                  onQuickView={handleQuickPreview}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">Previous</span>
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, idx, arr) => (
+                      <span key={page} className="contents">
+                        {idx > 0 && arr[idx - 1] !== page - 1 && (
+                          <span className="px-1 text-muted-foreground">…</span>
+                        )}
+                        <Button
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size="sm"
+                          className="w-9 h-9"
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </Button>
+                      </span>
+                    ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <span className="hidden sm:inline mr-1">Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
