@@ -124,10 +124,17 @@ export default function Profile() {
       {/* Header */}
       <header className="border-b border-border bg-background">
         <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-foreground md:text-3xl">My Profile</h1>
-          <p className="mt-1 text-muted-foreground">
-            Manage your settings and saved drills
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary md:hidden">
+              <User className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground md:text-3xl">My Profile</h1>
+              <p className="text-sm text-muted-foreground">
+                Manage your settings and saved drills
+              </p>
+            </div>
+          </div>
         </div>
       </header>
 

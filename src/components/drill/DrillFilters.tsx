@@ -69,13 +69,13 @@ export function DrillFilters({
       </div>
 
       {/* Filter Row */}
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap gap-2 md:gap-3 items-center">
         {/* Category - dynamic from database */}
         <Select
           value={filters.category || 'All'}
           onValueChange={(value) => updateFilter('category', value)}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[130px] md:w-[160px] h-9 text-xs md:text-sm">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -95,7 +95,7 @@ export function DrillFilters({
               value={filters.age_group || 'All'}
               onValueChange={(value) => updateFilter('age_group', value)}
             >
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-[110px] md:w-[130px] h-9 text-xs md:text-sm">
                 <SelectValue placeholder="Age Group" />
               </SelectTrigger>
               <SelectContent>
@@ -113,7 +113,7 @@ export function DrillFilters({
               value={filters.difficulty || 'All'}
               onValueChange={(value) => updateFilter('difficulty', value)}
             >
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-[110px] md:w-[130px] h-9 text-xs md:text-sm">
                 <SelectValue placeholder="Difficulty" />
               </SelectTrigger>
               <SelectContent>
@@ -133,7 +133,7 @@ export function DrillFilters({
                 placeholder="Min"
                 value={filters.min_players || ''}
                 onChange={(e) => updateFilter('min_players', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-20"
+                className="w-20 h-9 text-xs md:text-sm"
                 min={1}
               />
               <span className="text-muted-foreground">-</span>
@@ -142,7 +142,7 @@ export function DrillFilters({
                 placeholder="Max"
                 value={filters.max_players || ''}
                 onChange={(e) => updateFilter('max_players', e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-20"
+                className="w-20 h-9 text-xs md:text-sm"
                 min={1}
               />
               <span className="text-sm text-muted-foreground">players</span>
@@ -153,7 +153,7 @@ export function DrillFilters({
               value={filters.duration || 'Any Duration'}
               onValueChange={(value) => updateFilter('duration', value !== 'Any Duration' ? value : undefined)}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[120px] md:w-[140px] h-9 text-xs md:text-sm">
                 <SelectValue placeholder="Duration" />
               </SelectTrigger>
               <SelectContent>
@@ -177,7 +177,7 @@ export function DrillFilters({
                 }
               }}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[120px] md:w-[140px] h-9 text-xs md:text-sm">
                 <SelectValue placeholder="Animation" />
               </SelectTrigger>
               <SelectContent>
@@ -191,7 +191,7 @@ export function DrillFilters({
 
         {/* Clear Filters */}
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 h-9 text-xs md:text-sm">
             <X className="h-4 w-4" />
             Clear
           </Button>

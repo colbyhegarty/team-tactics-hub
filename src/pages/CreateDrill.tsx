@@ -12,7 +12,7 @@ import {
 import { CustomDrillFormData, DiagramData, CustomDrill } from '@/types/customDrill';
 import { fetchDrillById } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Sparkles, Copy, ArrowLeft } from 'lucide-react';
+import { Sparkles, Copy, ArrowLeft, PenTool } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type StartMode = 'choose' | 'scratch' | 'existing' | 'editing';
@@ -211,10 +211,17 @@ export default function CreateDrill() {
       <div className="min-h-screen">
         <header className="border-b border-border bg-background">
           <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold text-foreground md:text-3xl">Create Custom Drill</h1>
-            <p className="mt-1 text-muted-foreground">
-              Build your own training drill with our visual editor
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary md:hidden">
+                <PenTool className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground md:text-3xl">Create Custom Drill</h1>
+                <p className="text-sm text-muted-foreground">
+                  Build your own training drill with our visual editor
+                </p>
+              </div>
+            </div>
           </div>
         </header>
 
