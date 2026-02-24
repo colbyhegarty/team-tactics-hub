@@ -29,6 +29,7 @@ import {
   ACTION_COLORS as SHARED_ACTION_COLORS,
   RenderContext,
   CANVAS_PADDING,
+  CW,
 } from '@/utils/drillRenderer';
 
 interface DiagramCanvasProps {
@@ -53,43 +54,28 @@ export function DiagramCanvas({
   onPendingActionChange,
 }: DiagramCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = React.useState({ width: 800, height: 600 });
   const [isDragging, setIsDragging] = React.useState(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
-  // Use the shared fixed render context with padding (matches library renderer)
+  // Use CW as internal canvas resolution (same as library renderer)
+  // Full field bounds: 100x100 → square canvas
   const rc = React.useMemo(
-    () => createFixedRenderContext(dimensions.width, dimensions.height, CANVAS_PADDING),
-    [dimensions.width, dimensions.height]
+    () => createFixedRenderContext(CW, CW, CANVAS_PADDING),
+    []
   );
+
+  const canvasWidth = CW;
+  const canvasHeight = CW;
 
   const toField = useCallback((canvasX: number, canvasY: number): FieldPosition => {
     const p = CANVAS_PADDING;
-    const fw = dimensions.width - p * 2;
-    const fh = dimensions.height - p * 2;
+    const fw = canvasWidth - p * 2;
+    const fh = canvasHeight - p * 2;
     return {
       x: Math.max(0, Math.min(100, ((canvasX - p) / fw) * 100)),
       y: Math.max(0, Math.min(100, 100 - ((canvasY - p) / fh) * 100)),
     };
-  }, [dimensions.width, dimensions.height]);
-
-  // Resize observer
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width } = entry.contentRect;
-        const height = width * 0.75; // 4:3 aspect ratio
-        setDimensions({ width, height });
-      }
-    });
-
-    resizeObserver.observe(container);
-    return () => resizeObserver.disconnect();
-  }, []);
+  }, [canvasWidth, canvasHeight]);
 
   // Convert editor diagram data to shared renderer format
   const toRenderData = useCallback(() => {
@@ -151,14 +137,13 @@ export function DiagramCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { width, height } = dimensions;
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
 
     const renderData = toRenderData();
 
     // Use shared renderer for the base drawing
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     drawField(ctx, rc, renderData.field);
     drawSharedConeLines(ctx, rc, renderData.cones, renderData.cone_lines);
 
@@ -227,7 +212,7 @@ export function DiagramCanvas({
     });
     drawSharedBalls(ctx, rc, renderData.balls);
 
-  }, [diagram, dimensions, selectedEntity, pendingActionFrom, rc, toRenderData]);
+  }, [diagram, canvasWidth, canvasHeight, selectedEntity, pendingActionFrom, rc, toRenderData]);
 
   // ─── Interaction handlers ──────────────────────────────────────────────────
 
@@ -444,11 +429,13 @@ export function DiagramCanvas({
   const handleTouchEnd = useCallback(() => { setIsDragging(false); }, []);
 
   return (
-    <div ref={containerRef} className="w-full rounded-xl overflow-hidden">
+    <div className="w-full rounded-xl overflow-hidden">
       <canvas
         ref={canvasRef}
+        width={canvasWidth}
+        height={canvasHeight}
         className="w-full h-auto cursor-crosshair block touch-none"
-        style={{ aspectRatio: '4 / 3', borderRadius: '12px' }}
+        style={{ aspectRatio: `${canvasWidth} / ${canvasHeight}`, borderRadius: '12px' }}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
