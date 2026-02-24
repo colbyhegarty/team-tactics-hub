@@ -216,10 +216,10 @@ export default function CreateDrill() {
                 <PenTool className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground md:text-3xl">Create Custom Drill</h1>
-                <p className="text-sm text-muted-foreground">
-                  Build your own training drill with our visual editor
-                </p>
+              <h1 className="text-2xl font-bold text-foreground md:text-3xl">Create Drill</h1>
+              <p className="text-sm text-muted-foreground hidden md:block">
+                Build your own training drill with our visual editor
+              </p>
               </div>
             </div>
           </div>
@@ -285,7 +285,7 @@ export default function CreateDrill() {
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">
                 {editId ? 'Edit Drill' : 'Create Drill'}
               </h1>
-              <p className="mt-1 text-muted-foreground">
+              <p className="mt-1 text-muted-foreground hidden md:block">
                 {basedOnDrillId ? 'Based on library drill' : 'Design your training drill'}
               </p>
             </div>

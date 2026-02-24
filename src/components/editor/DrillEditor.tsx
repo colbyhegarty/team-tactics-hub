@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash2, Save } from 'lucide-react';
+import { Trash2, Save, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { fetchFilterOptions } from '@/lib/api';
 
 interface DrillEditorProps {
@@ -158,8 +159,8 @@ export function DrillEditor({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - hidden on mobile */}
+      <div className="hidden md:flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">
           {initialDrill ? 'Edit Custom Drill' : 'Create Custom Drill'}
         </h2>
@@ -177,15 +178,32 @@ export function DrillEditor({
 
       {/* Editor Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_220px] gap-4">
-        {/* Tools Panel */}
+        {/* Tools Panel - collapsible on mobile */}
         <div className="order-2 lg:order-1">
-          <ToolsPanel
-            activeTool={tool}
-            onToolChange={setTool}
-            pendingActionFrom={pendingActionFrom}
-            goalRotation={goalRotation}
-            onGoalRotationChange={setGoalRotation}
-          />
+          <div className="hidden lg:block">
+            <ToolsPanel
+              activeTool={tool}
+              onToolChange={setTool}
+              pendingActionFrom={pendingActionFrom}
+              goalRotation={goalRotation}
+              onGoalRotationChange={setGoalRotation}
+            />
+          </div>
+          <Collapsible className="lg:hidden">
+            <CollapsibleTrigger className="w-full flex items-center justify-between bg-[#1a2332] text-white rounded-lg px-4 py-3">
+              <span className="text-sm font-semibold">Tools</span>
+              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ToolsPanel
+                activeTool={tool}
+                onToolChange={setTool}
+                pendingActionFrom={pendingActionFrom}
+                goalRotation={goalRotation}
+                onGoalRotationChange={setGoalRotation}
+              />
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         {/* Canvas */}
@@ -202,15 +220,43 @@ export function DrillEditor({
           />
         </div>
 
-        {/* Properties Panel */}
+        {/* Properties Panel - collapsible on mobile */}
         <div className="order-3">
-          <PropertiesPanel
-            diagram={diagram}
-            selectedEntity={selectedEntity}
-            onDiagramChange={setDiagram}
-            onDeleteSelected={handleDeleteSelected}
-          />
+          <div className="hidden lg:block">
+            <PropertiesPanel
+              diagram={diagram}
+              selectedEntity={selectedEntity}
+              onDiagramChange={setDiagram}
+              onDeleteSelected={handleDeleteSelected}
+            />
+          </div>
+          <Collapsible className="lg:hidden">
+            <CollapsibleTrigger className="w-full flex items-center justify-between bg-[#1a2332] text-white rounded-lg px-4 py-3">
+              <span className="text-sm font-semibold">Properties</span>
+              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <PropertiesPanel
+                diagram={diagram}
+                selectedEntity={selectedEntity}
+                onDiagramChange={setDiagram}
+                onDeleteSelected={handleDeleteSelected}
+              />
+            </CollapsibleContent>
+          </Collapsible>
         </div>
+      </div>
+
+      {/* Mobile-only bottom action buttons */}
+      <div className="flex md:hidden gap-2">
+        <Button variant="outline" onClick={handleClearAll} className="flex-1">
+          <Trash2 className="h-4 w-4 mr-2" />
+          Clear All
+        </Button>
+        <Button onClick={handleSave} disabled={!formData.name.trim()} className="flex-1">
+          <Save className="h-4 w-4 mr-2" />
+          Save Drill
+        </Button>
       </div>
 
       {/* Drill Details Form */}
