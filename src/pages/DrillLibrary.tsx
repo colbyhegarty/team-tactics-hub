@@ -208,7 +208,7 @@ export default function DrillLibrary() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">Drill Library</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground hidden md:block">
                 Browse and discover training drills
               </p>
             </div>
@@ -225,7 +225,7 @@ export default function DrillLibrary() {
             onFilterChange={setFilters}
             resultCount={drillsForDisplay.length}
             isLoading={isLoading}
-            showAdvanced={false}
+            showAdvanced={true}
           />
         </div>
       </header>

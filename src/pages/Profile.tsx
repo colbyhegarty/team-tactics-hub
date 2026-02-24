@@ -130,7 +130,7 @@ export default function Profile() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground md:text-3xl">My Profile</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground hidden md:block">
                 Manage your settings and saved drills
               </p>
             </div>
