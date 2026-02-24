@@ -1,55 +1,19 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack, SkipForward, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Position,
+  RenderDrillData,
+  calculateDrillBounds,
+  createRenderContext,
+  renderDrillFrame,
+  CW,
+  CANVAS_PADDING,
+} from "@/utils/drillRenderer";
 
 // ============================================================
-// TYPES
+// TYPES (animation-specific)
 // ============================================================
-
-interface Position {
-  x: number;
-  y: number;
-}
-
-interface Player {
-  id: string;
-  role: string;
-  position: Position;
-  label?: string;
-}
-
-interface Cone {
-  position: Position;
-  color?: string;
-}
-
-interface ConeLine {
-  from_cone: number;
-  to_cone: number;
-}
-
-interface Ball {
-  position: Position;
-}
-
-interface Goal {
-  position: Position;
-  rotation?: number;
-  size?: "full" | "small";
-}
-
-interface MiniGoal {
-  position: Position;
-  rotation?: number;
-}
-
-interface FieldConfig {
-  type?: "FULL" | "HALF";
-  markings?: boolean;
-  show_markings?: boolean;
-  goals?: number;
-  attacking_direction?: "NORTH" | "SOUTH";
-}
 
 interface Keyframe {
   id?: string;
@@ -64,102 +28,10 @@ interface AnimationData {
   keyframes: Keyframe[];
 }
 
-interface DrillData {
-  name?: string;
-  field?: FieldConfig;
-  players?: Player[];
-  cones?: Cone[];
-  cone_lines?: ConeLine[];
-  balls?: Ball[];
-  goals?: Goal[];
-  mini_goals?: MiniGoal[];
-}
-
 interface DrillAnimationPlayerProps {
-  drill: DrillData;
+  drill: RenderDrillData;
   animation: AnimationData;
   className?: string;
-}
-
-// ============================================================
-// COLORS - Must match Python renderer.py
-// ============================================================
-
-const COLORS = {
-  GRASS_LIGHT: "#6fbf4a",
-  GRASS_DARK: "#63b043",
-  CONE_COLOR: "#f4a261",
-  CONE_LINE_COLOR: "#f4a261",
-};
-
-const PLAYER_COLORS: Record<string, string> = {
-  attacker: "#e63946",
-  defender: "#457b9d",
-  goalkeeper: "#f1fa3c",
-  neutral: "#f4a261",
-};
-
-// Canvas base width
-const CW = 900;
-const CANVAS_PADDING = 15;
-
-// ============================================================
-// BOUNDS CALCULATION - matches Python renderer
-// ============================================================
-
-interface Bounds {
-  xMin: number;
-  xMax: number;
-  yMin: number;
-  yMax: number;
-}
-
-function calculateDrillBounds(drill: DrillData, padding: number = 8): Bounds {
-  const xCoords: number[] = [];
-  const yCoords: number[] = [];
-
-  drill.players?.forEach(p => {
-    xCoords.push(p.position.x);
-    yCoords.push(p.position.y);
-  });
-  drill.cones?.forEach(c => {
-    xCoords.push(c.position.x);
-    yCoords.push(c.position.y);
-  });
-  drill.balls?.forEach(b => {
-    xCoords.push(b.position.x);
-    yCoords.push(b.position.y);
-  });
-  drill.goals?.forEach(g => {
-    xCoords.push(g.position.x - 4, g.position.x + 4);
-    yCoords.push(g.position.y - 3, g.position.y + 3);
-  });
-  drill.mini_goals?.forEach(g => {
-    xCoords.push(g.position.x - 2, g.position.x + 2);
-    yCoords.push(g.position.y - 2, g.position.y + 2);
-  });
-
-  if (xCoords.length === 0) xCoords.push(25, 75);
-  if (yCoords.length === 0) yCoords.push(25, 75);
-
-  let xMin = Math.max(0, Math.min(...xCoords) - padding);
-  let xMax = Math.min(100, Math.max(...xCoords) + padding);
-  let yMin = Math.max(0, Math.min(...yCoords) - padding);
-  let yMax = Math.min(100, Math.max(...yCoords) + padding);
-
-  const minSize = 30;
-  if (xMax - xMin < minSize) {
-    const cx = (xMin + xMax) / 2;
-    xMin = Math.max(0, cx - minSize / 2);
-    xMax = Math.min(100, cx + minSize / 2);
-  }
-  if (yMax - yMin < minSize) {
-    const cy = (yMin + yMax) / 2;
-    yMin = Math.max(0, cy - minSize / 2);
-    yMax = Math.min(100, cy + minSize / 2);
-  }
-
-  return { xMin, xMax, yMin, yMax };
 }
 
 // ============================================================
@@ -169,14 +41,9 @@ function calculateDrillBounds(drill: DrillData, padding: number = 8): Bounds {
 const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, animation, className = "" }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Dynamic bounds calculation
+  // Dynamic bounds & render context
   const bounds = useMemo(() => calculateDrillBounds(drill), [drill]);
-  const boundsWidth = bounds.xMax - bounds.xMin;
-  const boundsHeight = bounds.yMax - bounds.yMin;
-
-  const FIELD_WIDTH = CW - CANVAS_PADDING * 2;
-  const CH = Math.round((boundsHeight / boundsWidth) * FIELD_WIDTH + CANVAS_PADDING * 2);
-  const FIELD_HEIGHT = CH - CANVAS_PADDING * 2;
+  const rc = useMemo(() => createRenderContext(bounds, CW, CANVAS_PADDING), [bounds]);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -192,18 +59,6 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     if (i === 0) return sum;
     return sum + (kf.duration || 1000);
   }, 0);
-
-  // ============================================================
-  // COORDINATE CONVERSION - maps from field coords to canvas via bounds
-  // ============================================================
-
-  const toCanvas = useCallback(
-    (x: number, y: number) => ({
-      x: CANVAS_PADDING + ((x - bounds.xMin) / boundsWidth) * FIELD_WIDTH,
-      y: CANVAS_PADDING + ((bounds.yMax - y) / boundsHeight) * FIELD_HEIGHT,
-    }),
-    [bounds, boundsWidth, boundsHeight, FIELD_WIDTH, FIELD_HEIGHT],
-  );
 
   // ============================================================
   // POSITION CALCULATIONS
@@ -299,136 +154,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
   );
 
   // ============================================================
-  // DRAWING
+  // DRAWING - delegates to shared renderer
   // ============================================================
-
-  const drawGoalArea = useCallback(
-    (ctx: CanvasRenderingContext2D, goalY: number, drawGoal: boolean) => {
-      const into = goalY === 100 ? -1 : 1;
-      ctx.strokeStyle = "white";
-      ctx.lineWidth = 1.5;
-
-      // 18-yard box
-      const bt = toCanvas(30, goalY + into * 18);
-      const bb = toCanvas(70, goalY);
-      ctx.strokeRect(bt.x, Math.min(bt.y, bb.y), toCanvas(70, 0).x - toCanvas(30, 0).x, Math.abs(bt.y - bb.y));
-
-      // 6-yard box
-      const st = toCanvas(42, goalY + into * 6);
-      const sb = toCanvas(58, goalY);
-      ctx.strokeRect(st.x, Math.min(st.y, sb.y), toCanvas(58, 0).x - toCanvas(42, 0).x, Math.abs(st.y - sb.y));
-
-      // Penalty spot
-      const ps = toCanvas(50, goalY + into * 12);
-      ctx.fillStyle = "white";
-      ctx.beginPath();
-      ctx.arc(ps.x, ps.y, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Built-in goal
-      if (drawGoal) {
-        const pos = toCanvas(50, goalY);
-        const gw = (8 / boundsWidth) * FIELD_WIDTH;
-        const gd = (3 / boundsHeight) * FIELD_HEIGHT;
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-
-        if (goalY === 100) {
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y);
-          ctx.lineTo(pos.x - gw / 2, pos.y - gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x + gw / 2, pos.y);
-          ctx.lineTo(pos.x + gw / 2, pos.y - gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y - gd);
-          ctx.lineTo(pos.x + gw / 2, pos.y - gd);
-          ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y);
-          ctx.lineTo(pos.x - gw / 2, pos.y + gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x + gw / 2, pos.y);
-          ctx.lineTo(pos.x + gw / 2, pos.y + gd);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x - gw / 2, pos.y + gd);
-          ctx.lineTo(pos.x + gw / 2, pos.y + gd);
-          ctx.stroke();
-        }
-      }
-    },
-    [toCanvas],
-  );
-
-  const drawField = useCallback(
-    (ctx: CanvasRenderingContext2D) => {
-      const p = CANVAS_PADDING;
-      const w = FIELD_WIDTH;
-      const h = FIELD_HEIGHT;
-
-      // Dark green background
-      ctx.fillStyle = '#2d4a2d';
-      ctx.fillRect(0, 0, CW, CH);
-
-      // Grass stripes aligned to field coordinates (10-unit wide stripes)
-      const stripeWidth = 10;
-      const startStripe = Math.floor(bounds.xMin / stripeWidth);
-      const endStripe = Math.ceil(bounds.xMax / stripeWidth);
-      for (let i = startStripe; i <= endStripe; i++) {
-        const stripeLeft = Math.max(i * stripeWidth, bounds.xMin);
-        const stripeRight = Math.min((i + 1) * stripeWidth, bounds.xMax);
-        if (stripeRight <= stripeLeft) continue;
-        const left = toCanvas(stripeLeft, bounds.yMax);
-        const right = toCanvas(stripeRight, bounds.yMin);
-        ctx.fillStyle = i % 2 === 0 ? COLORS.GRASS_LIGHT : COLORS.GRASS_DARK;
-        ctx.fillRect(left.x, left.y, right.x - left.x, right.y - left.y);
-      }
-
-      // Field outline
-      ctx.strokeStyle = "rgba(255,255,255,0.5)";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(p, p, w, h);
-
-      // Field markings
-      const showMarkings = drill.field?.markings !== false && drill.field?.show_markings !== false;
-      if (showMarkings) {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 1.5;
-
-        // Halfway line
-        const cy = toCanvas(50, 50).y;
-        ctx.beginPath();
-        ctx.moveTo(p, cy);
-        ctx.lineTo(p + w, cy);
-        ctx.stroke();
-
-        // Center circle
-        const c = toCanvas(50, 50);
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, (10 / 100) * w, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Center spot
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        const fg = drill.field?.goals || 0;
-        drawGoalArea(ctx, 100, fg >= 1);
-        if (drill.field?.type === "FULL") {
-          drawGoalArea(ctx, 0, fg >= 2);
-        }
-      }
-    },
-    [drill.field, toCanvas, drawGoalArea, bounds, FIELD_WIDTH, FIELD_HEIGHT, CH],
-  );
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -437,155 +164,8 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     if (!ctx) return;
 
     const positions = isPlaying || currentTime > 0 ? getPositionsAtTime(currentTime) : getPositionsAtKeyframe(0);
-
-    ctx.clearRect(0, 0, CW, CH);
-
-    drawField(ctx);
-
-    // Cone lines
-    if (drill.cone_lines && drill.cones) {
-      ctx.strokeStyle = COLORS.CONE_LINE_COLOR;
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 0.8;
-      drill.cone_lines.forEach((l) => {
-        if (l.from_cone < drill.cones!.length && l.to_cone < drill.cones!.length) {
-          const f = toCanvas(drill.cones![l.from_cone].position.x, drill.cones![l.from_cone].position.y);
-          const t = toCanvas(drill.cones![l.to_cone].position.x, drill.cones![l.to_cone].position.y);
-          ctx.beginPath();
-          ctx.moveTo(f.x, f.y);
-          ctx.lineTo(t.x, t.y);
-          ctx.stroke();
-        }
-      });
-      ctx.globalAlpha = 1.0;
-    }
-
-    // Cones
-    const CONE_SIZE = 9;
-    drill.cones?.forEach((c) => {
-      const pos = toCanvas(c.position.x, c.position.y);
-      ctx.fillStyle = COLORS.CONE_COLOR;
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y - CONE_SIZE);
-      ctx.lineTo(pos.x - CONE_SIZE * 0.75, pos.y + CONE_SIZE * 0.6);
-      ctx.lineTo(pos.x + CONE_SIZE * 0.75, pos.y + CONE_SIZE * 0.6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-
-    // Goals
-    drill.goals?.forEach((g) => {
-      const pos = toCanvas(g.position.x, g.position.y);
-      const rot = g.rotation || 0;
-      const gw = (8 / boundsWidth) * FIELD_WIDTH;
-      const gd = (3 / boundsHeight) * FIELD_HEIGHT;
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
-      ctx.rotate((rot * Math.PI) / 180);
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-gw / 2, gd / 2);
-      ctx.lineTo(-gw / 2, -gd / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(gw / 2, gd / 2);
-      ctx.lineTo(gw / 2, -gd / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-gw / 2, -gd / 2);
-      ctx.lineTo(gw / 2, -gd / 2);
-      ctx.stroke();
-      ctx.restore();
-    });
-
-    // Mini goals
-    if (drill.mini_goals) {
-      const GOAL_WIDTH_UNITS = 4;
-      const GOAL_DEPTH_UNITS = 2;
-
-      drill.mini_goals.forEach((g) => {
-        const pos = toCanvas(g.position.x, g.position.y);
-        const inputRotation = g.rotation || 0;
-        const rotation = (inputRotation + 180) % 360;
-        const goalWidth = (GOAL_WIDTH_UNITS / boundsWidth) * FIELD_WIDTH;
-        const goalDepth = (GOAL_DEPTH_UNITS / boundsHeight) * FIELD_HEIGHT;
-
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-
-        if (rotation === 0) {
-          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x - goalWidth/2, pos.y - goalDepth); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x + goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y - goalDepth); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y); ctx.stroke();
-        } else if (rotation === 90) {
-          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x + goalDepth, pos.y - goalWidth/2); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x, pos.y + goalWidth/2); ctx.lineTo(pos.x + goalDepth, pos.y + goalWidth/2); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x, pos.y + goalWidth/2); ctx.stroke();
-        } else if (rotation === 180) {
-          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x - goalWidth/2, pos.y + goalDepth); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x + goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y + goalDepth); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x - goalWidth/2, pos.y); ctx.lineTo(pos.x + goalWidth/2, pos.y); ctx.stroke();
-        } else {
-          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x - goalDepth, pos.y - goalWidth/2); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x, pos.y + goalWidth/2); ctx.lineTo(pos.x - goalDepth, pos.y + goalWidth/2); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pos.x, pos.y - goalWidth/2); ctx.lineTo(pos.x, pos.y + goalWidth/2); ctx.stroke();
-        }
-      });
-    }
-
-    // Players
-    const PLAYER_RADIUS = 14;
-    const LABEL_OFFSET = 18;
-    drill.players?.forEach((p) => {
-      const pd = positions[p.id] || p.position;
-      const pos = toCanvas(pd.x, pd.y);
-      ctx.fillStyle = PLAYER_COLORS[p.role.toLowerCase()] || "#888";
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, PLAYER_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText(p.id, pos.x, pos.y + LABEL_OFFSET);
-    });
-
-    // Balls
-    const BALL_RADIUS = 11;
-    drill.balls?.forEach((b, i) => {
-      const pd = positions[`ball_${i}`] || b.position;
-      const pos = toCanvas(pd.x, pd.y);
-      ctx.fillStyle = "#fff";
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, BALL_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      const pentRadius = BALL_RADIUS * 0.45;
-      for (let j = 0; j < 5; j++) {
-        const a = ((j * 72 - 90) * Math.PI) / 180;
-        const px = pos.x + pentRadius * Math.cos(a);
-        const py = pos.y + pentRadius * Math.sin(a);
-        if (j === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fill();
-    });
-  }, [drill, isPlaying, currentTime, drawField, toCanvas, getPositionsAtTime, getPositionsAtKeyframe]);
+    renderDrillFrame(ctx, rc, drill, positions);
+  }, [drill, isPlaying, currentTime, rc, getPositionsAtTime, getPositionsAtKeyframe]);
 
   // ============================================================
   // ANIMATION LOOP
@@ -651,18 +231,11 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
     setIsPlaying(!isPlaying);
   };
 
-  const goToStart = () => {
-    setIsPlaying(false);
-    setCurrentTime(0);
-  };
-  const goToEnd = () => {
-    setIsPlaying(false);
-    setCurrentTime(totalDuration);
-  };
+  const goToStart = () => { setIsPlaying(false); setCurrentTime(0); };
+  const goToEnd = () => { setIsPlaying(false); setCurrentTime(totalDuration); };
 
   const prevKeyframe = () => {
     setIsPlaying(false);
-    // Find keyframe before current time
     let t = 0;
     let prevT = 0;
     for (let i = 1; i < keyframes.length; i++) {
@@ -708,20 +281,17 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
 
   return (
     <div className={className}>
-      {/* Canvas with field background */}
       <div className="bg-field rounded-xl overflow-hidden inline-flex justify-center w-full">
         <canvas
           ref={canvasRef}
           width={CW}
-          height={CH}
+          height={rc.canvasHeight}
           className="max-w-full max-h-96 block rounded-lg"
-          style={{ aspectRatio: `${CW} / ${CH}` }}
+          style={{ aspectRatio: `${CW} / ${rc.canvasHeight}` }}
         />
       </div>
 
-      {/* Controls - outside the field background */}
       <div className="mt-3 space-y-3">
-        {/* Playback row */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <Button variant="outline" size="icon" onClick={goToStart} title="Go to start" className="h-9 w-9">
             <SkipBack className="h-4 w-4" />
@@ -745,7 +315,6 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
             <SkipForward className="h-4 w-4" />
           </Button>
 
-          {/* Progress bar */}
           <div className="flex-1 min-w-[120px] flex items-center gap-2">
             <div className="flex-1 h-2 bg-muted rounded cursor-pointer relative" onClick={seekProgress}>
               <div
@@ -759,7 +328,6 @@ const DrillAnimationPlayer: React.FC<DrillAnimationPlayerProps> = ({ drill, anim
           </div>
         </div>
 
-        {/* Options row */}
         <div className="flex items-center gap-2 flex-wrap">
           <select
             value={playbackSpeed}

@@ -253,7 +253,6 @@ export function DrillDetailModal({
               {hasAnimation && viewMode === 'animated' && drill.animationJson ? (
                 <DrillAnimationPlayer
                   drill={{
-                    name: drill.name,
                     field: drill.drillJson?.field,
                     players: drill.drillJson?.players?.map(p => ({ ...p, role: p.role as string })),
                     cones: drill.drillJson?.cones,

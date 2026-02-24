@@ -39,12 +39,12 @@ function toRendererData(drill: CustomDrill): DrillData {
   // Convert actions
   const actions = diagramData.actions.map(action => {
     if (action.type === 'PASS') {
-      return { type: 'PASS' as const, from_player: action.fromPlayerId, to_player: action.toPlayerId };
+      return { type: 'PASS' as const, fromPlayer: action.fromPlayerId, toPlayer: action.toPlayerId };
     }
     return {
       type: action.type as 'RUN' | 'DRIBBLE' | 'SHOT',
       player: action.playerId,
-      to_position: action.toPosition,
+      toPosition: action.toPosition,
     };
   });
 
@@ -178,8 +178,6 @@ export function CustomDrillDetailModal({ drill, isOpen, onClose }: CustomDrillDe
               <div className="bg-field rounded-xl overflow-hidden">
                 <DrillCanvasRenderer
                   drill={drillData}
-                  width={900}
-                  height={600}
                   className="w-full h-auto rounded-xl"
                 />
               </div>
@@ -276,8 +274,6 @@ export function CustomDrillDetailModal({ drill, isOpen, onClose }: CustomDrillDe
           <div className="bg-field rounded-xl overflow-hidden">
             <DrillCanvasRenderer
               drill={drillData}
-              width={900}
-              height={600}
               className="w-full h-auto max-h-[85vh] object-contain"
             />
           </div>
