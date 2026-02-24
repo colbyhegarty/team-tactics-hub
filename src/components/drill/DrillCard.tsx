@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DrillCardProps {
   drill: Drill;
@@ -14,6 +16,9 @@ interface DrillCardProps {
 }
 
 export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className }: DrillCardProps) {
+  const isMobile = useIsMobile();
+  const [showOverlay, setShowOverlay] = useState(false);
+
   const handleQuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onQuickView) {
@@ -31,6 +36,20 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
     onSave(drill);
   };
 
+  const handleDiagramClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMobile) {
+      setShowOverlay(prev => !prev);
+    } else {
+      if (onQuickView) onQuickView(drill);
+      else onView(drill);
+    }
+  };
+
+  const handleContentClick = () => {
+    onView(drill);
+  };
+
   return (
     <div
       className={cn(
@@ -38,10 +57,9 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         'hover:shadow-card-lg hover:border-primary/30 transition-all duration-300',
         className
       )}
-      onClick={() => onQuickView ? onQuickView(drill) : onView(drill)}
     >
       {/* Diagram - fixed aspect ratio with field background */}
-      <div className="relative w-full aspect-[4/3] bg-field overflow-hidden">
+      <div className="relative w-full aspect-[4/3] bg-field overflow-hidden" onClick={handleDiagramClick}>
         {drill.svgUrl ? (
           <img
             src={drill.svgUrl}
@@ -62,8 +80,13 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
           </div>
         )}
 
-        {/* Hover overlay with quick actions */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+        {/* Hover/tap overlay with quick actions */}
+        <div className={cn(
+          "absolute inset-0 bg-black/40 transition-all duration-300 flex items-center justify-center",
+          isMobile
+            ? (showOverlay ? "opacity-100" : "opacity-0 pointer-events-none")
+            : "opacity-0 group-hover:opacity-100"
+        )}>
           <div className="flex gap-2">
             {onQuickView && (
               <Button
@@ -114,7 +137,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col flex-1">
+      <div className="p-4 flex flex-col flex-1" onClick={handleContentClick}>
         {/* Title */}
         <h3 className="font-semibold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
           {drill.name}

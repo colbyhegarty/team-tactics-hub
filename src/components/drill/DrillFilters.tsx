@@ -156,25 +156,6 @@ export function DrillFilters({
             </SelectContent>
           </Select>
 
-          <Select
-            value={filters.has_animation === undefined ? 'all' : filters.has_animation.toString()}
-            onValueChange={(value) => {
-              if (value === 'all') {
-                updateFilter('has_animation', undefined);
-              } else {
-                updateFilter('has_animation', value === 'true');
-              }
-            }}
-          >
-            <SelectTrigger className="w-[120px] md:w-[140px] h-9 text-xs md:text-sm">
-              <SelectValue placeholder="Animation" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Drills</SelectItem>
-              <SelectItem value="true">Animated Only</SelectItem>
-              <SelectItem value="false">Static Only</SelectItem>
-            </SelectContent>
-          </Select>
         </>
       )}
 
