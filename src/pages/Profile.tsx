@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, Trash2, Save, BookmarkX, PenTool, Plus } from 'lucide-react';
+import { User, Settings, Trash2, Save, BookmarkX, PenTool, Plus, ChevronDown, Mail, Users as UsersIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
 import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
@@ -139,133 +140,154 @@ export default function Profile() {
       </header>
 
       <div className="container max-w-2xl py-6 px-4 space-y-8">
-        {/* User Info Section */}
-        <div className="form-section">
-          <div className="form-section-title">
-            <User className="h-4 w-4" />
-            Profile Information
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={profile.avatarUrl} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                {getInitials(profile.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                {profile.name || 'Coach'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {profile.teamName || 'No team set'}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Your name"
-                value={profile.name}
-                onChange={(e) => handleProfileChange('name', e.target.value)}
-              />
+        {/* User Info Section - Enhanced Profile Card */}
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="h-24 bg-gradient-to-r from-primary/80 to-primary/40" />
+          <div className="px-6 pb-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-10">
+              <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
+                <AvatarImage src={profile.avatarUrl} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                  {getInitials(profile.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-center sm:text-left pb-1 flex-1">
+                <h3 className="text-xl font-bold text-foreground">
+                  {profile.name || 'Coach'}
+                </h3>
+                <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+                  <UsersIcon className="h-3.5 w-3.5" />
+                  {profile.teamName || 'No team set'}
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={profile.email}
-                onChange={(e) => handleProfileChange('email', e.target.value)}
-              />
+            {/* Quick stats */}
+            <div className="grid grid-cols-3 gap-3 mt-5">
+              <div className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold text-foreground">{customDrills.length}</p>
+                <p className="text-xs text-muted-foreground">My Drills</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold text-foreground">{savedDrills.length}</p>
+                <p className="text-xs text-muted-foreground">Saved</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold text-foreground">{profile.defaultAgeGroup || '—'}</p>
+                <p className="text-xs text-muted-foreground">Age Group</p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="teamName">Team / Organization</Label>
-              <Input
-                id="teamName"
-                placeholder="Your team name"
-                value={profile.teamName}
-                onChange={(e) => handleProfileChange('teamName', e.target.value)}
-              />
+            {/* Editable fields */}
+            <div className="space-y-3 mt-5">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Your name"
+                  value={profile.name}
+                  onChange={(e) => handleProfileChange('name', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={profile.email}
+                  onChange={(e) => handleProfileChange('email', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="teamName">Team / Organization</Label>
+                <Input
+                  id="teamName"
+                  placeholder="Your team name"
+                  value={profile.teamName}
+                  onChange={(e) => handleProfileChange('teamName', e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Default Settings Section */}
-        <div className="form-section">
-          <div className="form-section-title">
-            <Settings className="h-4 w-4" />
-            Default Settings
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            These will pre-fill the Generate Drill form
-          </p>
+        {/* Default Settings - Collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors">
+            <span className="flex items-center gap-2 font-semibold text-foreground">
+              <Settings className="h-4 w-4" />
+              Default Settings
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border border-t-0 border-border rounded-b-xl bg-card px-4 pb-4 pt-3 -mt-2">
+            <p className="text-sm text-muted-foreground mb-4">
+              These will pre-fill the Generate Drill form
+            </p>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
-                <Select
-                  value={profile.defaultAgeGroup}
-                  onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ageGroups.map(age => (
-                      <SelectItem key={age} value={age}>{age}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
+                  <Select
+                    value={profile.defaultAgeGroup}
+                    onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ageGroups.map(age => (
+                        <SelectItem key={age} value={age}>{age}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="defaultSkillLevel">Default Skill Level</Label>
+                  <Select
+                    value={profile.defaultSkillLevel}
+                    onValueChange={(value) => handleProfileChange('defaultSkillLevel', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {skillLevels.map(level => (
+                        <SelectItem key={level} value={level}>{level}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultSkillLevel">Default Skill Level</Label>
-                <Select
-                  value={profile.defaultSkillLevel}
-                  onValueChange={(value) => handleProfileChange('defaultSkillLevel', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {skillLevels.map(level => (
-                      <SelectItem key={level} value={level}>{level}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="defaultPlayerCount">Typical Player Count</Label>
+                <Input
+                  id="defaultPlayerCount"
+                  type="number"
+                  min={2}
+                  max={30}
+                  value={profile.defaultPlayerCount}
+                  onChange={(e) => handleProfileChange('defaultPlayerCount', parseInt(e.target.value) || 12)}
+                />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="defaultPlayerCount">Typical Player Count</Label>
-              <Input
-                id="defaultPlayerCount"
-                type="number"
-                min={2}
-                max={30}
-                value={profile.defaultPlayerCount}
-                onChange={(e) => handleProfileChange('defaultPlayerCount', parseInt(e.target.value) || 12)}
-              />
+              <Button
+                onClick={handleSaveProfile}
+                disabled={!hasChanges}
+                className="w-full"
+              >
+                <Save className="h-4 w-4" />
+                Save Settings
+              </Button>
             </div>
-
-            <Button
-              onClick={handleSaveProfile}
-              disabled={!hasChanges}
-              className="w-full"
-            >
-              <Save className="h-4 w-4" />
-              Save Defaults
-            </Button>
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Drills Tabs */}
         <Tabs defaultValue="custom" className="w-full">
@@ -280,17 +302,7 @@ export default function Profile() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Custom Drills Tab */}
           <TabsContent value="custom" className="mt-4">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                Drills you've created with the diagram editor
-              </p>
-              <Button size="sm" onClick={() => navigate('/')}>
-                <Plus className="h-4 w-4 mr-1" />
-                Create New
-              </Button>
-            </div>
 
             {customDrills.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-border rounded-lg">
@@ -320,9 +332,6 @@ export default function Profile() {
 
           {/* Saved Drills Tab */}
           <TabsContent value="saved" className="mt-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Drills saved from the library
-            </p>
 
             {savedDrills.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-border rounded-lg">

@@ -225,7 +225,7 @@ export default function CreateDrill() {
           </div>
         </header>
 
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 px-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 px-4 pt-6 md:pt-0">
           <div className="text-center max-w-lg">
             <h2 className="text-xl font-semibold text-foreground mb-2">How would you like to start?</h2>
             <p className="text-muted-foreground">
