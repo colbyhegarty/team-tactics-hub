@@ -54,7 +54,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
   const setRotation = onGoalRotationChange ?? setLocalRotation;
 
   return (
-    <div className="flex flex-col gap-3 p-3 bg-[#1a2332] rounded-xl">
+    <div className="flex flex-col gap-3 p-3 bg-transparent lg:bg-[#1a2332] rounded-xl">
       {/* Select tool */}
       <button
         onClick={() => onToolChange('select')}

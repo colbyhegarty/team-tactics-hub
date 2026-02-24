@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash2, Save, ChevronDown } from 'lucide-react';
+import { Trash2, Save, ChevronDown, Wrench, Settings } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { fetchFilterOptions } from '@/lib/api';
 
@@ -190,11 +190,14 @@ export function DrillEditor({
             />
           </div>
           <Collapsible className="lg:hidden">
-            <CollapsibleTrigger className="w-full flex items-center justify-between bg-[#1a2332] text-white rounded-lg px-4 py-3">
-              <span className="text-sm font-semibold">Tools</span>
-              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            <CollapsibleTrigger className="w-full flex items-center justify-between bg-[#1a2332] text-white rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all">
+              <div className="flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-semibold">Tools</span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 data-[state=open]:rotate-180" />
             </CollapsibleTrigger>
-            <CollapsibleContent>
+            <CollapsibleContent className="bg-[#1a2332] rounded-b-lg overflow-hidden">
               <ToolsPanel
                 activeTool={tool}
                 onToolChange={setTool}
@@ -231,11 +234,14 @@ export function DrillEditor({
             />
           </div>
           <Collapsible className="lg:hidden">
-            <CollapsibleTrigger className="w-full flex items-center justify-between bg-[#1a2332] text-white rounded-lg px-4 py-3">
-              <span className="text-sm font-semibold">Properties</span>
-              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            <CollapsibleTrigger className="w-full flex items-center justify-between bg-[#1a2332] text-white rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all">
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-semibold">Properties</span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 data-[state=open]:rotate-180" />
             </CollapsibleTrigger>
-            <CollapsibleContent>
+            <CollapsibleContent className="bg-[#1a2332] rounded-b-lg overflow-hidden">
               <PropertiesPanel
                 diagram={diagram}
                 selectedEntity={selectedEntity}
@@ -245,18 +251,6 @@ export function DrillEditor({
             </CollapsibleContent>
           </Collapsible>
         </div>
-      </div>
-
-      {/* Mobile-only bottom action buttons */}
-      <div className="flex md:hidden gap-2">
-        <Button variant="outline" onClick={handleClearAll} className="flex-1">
-          <Trash2 className="h-4 w-4 mr-2" />
-          Clear All
-        </Button>
-        <Button onClick={handleSave} disabled={!formData.name.trim()} className="flex-1">
-          <Save className="h-4 w-4 mr-2" />
-          Save Drill
-        </Button>
       </div>
 
       {/* Drill Details Form */}
@@ -412,12 +406,24 @@ export function DrillEditor({
         </div>
       </div>
 
-      {/* Bottom Actions */}
-      <div className="flex justify-end gap-3 pt-2">
+      {/* Bottom Actions - desktop */}
+      <div className="hidden md:flex justify-end gap-3 pt-2">
         <Button variant="outline" onClick={onCancel} className="border-[#3d4f6f] text-gray-300 hover:bg-[#243044]">
           Cancel
         </Button>
         <Button onClick={handleSave} disabled={!formData.name.trim()} className="bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
+          <Save className="h-4 w-4 mr-2" />
+          {initialDrill ? 'Update Drill' : 'Save Drill'}
+        </Button>
+      </div>
+
+      {/* Bottom Actions - mobile: pinned to bottom */}
+      <div className="flex md:hidden gap-2 pt-4 pb-2">
+        <Button variant="outline" onClick={handleClearAll} className="flex-1 border-[#3d4f6f] text-gray-300 hover:bg-[#243044]">
+          <Trash2 className="h-4 w-4 mr-2" />
+          Clear All
+        </Button>
+        <Button onClick={handleSave} disabled={!formData.name.trim()} className="flex-1 bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
           <Save className="h-4 w-4 mr-2" />
           {initialDrill ? 'Update Drill' : 'Save Drill'}
         </Button>

@@ -45,11 +45,11 @@ export function PropertiesPanel({
   const totalEntities = diagram.players.length + diagram.cones.length + diagram.balls.length + diagram.goals.length;
 
   return (
-    <div className="bg-[#1a2332] text-white rounded-lg p-4 overflow-y-auto max-h-[80vh] space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-2">
-        <Settings className="w-5 h-5 text-purple-400" />
-        <h2 className="text-lg font-semibold text-purple-400">Properties</h2>
+    <div className="bg-transparent lg:bg-[#1a2332] text-white rounded-lg p-4 overflow-y-auto max-h-[80vh] space-y-4">
+      {/* Header - hidden on mobile since collapsible trigger replaces it */}
+      <div className="hidden lg:flex items-center gap-2 mb-2">
+        <Settings className="w-5 h-5 text-gray-400" />
+        <h2 className="text-lg font-semibold text-gray-300">Properties</h2>
       </div>
 
       {/* Field Type */}
