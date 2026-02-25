@@ -1,7 +1,8 @@
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CustomDrill, PLAYER_COLORS } from '@/types/customDrill';
+import { CustomDrill } from '@/types/customDrill';
 import { Button } from '@/components/ui/button';
-import { Trash2, Edit, Eye } from 'lucide-react';
+import { Trash2, Edit, Eye, ArrowRight, Clock, Users, Target } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +15,15 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useRef, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  calculateDrillBounds,
+  createRenderContext,
+  renderDrillFrame,
+  CW,
+  CANVAS_PADDING,
+  RenderDrillData,
+} from '@/utils/drillRenderer';
 
 interface CustomDrillCardProps {
   drill: CustomDrill;
@@ -22,109 +31,124 @@ interface CustomDrillCardProps {
   onView: (drill: CustomDrill) => void;
 }
 
+function toRenderData(drill: CustomDrill): RenderDrillData {
+  const d = drill.diagramData;
+  const coneIndexMap: Record<string, number> = {};
+  d.cones.forEach((c, i) => { coneIndexMap[c.id] = i; });
+
+  const renderConeLines = d.coneLines
+    .map(cl => ({
+      from_cone: coneIndexMap[cl.fromConeId] ?? -1,
+      to_cone: coneIndexMap[cl.toConeId] ?? -1,
+    }))
+    .filter(cl => cl.from_cone >= 0 && cl.to_cone >= 0);
+
+  const fullGoals = d.goals
+    .filter(g => g.size === 'full')
+    .map(g => ({ position: g.position, rotation: g.rotation }));
+  const miniGoalsList = d.goals
+    .filter(g => g.size === 'mini')
+    .map(g => ({ position: g.position, rotation: g.rotation }));
+
+  const renderActions = d.actions.map(a => {
+    if (a.type === 'PASS') {
+      return { type: 'PASS' as const, fromPlayer: a.fromPlayerId, toPlayer: a.toPlayerId };
+    } else {
+      return { type: a.type, player: a.playerId, toPosition: a.toPosition };
+    }
+  });
+
+  return {
+    field: { type: d.field.type, markings: d.field.markings, goals: d.field.goals },
+    players: d.players.map(p => ({ id: p.id, role: p.role.toLowerCase(), position: p.position })),
+    cones: d.cones.map(c => ({ position: c.position })),
+    cone_lines: renderConeLines,
+    balls: d.balls.map(b => ({ position: b.position })),
+    goals: fullGoals,
+    mini_goals: miniGoalsList,
+    actions: renderActions,
+  };
+}
+
 export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProps) {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isMobile = useIsMobile();
+  const [showOverlay, setShowOverlay] = useState(false);
 
-  // Render mini diagram preview
+  // Render diagram using shared renderer with dynamic bounds (same as library)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const padding = 8;
+    const renderData = toRenderData(drill);
+    const bounds = calculateDrillBounds(renderData);
+    const rc = createRenderContext(bounds, CW, CANVAS_PADDING);
 
-    // Clear
-    ctx.clearRect(0, 0, width, height);
+    canvas.width = rc.canvasWidth;
+    canvas.height = rc.canvasHeight;
 
-    // Draw field background
-    const stripeCount = 6;
-    const stripeHeight = (height - padding * 2) / stripeCount;
-    for (let i = 0; i < stripeCount; i++) {
-      ctx.fillStyle = i % 2 === 0 ? '#6fbf4a' : '#63b043';
-      ctx.fillRect(padding, padding + i * stripeHeight, width - padding * 2, stripeHeight);
-    }
-
-    // Draw field border
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padding, padding, width - padding * 2, height - padding * 2);
-
-    // Convert field coords to canvas
-    const toCanvas = (x: number, y: number) => ({
-      x: padding + (x / 100) * (width - padding * 2),
-      y: padding + ((100 - y) / 100) * (height - padding * 2),
-    });
-
-    // Draw cones
-    drill.diagramData.cones.forEach((cone) => {
-      const pos = toCanvas(cone.position.x, cone.position.y);
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y - 4);
-      ctx.lineTo(pos.x - 4, pos.y + 4);
-      ctx.lineTo(pos.x + 4, pos.y + 4);
-      ctx.closePath();
-      ctx.fillStyle = '#f4a261';
-      ctx.fill();
-    });
-
-    // Draw players
-    drill.diagramData.players.forEach((player) => {
-      const pos = toCanvas(player.position.x, player.position.y);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = PLAYER_COLORS[player.role];
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-
-    // Draw balls
-    drill.diagramData.balls.forEach((ball) => {
-      const pos = toCanvas(ball.position.x, ball.position.y);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-    });
+    renderDrillFrame(ctx, rc, renderData);
   }, [drill.diagramData]);
 
   const handleEdit = () => {
     navigate(`/?edit=${drill.id}`);
   };
 
+  const handleDiagramClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMobile) {
+      setShowOverlay(prev => !prev);
+    } else {
+      onView(drill);
+    }
+  };
+
+  const handleViewFull = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onView(drill);
+  };
+
+  const getDifficultyColor = (diff: string) => {
+    switch (diff) {
+      case 'EASY': return 'bg-emerald-500/10 text-emerald-600';
+      case 'MEDIUM': return 'bg-amber-500/10 text-amber-600';
+      case 'HARD': return 'bg-red-500/10 text-red-600';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-      {/* Diagram Preview */}
-      <div className="relative aspect-[4/3] bg-field overflow-hidden">
+    <div
+      className={cn(
+        'group rounded-xl border border-border bg-card shadow-card overflow-hidden flex flex-col h-full cursor-pointer',
+        'hover:shadow-card-lg hover:border-primary/30 transition-all duration-300'
+      )}
+    >
+      {/* Diagram - fixed aspect ratio with field background */}
+      <div className="relative w-full aspect-[4/3] bg-field overflow-hidden" onClick={handleDiagramClick}>
         <canvas
           ref={canvasRef}
-          width={200}
-          height={150}
-          className="w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
         />
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onView(drill)}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button size="sm" onClick={handleEdit}>
-              <Edit className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* Hover/tap overlay */}
+        <div className={cn(
+          "absolute inset-0 bg-black/40 transition-all duration-300 flex items-center justify-center",
+          isMobile
+            ? (showOverlay ? "opacity-100" : "opacity-0 pointer-events-none")
+            : "opacity-0 group-hover:opacity-100"
+        )}>
+          <Button
+            size="sm"
+            className="shadow-lg"
+            onClick={handleViewFull}
+          >
+            View Drill
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
         </div>
 
         {/* Category badge */}
@@ -136,72 +160,82 @@ export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProp
       </div>
 
       {/* Content */}
-      <div className="p-3">
-        <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+      <div className="p-4 flex flex-col flex-1" onClick={() => onView(drill)}>
+        <h3 className="font-semibold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
           {drill.formData.name || 'Untitled Drill'}
         </h3>
 
-        <div className="flex flex-wrap gap-1.5 mt-2">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {drill.formData.difficulty && (
-            <span
-              className={cn(
-                'px-2 py-0.5 text-xs rounded-full',
-                drill.formData.difficulty === 'EASY'
-                  ? 'bg-emerald-500/10 text-emerald-600'
-                  : drill.formData.difficulty === 'MEDIUM'
-                  ? 'bg-amber-500/10 text-amber-600'
-                  : 'bg-red-500/10 text-red-600'
-              )}
-            >
+            <span className={cn('badge-pill text-xs font-medium', getDifficultyColor(drill.formData.difficulty))}>
               {drill.formData.difficulty.charAt(0) + drill.formData.difficulty.slice(1).toLowerCase()}
-            </span>
-          )}
-          {drill.formData.playerCount && (
-            <span className="px-2 py-0.5 bg-secondary text-muted-foreground text-xs rounded-full">
-              👥 {drill.formData.playerCount}
             </span>
           )}
         </div>
 
+        {/* Description */}
         {drill.formData.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
             {drill.formData.description}
           </p>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-          <span className="text-xs text-muted-foreground">
-            {new Date(drill.updatedAt).toLocaleDateString()}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={handleEdit}>
-              <Edit className="h-3 w-3" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Drill</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{drill.formData.name}"? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(drill.id)}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+        {/* Meta info */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {drill.formData.playerCount && (
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {drill.formData.playerCount}
+            </span>
+          )}
+          {drill.formData.duration && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {drill.formData.duration}
+            </span>
+          )}
+          {drill.formData.ageGroup && (
+            <span className="flex items-center gap-1">
+              <Target className="h-3 w-3" />
+              {drill.formData.ageGroup}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+        <span className="text-xs text-muted-foreground">
+          {new Date(drill.updatedAt).toLocaleDateString()}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={handleEdit}>
+            <Edit className="h-3 w-3" />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Drill</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{drill.formData.name}"? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(drill.id)}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
