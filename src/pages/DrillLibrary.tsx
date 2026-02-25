@@ -119,6 +119,9 @@ export default function DrillLibrary() {
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [filters]);
 
+  // Scroll to top when page changes
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentPage]);
+
   const handleViewDrill = async (drill: Drill) => {
     setIsLoadingDrill(true);
     
@@ -153,7 +156,7 @@ export default function DrillLibrary() {
     }
   };
 
-  const handleSaveDrill = (drill: Drill) => {
+  const handleSaveDrill = async (drill: Drill) => {
     const currentlySaved = savedState[drill.id] ?? isDrillSaved(drill.id);
     
     if (currentlySaved) {
@@ -164,7 +167,32 @@ export default function DrillLibrary() {
         description: 'Removed from your saved drills.',
       });
     } else {
-      saveDrill(drill);
+      // Fetch full drill details before saving so bookmark saves everything
+      try {
+        const response = await fetchLibraryDrill(drill.id);
+        if (response.success) {
+          const fullDrill = mapLibraryDrillToDrill(
+            {
+              id: response.drill.id,
+              name: response.drill.name,
+              category: response.drill.category,
+              player_count: response.drill.player_count,
+              duration: response.drill.duration,
+              age_group: response.drill.age_group,
+              difficulty: response.drill.difficulty,
+              description: response.drill.description,
+            },
+            response.drill,
+            response.svg_url
+          );
+          saveDrill(fullDrill);
+        } else {
+          saveDrill(drill);
+        }
+      } catch {
+        // Fallback: save meta-only drill if fetch fails
+        saveDrill(drill);
+      }
       setSavedState(prev => ({ ...prev, [drill.id]: true }));
       toast({
         title: 'Drill Saved',

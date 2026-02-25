@@ -67,12 +67,12 @@ export function DrillFilters({
 
   const filterControls = (
     <div className="flex flex-wrap gap-2 items-center">
-      {/* Category */}
+      {/* Row 1: Category, Age, Duration */}
       <Select
         value={filters.category || 'All'}
         onValueChange={(value) => updateFilter('category', value)}
       >
-        <SelectTrigger className="w-[120px] md:w-[150px] h-9 text-xs md:text-sm">
+        <SelectTrigger className="w-[130px] md:w-[150px] h-9 text-xs md:text-sm">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>
@@ -104,6 +104,24 @@ export function DrillFilters({
             </SelectContent>
           </Select>
 
+          <Select
+            value={filters.duration || 'Any Duration'}
+            onValueChange={(value) => updateFilter('duration', value !== 'Any Duration' ? value : undefined)}
+          >
+            <SelectTrigger className="w-[130px] md:w-[140px] h-9 text-xs md:text-sm">
+              <SelectValue placeholder="Duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Any Duration">Any Duration</SelectItem>
+              {durations.map((dur) => (
+                <SelectItem key={dur} value={dur}>
+                  {dur}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Row 2: Difficulty, Players */}
           <Select
             value={filters.difficulty || 'All'}
             onValueChange={(value) => updateFilter('difficulty', value)}
@@ -139,25 +157,8 @@ export function DrillFilters({
               className="w-16 h-9 text-xs md:text-sm"
               min={1}
             />
-            <span className="text-xs text-muted-foreground">players</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">players</span>
           </div>
-
-          <Select
-            value={filters.duration || 'Any Duration'}
-            onValueChange={(value) => updateFilter('duration', value !== 'Any Duration' ? value : undefined)}
-          >
-            <SelectTrigger className="w-[110px] md:w-[130px] h-9 text-xs md:text-sm">
-              <SelectValue placeholder="Duration" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Any Duration">Any Duration</SelectItem>
-              {durations.map((dur) => (
-                <SelectItem key={dur} value={dur}>
-                  {dur}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
         </>
       )}
@@ -188,12 +189,12 @@ export function DrillFilters({
       {isMobile ? (
         <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
           <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-between gap-2 h-9 text-xs">
+            <Button variant="outline" size="sm" className="w-full justify-between gap-2 h-9 text-xs [&[data-state=open]>svg]:rotate-180">
               <span className="flex items-center gap-1.5">
                 <Filter className="h-3.5 w-3.5" />
                 Filters{activeFilterCount > 0 && ` (${activeFilterCount})`}
               </span>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200" />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3">
