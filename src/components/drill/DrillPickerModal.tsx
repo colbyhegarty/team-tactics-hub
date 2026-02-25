@@ -86,6 +86,12 @@ export function DrillPickerModal({ isOpen, onClose, onSelect }: DrillPickerModal
                           alt={drill.name}
                           className="w-full h-full object-contain p-1"
                         />
+                      ) : drill.svg ? (
+                        <img
+                          src={`data:image/svg+xml;base64,${drill.svg}`}
+                          alt={drill.name}
+                          className="w-full h-full object-contain p-1"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <span className="text-xs text-muted-foreground">No preview</span>
