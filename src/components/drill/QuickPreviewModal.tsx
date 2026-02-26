@@ -49,7 +49,7 @@ export function QuickPreviewModal({
             <img 
               src={drill.svgUrl} 
               alt={drill.name}
-              className="w-full h-auto max-h-[50vh] object-contain"
+              className="w-full h-auto max-h-[50vh] object-contain block"
             />
           ) : drill.svg ? (
             <img
