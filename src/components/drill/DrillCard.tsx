@@ -60,7 +60,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
     >
       {/* Diagram - consistent aspect ratio with grass background */}
       <div
-        className="relative aspect-[3/2] overflow-hidden rounded-t-xl"
+        className="relative aspect-[3/2] overflow-hidden rounded-t-xl bg-[#63b043]"
         onClick={handleDiagramClick}
       >
         {drill.svgUrl ? (
