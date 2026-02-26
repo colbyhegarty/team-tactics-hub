@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchDrills } from '@/lib/api';
 import { Drill } from '@/types/drill';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+const PICKER_PER_PAGE = 12;
 
 interface DrillPickerModalProps {
   isOpen: boolean;
@@ -17,10 +19,12 @@ export function DrillPickerModal({ isOpen, onClose, onSelect }: DrillPickerModal
   const [drills, setDrills] = useState<Drill[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (isOpen) {
       loadDrills();
+      setCurrentPage(1);
     }
   }, [isOpen]);
 
@@ -41,9 +45,21 @@ export function DrillPickerModal({ isOpen, onClose, onSelect }: DrillPickerModal
     drill.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Reset page when search changes
+  useEffect(() => { setCurrentPage(1); }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredDrills.length / PICKER_PER_PAGE));
+  const paginatedDrills = useMemo(() => {
+    const start = (currentPage - 1) * PICKER_PER_PAGE;
+    return filteredDrills.slice(start, start + PICKER_PER_PAGE);
+  }, [filteredDrills, currentPage]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
+      <DialogContent
+        className="max-w-3xl max-h-[80vh]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Select a Drill to Modify</DialogTitle>
         </DialogHeader>
@@ -72,7 +88,7 @@ export function DrillPickerModal({ isOpen, onClose, onSelect }: DrillPickerModal
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pr-4">
-                {filteredDrills.map((drill) => (
+                {paginatedDrills.map((drill) => (
                   <button
                     key={drill.id}
                     onClick={() => onSelect(drill.id)}
@@ -111,6 +127,31 @@ export function DrillPickerModal({ isOpen, onClose, onSelect }: DrillPickerModal
               </div>
             )}
           </ScrollArea>
+
+          {/* Pagination */}
+          {!isLoading && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end">

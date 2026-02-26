@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { DiagramCanvas } from './DiagramCanvas';
 import { ToolsPanel } from './ToolsPanel';
 import { PropertiesPanel } from './PropertiesPanel';
@@ -114,12 +114,22 @@ export function DrillEditor({
   );
   const [selectedEntity, setSelectedEntity] = useState<EditorState['selectedEntity']>(null);
   const [pendingActionFrom, setPendingActionFrom] = useState<string | null>(null);
-  const [goalRotation, setGoalRotation] = useState(0);
 
   // Form state
   const [formData, setFormData] = useState<CustomDrillFormData>(
     initialDrill?.formData || getEmptyFormData()
   );
+
+  // Track initial state for change detection
+  const initialStateRef = useRef({
+    diagram: JSON.stringify(initialDrill?.diagramData || getEmptyDiagram()),
+    form: JSON.stringify(initialDrill?.formData || getEmptyFormData()),
+  });
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(diagram) !== initialStateRef.current.diagram ||
+           JSON.stringify(formData) !== initialStateRef.current.form;
+  }, [diagram, formData]);
 
   // Sync state when initialDrill prop changes (e.g. loading from existing drill)
   useEffect(() => {
@@ -128,6 +138,10 @@ export function DrillEditor({
       setFormData(initialDrill.formData);
       setSelectedEntity(null);
       setPendingActionFrom(null);
+      initialStateRef.current = {
+        diagram: JSON.stringify(initialDrill.diagramData),
+        form: JSON.stringify(initialDrill.formData),
+      };
     }
   }, [initialDrill]);
 
@@ -209,6 +223,7 @@ export function DrillEditor({
 
   const handleClearAll = () => {
     setDiagram(getEmptyDiagram());
+    setFormData(getEmptyFormData());
     setSelectedEntity(null);
     setPendingActionFrom(null);
   };
@@ -219,7 +234,6 @@ export function DrillEditor({
 
   const handleSave = () => {
     if (!formData.name.trim()) {
-      // Could add toast here
       return;
     }
     onSave(formData, diagram);
@@ -233,11 +247,11 @@ export function DrillEditor({
           {initialDrill ? 'Edit Custom Drill' : 'Create Custom Drill'}
         </h2>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleClearAll}>
+          <Button variant="outline" onClick={handleClearAll} disabled={!hasChanges}>
             <Trash2 className="h-4 w-4 mr-2" />
             Clear All
           </Button>
-          <Button onClick={handleSave} disabled={!formData.name.trim()}>
+          <Button onClick={handleSave} disabled={!hasChanges || !formData.name.trim()}>
             <Save className="h-4 w-4 mr-2" />
             Save Drill
           </Button>
@@ -253,8 +267,6 @@ export function DrillEditor({
               activeTool={tool}
               onToolChange={setTool}
               pendingActionFrom={pendingActionFrom}
-              goalRotation={goalRotation}
-              onGoalRotationChange={setGoalRotation}
             />
           </div>
           <Collapsible className="lg:hidden">
@@ -270,8 +282,6 @@ export function DrillEditor({
                 activeTool={tool}
                 onToolChange={setTool}
                 pendingActionFrom={pendingActionFrom}
-                goalRotation={goalRotation}
-                onGoalRotationChange={setGoalRotation}
               />
             </CollapsibleContent>
           </Collapsible>
@@ -284,7 +294,6 @@ export function DrillEditor({
             tool={tool}
             selectedEntity={selectedEntity}
             pendingActionFrom={pendingActionFrom}
-            goalRotation={goalRotation}
             onDiagramChange={setDiagram}
             onSelectEntity={setSelectedEntity}
             onPendingActionChange={setPendingActionFrom}
@@ -344,7 +353,7 @@ export function DrillEditor({
         <Button variant="outline" onClick={onCancel} className="border-[#3d4f6f] text-gray-300 hover:bg-[#243044]">
           Cancel
         </Button>
-        <Button onClick={handleSave} disabled={!formData.name.trim()} className="bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
+        <Button onClick={handleSave} disabled={!hasChanges || !formData.name.trim()} className="bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
           <Save className="h-4 w-4 mr-2" />
           {initialDrill ? 'Update Drill' : 'Save Drill'}
         </Button>
@@ -352,11 +361,11 @@ export function DrillEditor({
 
       {/* Bottom Actions - mobile: pinned to bottom */}
       <div className="flex md:hidden gap-2 pt-4 pb-2">
-        <Button variant="outline" onClick={handleClearAll} className="flex-1 border-[#3d4f6f] text-gray-300 hover:bg-[#243044]">
+        <Button variant="outline" onClick={handleClearAll} disabled={!hasChanges} className="flex-1 border-[#3d4f6f] text-gray-300 hover:bg-[#243044]">
           <Trash2 className="h-4 w-4 mr-2" />
           Clear All
         </Button>
-        <Button onClick={handleSave} disabled={!formData.name.trim()} className="flex-1 bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
+        <Button onClick={handleSave} disabled={!hasChanges || !formData.name.trim()} className="flex-1 bg-[#3d5a3d] hover:bg-[#4a6d4a] text-white">
           <Save className="h-4 w-4 mr-2" />
           {initialDrill ? 'Update Drill' : 'Save Drill'}
         </Button>

@@ -7,7 +7,7 @@ export const getEmptyDiagram = (): DiagramData => ({
   field: {
     type: 'FULL',
     markings: true,
-    goals: 0,
+    goals: 2,
   },
   players: [],
   cones: [],

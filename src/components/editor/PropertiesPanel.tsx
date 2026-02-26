@@ -1,5 +1,5 @@
 import { DiagramData, SelectedEntity, FieldConfig, PLAYER_COLORS } from '@/types/customDrill';
-import { Trash2, Settings, RotateCw } from 'lucide-react';
+import { Trash2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PropertiesPanelProps {
@@ -52,39 +52,18 @@ export function PropertiesPanel({
         <h2 className="text-lg font-semibold text-gray-300">Properties</h2>
       </div>
 
-      {/* Field Type */}
-      <div>
-        <label className="text-gray-400 text-sm mb-1.5 block">Field Type</label>
-        <select
-          value={diagram.field.type}
-          onChange={(e) => updateField({ type: e.target.value as 'FULL' | 'HALF' })}
-          className="w-full bg-[#243044] border border-[#3d4f6f] rounded-lg p-2.5 text-white text-sm outline-none focus:border-purple-400 transition-colors"
-        >
-          <option value="FULL">Full Field</option>
-          <option value="HALF">Half Field</option>
-        </select>
-      </div>
-
-      {/* Goals */}
-      <div>
-        <label className="text-gray-400 text-sm mb-1.5 block">Goals</label>
-        <select
-          value={diagram.field.goals}
-          onChange={(e) => updateField({ goals: Number(e.target.value) as 0 | 1 | 2 })}
-          className="w-full bg-[#243044] border border-[#3d4f6f] rounded-lg p-2.5 text-white text-sm outline-none focus:border-purple-400 transition-colors"
-        >
-          <option value={0}>No Goals</option>
-          <option value={1}>1 Goal (Top)</option>
-          <option value={2}>2 Goals</option>
-        </select>
-      </div>
-
-      {/* Show Markings */}
+      {/* Show Markings - toggles full field with goals at both ends */}
       <label className="flex items-center gap-3 cursor-pointer py-1">
         <input
           type="checkbox"
           checked={diagram.field.markings}
-          onChange={(e) => updateField({ markings: e.target.checked })}
+          onChange={(e) => {
+            if (e.target.checked) {
+              updateField({ markings: true, type: 'FULL', goals: 2 });
+            } else {
+              updateField({ markings: false, goals: 0 });
+            }
+          }}
           className="w-4 h-4 rounded bg-[#243044] border-[#3d4f6f] text-purple-500 focus:ring-purple-500 accent-purple-500"
         />
         <span className="text-gray-300 text-sm">Show Field Markings</span>
@@ -135,29 +114,6 @@ export function PropertiesPanel({
               return `${selectedEntity.type}: ${selectedEntity.id}`;
             })()}
           </div>
-          {selectedEntity.type === 'goal' && (() => {
-            const goal = diagram.goals.find(g => g.id === selectedEntity.id);
-            if (!goal) return null;
-            return (
-              <button
-                onClick={() => {
-                  onDiagramChange({
-                    ...diagram,
-                    goals: diagram.goals.map(g =>
-                      g.id === selectedEntity.id
-                        ? { ...g, rotation: (g.rotation + 90) % 360 }
-                        : g
-                    ),
-                  });
-                }}
-                className="w-full flex items-center justify-center gap-2 p-3 bg-[#243044] border border-[#3d4f6f] rounded-lg hover:bg-[#2d3a4f] transition-colors"
-              >
-                <RotateCw className="h-4 w-4 text-blue-400" />
-                <span className="text-white text-sm">Rotate 90°</span>
-                <span className="text-gray-500 text-xs ml-1">({goal.rotation}°)</span>
-              </button>
-            );
-          })()}
           <hr className="border-[#3d4f6f]" />
         </>
       )}
