@@ -44,18 +44,18 @@ export function QuickPreviewModal({
         </div>
         
         {/* Large diagram */}
-        <div className="bg-field p-4">
+        <div className="rounded-xl overflow-hidden">
           {drill.svgUrl ? (
             <img 
               src={drill.svgUrl} 
               alt={drill.name}
-              className="w-full h-auto max-h-[50vh] object-contain"
+              className="w-full h-auto max-h-[50vh] object-contain block"
             />
           ) : drill.svg ? (
             <img
               src={`data:image/svg+xml;base64,${drill.svg}`}
               alt={drill.name}
-              className="w-full h-auto max-h-[50vh] object-contain"
+              className="w-full h-auto max-h-[50vh] object-contain block"
             />
           ) : (
             <div className="flex items-center justify-center h-64 text-field-lines/60">
