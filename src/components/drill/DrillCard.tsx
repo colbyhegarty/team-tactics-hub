@@ -67,7 +67,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
           <img
             src={drill.svgUrl}
             alt={drill.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-fill group-hover:scale-105 transition-transform duration-300"
           />
         ) : drill.svg ? (
           <img
