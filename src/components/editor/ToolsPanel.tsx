@@ -10,16 +10,12 @@ import {
   Zap,
   Target,
   Minus,
-  RotateCw,
 } from 'lucide-react';
-import { useState } from 'react';
 
 interface ToolsPanelProps {
   activeTool: EditorTool;
   onToolChange: (tool: EditorTool) => void;
   pendingActionFrom: string | null;
-  goalRotation?: number;
-  onGoalRotationChange?: (rotation: number) => void;
 }
 
 const playerTools = [
@@ -43,16 +39,10 @@ const actionTools = [
   { id: 'shot' as const, label: 'Shot', borderColor: 'border-l-red-500', textColor: 'text-red-500', icon: Target },
 ];
 
-
-
 const btnBase = 'bg-[#243044] border border-[#3d4f6f] rounded-lg hover:bg-[#2d3a4f] transition-colors';
 const btnActive = 'bg-[#3d5a3d] border-[#5a7a5a]';
 
-export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRotation = 0, onGoalRotationChange }: ToolsPanelProps) {
-  const [localRotation, setLocalRotation] = useState(goalRotation);
-  const rotation = goalRotation ?? localRotation;
-  const setRotation = onGoalRotationChange ?? setLocalRotation;
-
+export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: ToolsPanelProps) {
   return (
     <div className="flex flex-col gap-3 p-3 bg-transparent lg:bg-[#1a2332] rounded-xl">
       {/* Select tool */}
@@ -114,20 +104,6 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom, goalRo
             </button>
           ))}
         </div>
-
-        {(activeTool === 'goal' || activeTool === 'minigoal') && (
-          <button
-            onClick={() => setRotation((rotation + 90) % 360)}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 p-2 rounded-lg transition-colors mt-1',
-              btnBase
-            )}
-          >
-            <RotateCw className="h-3.5 w-3.5 text-blue-400" />
-            <span className="text-white text-xs">Rotate 90°</span>
-            <span className="text-gray-500 text-[10px]">({rotation}°)</span>
-          </button>
-        )}
       </div>
 
       {/* BOUNDARIES */}

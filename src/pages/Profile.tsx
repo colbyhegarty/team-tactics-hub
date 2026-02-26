@@ -7,13 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -26,15 +19,9 @@ import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
 import { CustomDrillDetailModal } from '@/components/drill/CustomDrillDetailModal';
 import { getUserProfile, saveUserProfile, getSavedDrills, removeDrill, clearAllData } from '@/lib/storage';
 import { getCustomDrills, deleteCustomDrill, clearCustomDrills } from '@/lib/customDrillStorage';
-import { UserProfile, Drill, AgeGroup } from '@/types/drill';
+import { UserProfile, Drill } from '@/types/drill';
 import { CustomDrill } from '@/types/customDrill';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-
-const ageGroups: AgeGroup[] = [
-  'U8', 'U10', 'U12', 'U14', 'U16', 'U18',
-  'College', 'Semi-Pro', 'Professional', 'Recreational Adult', 'Not Specified',
-];
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -44,6 +31,7 @@ export default function Profile() {
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [selectedCustomDrill, setSelectedCustomDrill] = useState<CustomDrill | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +48,7 @@ export default function Profile() {
   const handleSaveProfile = () => {
     saveUserProfile(profile);
     setHasChanges(false);
+    setSheetOpen(false);
     toast({
       title: 'Profile Saved',
       description: 'Your settings have been updated.',
@@ -122,13 +111,13 @@ export default function Profile() {
               </p>
             </div>
             {/* Settings gear icon */}
-            <Sheet>
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
                   <Settings className="h-5 w-5 text-muted-foreground" />
                 </Button>
               </SheetTrigger>
-              <SheetContent>
+              <SheetContent onOpenAutoFocus={(e) => e.preventDefault()}>
                 <SheetHeader>
                   <SheetTitle>Settings</SheetTitle>
                 </SheetHeader>
@@ -160,22 +149,6 @@ export default function Profile() {
                       value={profile.teamName}
                       onChange={(e) => handleProfileChange('teamName', e.target.value)}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="defaultAgeGroup">Default Age Group</Label>
-                    <Select
-                      value={profile.defaultAgeGroup}
-                      onValueChange={(value) => handleProfileChange('defaultAgeGroup', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ageGroups.map(age => (
-                          <SelectItem key={age} value={age}>{age}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                   <Button
                     onClick={handleSaveProfile}
@@ -232,7 +205,7 @@ export default function Profile() {
             </div>
 
             {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-3 mt-5">
+            <div className="grid grid-cols-2 gap-3 mt-5">
               <div className="text-center p-3 rounded-lg bg-muted/50">
                 <p className="text-lg font-bold text-foreground">{customDrills.length}</p>
                 <p className="text-xs text-muted-foreground">My Drills</p>
@@ -241,15 +214,9 @@ export default function Profile() {
                 <p className="text-lg font-bold text-foreground">{savedDrills.length}</p>
                 <p className="text-xs text-muted-foreground">Saved</p>
               </div>
-              <div className="text-center p-3 rounded-lg bg-muted/50">
-                <p className="text-lg font-bold text-foreground">{profile.defaultAgeGroup || '—'}</p>
-                <p className="text-xs text-muted-foreground">Age Group</p>
-              </div>
             </div>
           </div>
         </div>
-
-
 
         {/* Drills Tabs */}
         <Tabs defaultValue="custom" className="w-full">

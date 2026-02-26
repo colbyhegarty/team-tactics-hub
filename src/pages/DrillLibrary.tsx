@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Loader2, Library, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Library, ChevronLeft, ChevronRight, LayoutGrid, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DrillCard } from '@/components/drill/DrillCard';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
@@ -21,6 +21,7 @@ import { saveDrill, removeDrill, isDrillSaved } from '@/lib/storage';
 import { Drill } from '@/types/drill';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const DRILLS_PER_PAGE = 12;
 
@@ -37,10 +38,11 @@ export default function DrillLibrary() {
   const [isLoadingDrill, setIsLoadingDrill] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [gridCols, setGridCols] = useState<1 | 2>(1);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
-  // Fetch filter options (categories, age groups, durations) on mount
   useEffect(() => {
     async function loadFilterOptions() {
       try {
@@ -56,17 +58,14 @@ export default function DrillLibrary() {
     loadFilterOptions();
   }, []);
 
-  // Fetch drills when filters change
   useEffect(() => {
     async function loadDrills() {
       setIsLoading(true);
       setError(null);
       
       try {
-        // Only use server-side filters for exact match fields
         const serverFilters: DrillFilterParams = {};
         if (filters.category) serverFilters.category = filters.category;
-        // age_group is now filtered client-side with grouped categories
         if (filters.difficulty) serverFilters.difficulty = filters.difficulty;
         if (filters.search) serverFilters.search = filters.search;
         if (filters.has_animation !== undefined) serverFilters.has_animation = filters.has_animation;
@@ -77,18 +76,10 @@ export default function DrillLibrary() {
           : await fetchLibraryDrills();
         
         if (drillsRes.success) {
-          // Apply client-side filters for player count and duration
           let filteredDrills = drillsRes.drills;
-          
-          // Filter by player count (client-side)
           filteredDrills = filterByPlayerCount(filteredDrills, filters.min_players, filters.max_players);
-          
-          // Filter by duration (client-side)
           filteredDrills = filterByDuration(filteredDrills, filters.duration);
-          
-          // Filter by age group category (client-side)
           filteredDrills = filterByAgeGroup(filteredDrills, filters.age_group);
-          
           setDrillsMeta(filteredDrills);
         }
       } catch (err) {
@@ -106,28 +97,21 @@ export default function DrillLibrary() {
     loadDrills();
   }, [filters, toast]);
 
-  // Convert meta to Drill for display
   const drillsForDisplay: Drill[] = drillsMeta.map(meta => mapLibraryDrillToDrill(meta));
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(drillsForDisplay.length / DRILLS_PER_PAGE));
   const paginatedDrills = useMemo(() => {
     const start = (currentPage - 1) * DRILLS_PER_PAGE;
     return drillsForDisplay.slice(start, start + DRILLS_PER_PAGE);
   }, [drillsForDisplay, currentPage]);
 
-  // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [filters]);
-
-  // Scroll to top when page changes
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentPage]);
 
   const handleViewDrill = async (drill: Drill) => {
     setIsLoadingDrill(true);
-    
     try {
       const response = await fetchLibraryDrill(drill.id);
-      
       if (response.success) {
         const fullDrill = mapLibraryDrillToDrill(
           { 
@@ -158,16 +142,11 @@ export default function DrillLibrary() {
 
   const handleSaveDrill = async (drill: Drill) => {
     const currentlySaved = savedState[drill.id] ?? isDrillSaved(drill.id);
-    
     if (currentlySaved) {
       removeDrill(drill.id);
       setSavedState(prev => ({ ...prev, [drill.id]: false }));
-      toast({
-        title: 'Drill Removed',
-        description: 'Removed from your saved drills.',
-      });
+      toast({ title: 'Drill Removed', description: 'Removed from your saved drills.' });
     } else {
-      // Fetch full drill details before saving so bookmark saves everything
       try {
         const response = await fetchLibraryDrill(drill.id);
         if (response.success) {
@@ -190,14 +169,10 @@ export default function DrillLibrary() {
           saveDrill(drill);
         }
       } catch {
-        // Fallback: save meta-only drill if fetch fails
         saveDrill(drill);
       }
       setSavedState(prev => ({ ...prev, [drill.id]: true }));
-      toast({
-        title: 'Drill Saved',
-        description: 'Added to your saved drills.',
-      });
+      toast({ title: 'Drill Saved', description: 'Added to your saved drills.' });
     }
   };
 
@@ -216,9 +191,7 @@ export default function DrillLibrary() {
     });
   };
 
-  const handleQuickPreview = (drill: Drill) => {
-    setQuickPreviewDrill(drill);
-  };
+  const handleQuickPreview = (drill: Drill) => setQuickPreviewDrill(drill);
 
   const handleViewFullFromPreview = async (drill: Drill) => {
     setQuickPreviewDrill(null);
@@ -231,7 +204,7 @@ export default function DrillLibrary() {
 
   return (
     <div className="min-h-screen">
-      {/* Header - not sticky on mobile so filters scroll away */}
+      {/* Header */}
       <header className="border-b border-border bg-background md:sticky md:top-0 md:z-40 md:bg-background/95 md:backdrop-blur-sm">
         <div className="px-4 py-4">
           <div className="flex items-center gap-3 mb-1">
@@ -247,7 +220,6 @@ export default function DrillLibrary() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="px-4 pb-4">
           <DrillFilters
             categories={categories}
@@ -289,7 +261,33 @@ export default function DrillLibrary() {
           </div>
         ) : (
           <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Grid toggle - mobile only */}
+            {isMobile && (
+              <div className="flex items-center justify-end gap-1 mb-4">
+                <Button
+                  variant={gridCols === 1 ? 'default' : 'outline'}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setGridCols(1)}
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={gridCols === 2 ? 'default' : 'outline'}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setGridCols(2)}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className={
+              isMobile && gridCols === 2
+                ? 'grid gap-3 grid-cols-2'
+                : 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'
+            }>
               {paginatedDrills.map(drill => (
                 <DrillCard
                   key={drill.id}
