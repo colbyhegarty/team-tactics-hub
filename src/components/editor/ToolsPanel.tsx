@@ -39,19 +39,19 @@ const actionTools = [
   { id: 'shot' as const, label: 'Shot', borderColor: 'border-l-red-500', textColor: 'text-red-500', icon: Target },
 ];
 
-const btnBase = 'bg-[#243044] border border-[#3d4f6f] rounded-lg hover:bg-[#2d3a4f] transition-colors';
-const btnActive = 'bg-[#3d5a3d] border-[#5a7a5a]';
+const btnBase = 'bg-editor-surface border border-editor-border rounded-lg hover:bg-editor/80 transition-colors';
+const btnActive = 'bg-primary/30 border-primary/50';
 
 export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: ToolsPanelProps) {
   return (
-    <div className="flex flex-col gap-3 p-3 bg-transparent lg:bg-[#1a2332] rounded-xl">
+    <div className="flex flex-col gap-3 p-3 bg-transparent lg:bg-editor rounded-xl">
       {/* Select tool */}
       <button
         onClick={() => onToolChange('select')}
         className={cn(
           'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors',
           activeTool === 'select' ? btnActive : btnBase,
-          'text-white'
+          'text-editor-text'
         )}
       >
         <MousePointer className="h-3.5 w-3.5" />
@@ -60,7 +60,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
 
       {/* ADD PLAYERS */}
       <div className="space-y-1.5">
-        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Players</h4>
+        <h4 className="text-[10px] font-semibold text-editor-text-muted uppercase tracking-widest">Players</h4>
         <div className="grid grid-cols-2 gap-1.5">
           {playerTools.map((tool) => (
             <button
@@ -72,7 +72,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
               )}
             >
               <div className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: tool.color }} />
-              <span className="text-white text-[10px]">{tool.label}</span>
+              <span className="text-editor-text text-[10px]">{tool.label}</span>
             </button>
           ))}
         </div>
@@ -80,7 +80,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
 
       {/* ADD EQUIPMENT */}
       <div className="space-y-1.5">
-        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Equipment</h4>
+        <h4 className="text-[10px] font-semibold text-editor-text-muted uppercase tracking-widest">Equipment</h4>
         <div className="grid grid-cols-2 gap-1.5">
           {equipmentTools.map((tool) => (
             <button
@@ -94,13 +94,13 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
               {tool.id === 'cone' ? (
                 <Triangle className="h-3.5 w-3.5 mb-1 text-orange-400" />
               ) : tool.id === 'ball' ? (
-                <CircleDot className="h-3.5 w-3.5 mb-1 text-white" />
+                <CircleDot className="h-3.5 w-3.5 mb-1 text-editor-text" />
               ) : tool.id === 'goal' ? (
-                <Crosshair className="h-3.5 w-3.5 mb-1 text-white" />
+                <Crosshair className="h-3.5 w-3.5 mb-1 text-editor-text" />
               ) : (
-                <Crosshair className="h-3.5 w-3.5 mb-1 text-slate-400" />
+                <Crosshair className="h-3.5 w-3.5 mb-1 text-editor-text-muted" />
               )}
-              <span className="text-white text-[10px]">{tool.label}</span>
+              <span className="text-editor-text text-[10px]">{tool.label}</span>
             </button>
           ))}
         </div>
@@ -108,7 +108,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
 
       {/* BOUNDARIES */}
       <div className="space-y-1.5">
-        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Boundaries</h4>
+        <h4 className="text-[10px] font-semibold text-editor-text-muted uppercase tracking-widest">Boundaries</h4>
         <button
           onClick={() => onToolChange('coneline')}
           className={cn(
@@ -124,7 +124,7 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
 
       {/* ADD ACTIONS */}
       <div className="space-y-1.5">
-        <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Actions</h4>
+        <h4 className="text-[10px] font-semibold text-editor-text-muted uppercase tracking-widest">Actions</h4>
         <div className="flex flex-col gap-1">
           {actionTools.map((tool) => {
             const Icon = tool.icon;
@@ -133,13 +133,13 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
                 key={tool.id}
                 onClick={() => onToolChange(tool.id)}
                 className={cn(
-                  'w-full flex items-center gap-2 p-2 border border-[#3d4f6f] border-l-4 rounded-lg transition-colors text-left',
+                  'w-full flex items-center gap-2 p-2 border border-editor-border border-l-4 rounded-lg transition-colors text-left',
                   tool.borderColor,
-                  activeTool === tool.id ? 'bg-[#3d5a3d]' : 'bg-[#243044] hover:bg-[#2d3a4f]'
+                  activeTool === tool.id ? 'bg-primary/30' : 'bg-editor-surface hover:bg-editor/80'
                 )}
               >
                 <Icon className={cn('h-3.5 w-3.5 shrink-0', tool.textColor)} />
-                <span className="text-white text-[11px]">{tool.label}</span>
+                <span className="text-editor-text text-[11px]">{tool.label}</span>
               </button>
             );
           })}
@@ -156,9 +156,9 @@ export function ToolsPanel({ activeTool, onToolChange, pendingActionFrom }: Tool
       )}
 
       {/* Tip */}
-      <div className="border-t border-[#3d4f6f] pt-2">
-        <p className="text-[10px] text-gray-500 leading-relaxed">
-          <strong className="text-gray-400">Tip:</strong> Select a tool, click on field to place.
+      <div className="border-t border-editor-border pt-2">
+        <p className="text-[10px] text-editor-text-muted/60 leading-relaxed">
+          <strong className="text-editor-text-muted">Tip:</strong> Select a tool, click on field to place.
         </p>
       </div>
     </div>

@@ -56,7 +56,7 @@ export function DiagramCanvas({
   const [isDragging, setIsDragging] = React.useState(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
-  // Pinch-to-zoom state
+  // Pinch-to-zoom + pan state
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const pinchRef = useRef<{
@@ -65,6 +65,12 @@ export function DiagramCanvas({
     startPan: { x: number; y: number };
     startMidX: number;
     startMidY: number;
+  } | null>(null);
+  // Single-finger pan when zoomed (no entity hit)
+  const panDragRef = useRef<{
+    startX: number;
+    startY: number;
+    startPan: { x: number; y: number };
   } | null>(null);
 
   const rc = React.useMemo(
@@ -165,16 +171,29 @@ export function DiagramCanvas({
     });
     drawSharedCones(ctx, rc, renderData.cones);
 
-    // Draw goals with selection indicators
+    // Draw goals with rotated selection indicators
     diagram.goals.forEach(goal => {
       const pos = rc.toCanvas(goal.position.x, goal.position.y);
       const isSelected = selectedEntity?.type === 'goal' && selectedEntity.id === goal.id;
       if (isSelected) {
+        const boundsWidth = rc.bounds.xMax - rc.bounds.xMin;
+        const boundsHeight = rc.bounds.yMax - rc.bounds.yMin;
+        const isMini = goal.size === 'mini';
+        const gwUnits = isMini ? 4 : 8;
+        const gdUnits = isMini ? 2 : 3;
+        const gw = (gwUnits / boundsWidth) * rc.fieldWidth;
+        const gd = (gdUnits / boundsHeight) * rc.fieldHeight;
+        const rot = goal.rotation || 0;
+
         ctx.save();
         ctx.translate(pos.x, pos.y);
+        ctx.rotate((rot * Math.PI) / 180);
         ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(-33, -10, 66, 20);
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([6, 3]);
+        const pad = 5;
+        ctx.strokeRect(-gw / 2 - pad, -gd / 2 - pad, gw + pad * 2, gd + pad * 2);
+        ctx.setLineDash([]);
         ctx.restore();
       }
     });
@@ -380,12 +399,11 @@ export function DiagramCanvas({
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  const getTouchFieldPos = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+  const getTouchFieldPos = useCallback((touch: React.Touch) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    const touch = e.touches[0];
-    if (!touch) return null;
     const rect = canvas.getBoundingClientRect();
+    // Account for zoom & pan: the canvas container is transformed
     const canvasX = (touch.clientX - rect.left) * (canvas.width / rect.width);
     const canvasY = (touch.clientY - rect.top) * (canvas.height / rect.height);
     return toField(canvasX, canvasY);
@@ -396,6 +414,7 @@ export function DiagramCanvas({
     if (e.touches.length >= 2) {
       e.preventDefault();
       setIsDragging(false);
+      panDragRef.current = null;
       const dist = getTouchDist(e.touches[0], e.touches[1]);
       const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
@@ -409,23 +428,35 @@ export function DiagramCanvas({
       return;
     }
 
-    // Single-finger: entity interaction
-    if (tool !== 'select') return;
-    const fieldPos = getTouchFieldPos(e);
+    // Single-finger
+    const touch = e.touches[0];
+    if (!touch) return;
+    const fieldPos = getTouchFieldPos(touch);
     if (!fieldPos) return;
 
-    const entity = findEntityAt(fieldPos);
-    if (entity) {
-      e.preventDefault();
-      onSelectEntity(entity);
-      setIsDragging(true);
-      let entityPos: FieldPosition | null = null;
-      if (entity.type === 'player') entityPos = diagram.players.find(p => p.id === entity.id)?.position || null;
-      else if (entity.type === 'cone') entityPos = diagram.cones.find(c => c.id === entity.id)?.position || null;
-      else if (entity.type === 'ball') entityPos = diagram.balls.find(b => b.id === entity.id)?.position || null;
-      else if (entity.type === 'goal') entityPos = diagram.goals.find(g => g.id === entity.id)?.position || null;
-      if (entityPos) {
-        dragOffsetRef.current = { x: fieldPos.x - entityPos.x, y: fieldPos.y - entityPos.y };
+    if (tool === 'select') {
+      const entity = findEntityAt(fieldPos);
+      if (entity) {
+        e.preventDefault();
+        onSelectEntity(entity);
+        setIsDragging(true);
+        panDragRef.current = null;
+        let entityPos: FieldPosition | null = null;
+        if (entity.type === 'player') entityPos = diagram.players.find(p => p.id === entity.id)?.position || null;
+        else if (entity.type === 'cone') entityPos = diagram.cones.find(c => c.id === entity.id)?.position || null;
+        else if (entity.type === 'ball') entityPos = diagram.balls.find(b => b.id === entity.id)?.position || null;
+        else if (entity.type === 'goal') entityPos = diagram.goals.find(g => g.id === entity.id)?.position || null;
+        if (entityPos) {
+          dragOffsetRef.current = { x: fieldPos.x - entityPos.x, y: fieldPos.y - entityPos.y };
+        }
+      } else if (zoom > 1.05) {
+        // No entity hit + zoomed in → start panning
+        e.preventDefault();
+        panDragRef.current = {
+          startX: touch.clientX,
+          startY: touch.clientY,
+          startPan: { ...pan },
+        };
       }
     }
   }, [tool, getTouchFieldPos, findEntityAt, diagram, onSelectEntity, zoom, pan]);
@@ -448,10 +479,25 @@ export function DiagramCanvas({
       return;
     }
 
-    // Single-finger drag
+    // Single-finger pan (when zoomed, no entity drag)
+    if (panDragRef.current && e.touches.length === 1) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const dx = touch.clientX - panDragRef.current.startX;
+      const dy = touch.clientY - panDragRef.current.startY;
+      setPan({
+        x: panDragRef.current.startPan.x + dx,
+        y: panDragRef.current.startPan.y + dy,
+      });
+      return;
+    }
+
+    // Single-finger entity drag
     if (!isDragging || !selectedEntity) return;
     e.preventDefault();
-    const fieldPos = getTouchFieldPos(e);
+    const touch = e.touches[0];
+    if (!touch) return;
+    const fieldPos = getTouchFieldPos(touch);
     if (!fieldPos) return;
     const newPos = {
       x: Math.max(0, Math.min(100, fieldPos.x - dragOffsetRef.current.x)),
@@ -467,13 +513,13 @@ export function DiagramCanvas({
     } else if (selectedEntity.type === 'goal') {
       onDiagramChange({ ...diagram, goals: diagram.goals.map(g => g.id === selectedEntity.id ? { ...g, position: newPos } : g) });
     }
-  }, [isDragging, selectedEntity, getTouchFieldPos, diagram, onDiagramChange]);
+  }, [isDragging, selectedEntity, getTouchFieldPos, diagram, onDiagramChange, zoom, pan]);
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
+    panDragRef.current = null;
     if (pinchRef.current) {
       pinchRef.current = null;
-      // Snap back if barely zoomed
       if (zoom <= 1.05) {
         setZoom(1);
         setPan({ x: 0, y: 0 });
@@ -494,7 +540,7 @@ export function DiagramCanvas({
     });
   }, [selectedEntity, diagram, onDiagramChange]);
 
-  // Calculate rotate button position for selected goal (as percentage of canvas)
+  // Calculate rotate button position for selected goal
   const getRotateButtonPosition = () => {
     if (!selectedEntity || selectedEntity.type !== 'goal') return null;
     const goal = diagram.goals.find(g => g.id === selectedEntity.id);
@@ -537,7 +583,7 @@ export function DiagramCanvas({
         {/* Rotate button overlay for selected goal/minigoal */}
         {rotateBtnPos && (
           <button
-            className="absolute z-10 bg-[#243044]/90 border border-[#5a7a9a] rounded-full p-1.5 hover:bg-[#2d3a4f] transition-colors shadow-lg"
+            className="absolute z-10 bg-editor-surface/90 border border-editor-border rounded-full p-1.5 hover:bg-editor/80 transition-colors shadow-lg"
             style={{
               left: rotateBtnPos.left,
               top: rotateBtnPos.top,
@@ -548,7 +594,7 @@ export function DiagramCanvas({
               handleRotateGoal();
             }}
           >
-            <RotateCw className="h-3.5 w-3.5 text-blue-400" />
+            <RotateCw className="h-3.5 w-3.5 text-primary" />
           </button>
         )}
       </div>
@@ -557,7 +603,7 @@ export function DiagramCanvas({
       {zoom > 1.05 && (
         <button
           onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
-          className="absolute top-2 right-2 z-20 bg-[#243044]/90 border border-[#3d4f6f] text-white text-xs px-2.5 py-1.5 rounded-lg hover:bg-[#2d3a4f] transition-colors shadow-lg"
+          className="absolute top-2 right-2 z-20 bg-editor-surface/90 border border-editor-border text-editor-text text-xs px-2.5 py-1.5 rounded-lg hover:bg-editor/80 transition-colors shadow-lg"
         >
           Reset Zoom ({Math.round(zoom * 100)}%)
         </button>

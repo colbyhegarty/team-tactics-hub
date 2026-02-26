@@ -64,6 +64,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        editor: {
+          DEFAULT: "hsl(var(--editor-bg))",
+          surface: "hsl(var(--editor-surface))",
+          border: "hsl(var(--editor-border))",
+          text: "hsl(var(--editor-text))",
+          "text-muted": "hsl(var(--editor-text-muted))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

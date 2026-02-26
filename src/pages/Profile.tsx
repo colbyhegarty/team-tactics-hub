@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, Save, BookmarkX, PenTool, Plus, Camera, Users as UsersIcon } from 'lucide-react';
+import { User, Settings, Save, BookmarkX, PenTool, Plus, Camera, Users as UsersIcon, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import {
   Sheet,
   SheetContent,
@@ -32,6 +33,9 @@ export default function Profile() {
   const [selectedCustomDrill, setSelectedCustomDrill] = useState<CustomDrill | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +43,17 @@ export default function Profile() {
     setSavedDrills(getSavedDrills());
     setCustomDrills(getCustomDrills());
   }, []);
+
+  const handleToggleDarkMode = (checked: boolean) => {
+    setIsDarkMode(checked);
+    if (checked) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('drillforge_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('drillforge_theme', 'light');
+    }
+  };
 
   const handleProfileChange = (key: keyof UserProfile, value: string | number) => {
     setProfile(prev => ({ ...prev, [key]: value }));
@@ -150,6 +165,20 @@ export default function Profile() {
                       onChange={(e) => handleProfileChange('teamName', e.target.value)}
                     />
                   </div>
+
+                  {/* Dark Mode Toggle */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-2">
+                      {isDarkMode ? <Moon className="h-4 w-4 text-muted-foreground" /> : <Sun className="h-4 w-4 text-muted-foreground" />}
+                      <Label htmlFor="dark-mode" className="cursor-pointer">Dark Mode</Label>
+                    </div>
+                    <Switch
+                      id="dark-mode"
+                      checked={isDarkMode}
+                      onCheckedChange={handleToggleDarkMode}
+                    />
+                  </div>
+
                   <Button
                     onClick={handleSaveProfile}
                     disabled={!hasChanges}
