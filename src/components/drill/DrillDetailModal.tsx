@@ -276,7 +276,7 @@ export function DrillDetailModal({
                   <img
                     src={`data:image/svg+xml;base64,${drill.svg}`}
                     alt={drill.name}
-                    className="w-full max-h-96 object-contain mx-auto block"
+                    className="w-full h-auto block"
                   />
                 </div>
               ) : (
