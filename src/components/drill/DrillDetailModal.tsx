@@ -272,12 +272,11 @@ export function DrillDetailModal({
                   />
                 </div>
               ) : drill.svg ? (
-                <div className="bg-field rounded-xl overflow-hidden">
+                <div className="rounded-xl overflow-hidden">
                   <img
                     src={`data:image/svg+xml;base64,${drill.svg}`}
                     alt={drill.name}
-                    className="w-full max-h-96 object-contain mx-auto p-2 rounded-lg"
-                    style={{ background: 'transparent' }}
+                    className="w-full max-h-96 object-contain mx-auto block"
                   />
                 </div>
               ) : (
