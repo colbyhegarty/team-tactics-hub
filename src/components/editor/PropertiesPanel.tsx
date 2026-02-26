@@ -15,7 +15,7 @@ const getEntityColor = (role: string) => {
     case 'DEFENDER': return 'text-blue-400';
     case 'GOALKEEPER': return 'text-yellow-400';
     case 'NEUTRAL': return 'text-orange-400';
-    default: return 'text-gray-300';
+    default: return 'text-editor-text-muted';
   }
 };
 
@@ -25,7 +25,7 @@ const getActionColor = (type: string) => {
     case 'RUN': return 'text-yellow-400';
     case 'DRIBBLE': return 'text-purple-400';
     case 'SHOT': return 'text-red-400';
-    default: return 'text-gray-300';
+    default: return 'text-editor-text-muted';
   }
 };
 
@@ -45,14 +45,14 @@ export function PropertiesPanel({
   const totalEntities = diagram.players.length + diagram.cones.length + diagram.balls.length + diagram.goals.length;
 
   return (
-    <div className="bg-transparent lg:bg-[#1a2332] text-white rounded-lg p-4 overflow-y-auto max-h-[80vh] space-y-4">
-      {/* Header - hidden on mobile since collapsible trigger replaces it */}
+    <div className="bg-transparent lg:bg-editor text-editor-text rounded-lg p-4 overflow-y-auto max-h-[80vh] space-y-4">
+      {/* Header */}
       <div className="hidden lg:flex items-center gap-2 mb-2">
-        <Settings className="w-5 h-5 text-gray-400" />
-        <h2 className="text-lg font-semibold text-gray-300">Properties</h2>
+        <Settings className="w-5 h-5 text-editor-text-muted" />
+        <h2 className="text-lg font-semibold text-editor-text-muted">Properties</h2>
       </div>
 
-      {/* Show Markings - toggles full field with goals at both ends */}
+      {/* Show Markings */}
       <label className="flex items-center gap-3 cursor-pointer py-1">
         <input
           type="checkbox"
@@ -64,18 +64,18 @@ export function PropertiesPanel({
               updateField({ markings: false, goals: 0 });
             }
           }}
-          className="w-4 h-4 rounded bg-[#243044] border-[#3d4f6f] text-purple-500 focus:ring-purple-500 accent-purple-500"
+          className="w-4 h-4 rounded bg-editor-surface border-editor-border text-primary focus:ring-primary accent-primary"
         />
-        <span className="text-gray-300 text-sm">Show Field Markings</span>
+        <span className="text-editor-text text-sm">Show Field Markings</span>
       </label>
 
-      <hr className="border-[#3d4f6f]" />
+      <hr className="border-editor-border" />
 
       {/* Selected Entity */}
       {selectedEntity && (
         <>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Selected</h3>
+            <h3 className="text-sm font-semibold text-editor-text-muted uppercase tracking-wide">Selected</h3>
             <button
               onClick={onDeleteSelected}
               className="flex items-center gap-1 px-2 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded text-xs transition-colors"
@@ -84,7 +84,7 @@ export function PropertiesPanel({
               Delete
             </button>
           </div>
-          <div className="bg-[#243044] rounded-lg p-3 border border-purple-400/30 text-sm text-gray-300">
+          <div className="bg-editor-surface rounded-lg p-3 border border-primary/30 text-sm text-editor-text">
             {(() => {
               if (selectedEntity.type === 'player') {
                 return `Player: ${selectedEntity.id}`;
@@ -114,12 +114,12 @@ export function PropertiesPanel({
               return `${selectedEntity.type}: ${selectedEntity.id}`;
             })()}
           </div>
-          <hr className="border-[#3d4f6f]" />
+          <hr className="border-editor-border" />
         </>
       )}
 
       {/* Players & Equipment */}
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-sm font-semibold text-editor-text-muted uppercase tracking-wide">
         Players & Equipment ({totalEntities})
       </h3>
 
@@ -164,7 +164,7 @@ export function PropertiesPanel({
           <EntityItem
             key={ball.id}
             label={`Ball ${index + 1}`}
-            colorClass="text-white"
+            colorClass="text-editor-text"
             dotColor="#ffffff"
             isSelected={selectedEntity?.id === ball.id}
             onDelete={() => {
@@ -179,7 +179,7 @@ export function PropertiesPanel({
           <EntityItem
             key={goal.id}
             label={`${goal.size === 'full' ? 'Goal' : 'Mini Goal'} ${index + 1}`}
-            colorClass="text-gray-300"
+            colorClass="text-editor-text"
             dotColor="#ffffff"
             isSelected={selectedEntity?.id === goal.id}
             onDelete={() => {
@@ -191,15 +191,15 @@ export function PropertiesPanel({
           />
         ))}
         {totalEntities === 0 && (
-          <p className="text-gray-500 text-xs italic py-2">No entities placed yet</p>
+          <p className="text-editor-text-muted text-xs italic py-2">No entities placed yet</p>
         )}
       </div>
 
       {/* Actions */}
       {diagram.actions.length > 0 && (
         <>
-          <hr className="border-[#3d4f6f]" />
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+          <hr className="border-editor-border" />
+          <h3 className="text-sm font-semibold text-editor-text-muted uppercase tracking-wide">
             Actions ({diagram.actions.length})
           </h3>
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
@@ -214,14 +214,14 @@ export function PropertiesPanel({
                 <div
                   key={action.id}
                   className={cn(
-                    'flex items-center justify-between bg-[#243044] rounded-lg p-2.5 border border-[#3d4f6f] text-sm',
-                    selectedEntity?.id === action.id && 'border-purple-400/50'
+                    'flex items-center justify-between bg-editor-surface rounded-lg p-2.5 border border-editor-border text-sm',
+                    selectedEntity?.id === action.id && 'border-primary/50'
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-xs">{index + 1}.</span>
+                    <span className="text-editor-text-muted text-xs">{index + 1}.</span>
                     <span className={cn('font-medium', getActionColor(action.type))}>{action.type}</span>
-                    <span className="text-white">{label}</span>
+                    <span className="text-editor-text">{label}</span>
                   </div>
                   <button
                     onClick={(e) => {
@@ -245,8 +245,8 @@ export function PropertiesPanel({
       {/* Cone Lines */}
       {diagram.coneLines.length > 0 && (
         <>
-          <hr className="border-[#3d4f6f]" />
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+          <hr className="border-editor-border" />
+          <h3 className="text-sm font-semibold text-editor-text-muted uppercase tracking-wide">
             Cone Lines ({diagram.coneLines.length})
           </h3>
           <div className="space-y-1.5 max-h-24 overflow-y-auto">
@@ -254,8 +254,8 @@ export function PropertiesPanel({
               <div
                 key={line.id}
                 className={cn(
-                  'flex items-center justify-between bg-[#243044] rounded-lg p-2.5 border border-[#3d4f6f] text-sm',
-                  selectedEntity?.id === line.id && 'border-purple-400/50'
+                  'flex items-center justify-between bg-editor-surface rounded-lg p-2.5 border border-editor-border text-sm',
+                  selectedEntity?.id === line.id && 'border-primary/50'
                 )}
               >
                 <span className="text-orange-400 font-medium">Line {index + 1}</span>
@@ -298,8 +298,8 @@ function EntityItem({
   return (
     <div
       className={cn(
-        'flex items-center justify-between bg-[#243044] rounded-lg p-2.5 border border-[#3d4f6f] text-sm',
-        isSelected && 'border-purple-400/50'
+        'flex items-center justify-between bg-editor-surface rounded-lg p-2.5 border border-editor-border text-sm',
+        isSelected && 'border-primary/50'
       )}
     >
       <div className="flex items-center gap-2.5">
@@ -308,7 +308,7 @@ function EntityItem({
           style={{ backgroundColor: dotColor }}
         />
         <span className={cn('font-medium', colorClass)}>{label}</span>
-        {detail && <span className="text-gray-500 text-xs">({detail})</span>}
+        {detail && <span className="text-editor-text-muted text-xs">({detail})</span>}
       </div>
       <button
         onClick={(e) => {

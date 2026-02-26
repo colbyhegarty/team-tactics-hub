@@ -261,27 +261,32 @@ export default function DrillLibrary() {
           </div>
         ) : (
           <>
-            {/* Grid toggle - mobile only */}
-            {isMobile && (
-              <div className="flex items-center justify-end gap-1 mb-4">
-                <Button
-                  variant={gridCols === 1 ? 'default' : 'outline'}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setGridCols(1)}
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={gridCols === 2 ? 'default' : 'outline'}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setGridCols(2)}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            {/* Results header with grid toggle */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">
+                {drillsForDisplay.length} drills found
+              </p>
+              {isMobile && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant={gridCols === 1 ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setGridCols(1)}
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={gridCols === 2 ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setGridCols(2)}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
 
             <div className={
               isMobile && gridCols === 2
