@@ -44,7 +44,10 @@ export function QuickPreviewModal({
         </div>
         
         {/* Large diagram */}
-        <div className="rounded-xl overflow-hidden">
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ background: 'repeating-linear-gradient(to right, #6fbf4a 0%, #6fbf4a 10%, #63b043 10%, #63b043 20%)' }}
+        >
           {drill.svgUrl ? (
             <img 
               src={drill.svgUrl} 
