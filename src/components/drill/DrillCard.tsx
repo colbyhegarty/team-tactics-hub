@@ -70,8 +70,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
-            className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
-            style={{ background: 'transparent' }}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-field-lines/60">
