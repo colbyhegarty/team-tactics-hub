@@ -230,22 +230,22 @@ export function drawField(
 ) {
   const { bounds, canvasWidth, canvasHeight, fieldWidth, fieldHeight, padding, toCanvas } = rc;
 
-  // Dark green background
-  ctx.fillStyle = '#2d4a2d';
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  // Grass stripes filling entire canvas, aligned to field coordinates
+  const stripeWidthUnits = 10;
+  const boundsWidth = bounds.xMax - bounds.xMin;
+  const pixelsPerUnitX = fieldWidth / boundsWidth;
+  const stripeWidthPx = stripeWidthUnits * pixelsPerUnitX;
 
-  // Grass stripes aligned to field coordinates (10-unit wide stripes)
-  const stripeWidth = 10;
-  const startStripe = Math.floor(bounds.xMin / stripeWidth);
-  const endStripe = Math.ceil(bounds.xMax / stripeWidth);
-  for (let i = startStripe; i <= endStripe; i++) {
-    const stripeLeft = Math.max(i * stripeWidth, bounds.xMin);
-    const stripeRight = Math.min((i + 1) * stripeWidth, bounds.xMax);
-    if (stripeRight <= stripeLeft) continue;
-    const left = toCanvas(stripeLeft, bounds.yMax);
-    const right = toCanvas(stripeRight, bounds.yMin);
-    ctx.fillStyle = i % 2 === 0 ? COLORS.GRASS_LIGHT : COLORS.GRASS_DARK;
-    ctx.fillRect(left.x, left.y, right.x - left.x, right.y - left.y);
+  const leftEdgeFieldX = bounds.xMin - (padding / pixelsPerUnitX);
+  const startStripeIdx = Math.floor(leftEdgeFieldX / stripeWidthUnits);
+  const numStripes = Math.ceil(canvasWidth / stripeWidthPx) + 2;
+
+  for (let i = 0; i < numStripes; i++) {
+    const stripeIndex = startStripeIdx + i;
+    const stripeFieldX = stripeIndex * stripeWidthUnits;
+    const canvasX = padding + ((stripeFieldX - bounds.xMin) / boundsWidth) * fieldWidth;
+    ctx.fillStyle = stripeIndex % 2 === 0 ? COLORS.GRASS_LIGHT : COLORS.GRASS_DARK;
+    ctx.fillRect(canvasX, 0, stripeWidthPx, canvasHeight);
   }
 
   // Field outline
