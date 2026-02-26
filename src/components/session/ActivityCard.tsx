@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, Pencil, Trash2, Clock, Users, StickyNote } from 'lucide-react';
 import { SessionActivity } from '@/types/session';
 import { Button } from '@/components/ui/button';
 
@@ -49,12 +49,12 @@ export function ActivityCard({
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-foreground text-sm">{displayTitle}</h4>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-0.5">
-              <span>⏱ {activity.duration_minutes} min</span>
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {activity.duration_minutes} min</span>
               {activity.drill_difficulty && (
                 <span className="badge-pill badge-muted">{activity.drill_difficulty}</span>
               )}
               {activity.drill_player_count && (
-                <span>👥 {activity.drill_player_count}</span>
+                <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {activity.drill_player_count}</span>
               )}
             </div>
           </div>
@@ -102,12 +102,12 @@ export function ActivityCard({
               <div className="min-w-0">
                 <h4 className="font-semibold text-foreground">{displayTitle}</h4>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
-                  <span>⏱ {activity.duration_minutes} min</span>
+                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {activity.duration_minutes} min</span>
                   {activity.drill_difficulty && (
                     <span className="badge-pill badge-muted">{activity.drill_difficulty}</span>
                   )}
                   {activity.drill_player_count && (
-                    <span>👥 {activity.drill_player_count}</span>
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {activity.drill_player_count}</span>
                   )}
                 </div>
               </div>
@@ -123,8 +123,9 @@ export function ActivityCard({
             )}
 
             {activity.activity_notes && (
-              <div className="mt-2 rounded bg-accent/20 px-2 py-1.5 text-xs text-accent-foreground">
-                📝 {activity.activity_notes}
+              <div className="mt-2 rounded bg-secondary px-2 py-1.5 text-xs text-secondary-foreground flex items-start gap-1.5">
+                <StickyNote className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>{activity.activity_notes}</span>
               </div>
             )}
           </div>
@@ -154,8 +155,9 @@ export function ActivityCard({
             </p>
           )}
           {activity.activity_notes && (
-            <div className="mt-2 rounded bg-accent/20 px-2 py-1.5 text-xs text-accent-foreground">
-              📝 {activity.activity_notes}
+            <div className="mt-2 rounded bg-secondary px-2 py-1.5 text-xs text-secondary-foreground flex items-start gap-1.5">
+              <StickyNote className="h-3 w-3 mt-0.5 shrink-0" />
+              <span>{activity.activity_notes}</span>
             </div>
           )}
         </div>

@@ -227,12 +227,12 @@ export function DrillDetailModal({
                     type="single"
                     value={viewMode}
                     onValueChange={(value) => value && setViewMode(value as 'static' | 'animated')}
-                    className="bg-muted p-1 rounded-lg"
+                    className="bg-secondary p-1 rounded-lg"
                   >
                     <ToggleGroupItem 
                       value="static" 
                       aria-label="Static View"
-                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
+                      className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm px-4 py-2 rounded-md"
                     >
                       <Image className="h-4 w-4 mr-2" />
                       Static
@@ -240,7 +240,7 @@ export function DrillDetailModal({
                     <ToggleGroupItem 
                       value="animated" 
                       aria-label="Animated View"
-                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-4 py-2 rounded-md"
+                      className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm px-4 py-2 rounded-md"
                     >
                       <Film className="h-4 w-4 mr-2" />
                       Animated
@@ -373,7 +373,7 @@ export function DrillDetailModal({
                 )}
                 
                 {hasCoachingPoints && (
-                  <TabsContent value="coaching" className="bg-accent/30 rounded-xl p-4 mt-4 border border-border">
+                  <TabsContent value="coaching" className="bg-card rounded-xl p-4 mt-4 border border-border">
                     <div className="prose prose-sm max-w-none">
                       {formatDrillText(filterCoachingPoints(drill.coachingPoints))}
                     </div>

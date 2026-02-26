@@ -176,19 +176,32 @@ export default function DrillLibrary() {
     }
   };
 
-  const handleUseAsTemplate = (drill: Drill) => {
+  const handleUseAsTemplate = async (drill: Drill) => {
     setSelectedDrill(null);
     setQuickPreviewDrill(null);
-    navigate('/', { 
-      state: { 
-        templateDrill: {
-          category: drill.category,
-          playerCount: drill.playerCount,
-          duration: drill.duration,
-          ageGroup: drill.ageGroup,
-        }
+    // Load full drill data and navigate to editor with it
+    try {
+      const response = await fetchLibraryDrill(drill.id);
+      if (response.success) {
+        const fullDrill = mapLibraryDrillToDrill(
+          {
+            id: response.drill.id,
+            name: response.drill.name,
+            category: response.drill.category,
+            player_count: response.drill.player_count,
+            duration: response.drill.duration,
+            age_group: response.drill.age_group,
+            difficulty: response.drill.difficulty,
+            description: response.drill.description,
+          },
+          response.drill,
+          response.svg_url
+        );
+        navigate('/', { state: { useAsTemplateDrill: fullDrill } });
       }
-    });
+    } catch {
+      navigate('/', { state: { useAsTemplateDrill: drill } });
+    }
   };
 
   const handleQuickPreview = (drill: Drill) => setQuickPreviewDrill(drill);
@@ -231,6 +244,32 @@ export default function DrillLibrary() {
             isLoading={isLoading}
             showAdvanced={true}
           />
+          {/* Grid toggle - below filters */}
+          {!isLoading && drillsForDisplay.length > 0 && isMobile && (
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-muted-foreground">
+                {drillsForDisplay.length} drills found
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={gridCols === 1 ? 'default' : 'outline'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setGridCols(1)}
+                >
+                  <LayoutList className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant={gridCols === 2 ? 'default' : 'outline'}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setGridCols(2)}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -261,32 +300,14 @@ export default function DrillLibrary() {
           </div>
         ) : (
           <>
-            {/* Results header with grid toggle */}
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                {drillsForDisplay.length} drills found
-              </p>
-              {isMobile && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant={gridCols === 1 ? 'default' : 'outline'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setGridCols(1)}
-                  >
-                    <LayoutList className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={gridCols === 2 ? 'default' : 'outline'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setGridCols(2)}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+            {/* Results header - desktop only since mobile toggle is in header */}
+            {!isMobile && (
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {drillsForDisplay.length} drills found
+                </p>
+              </div>
+            )}
 
             <div className={
               isMobile && gridCols === 2

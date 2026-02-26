@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { DrillEditor } from '@/components/editor/DrillEditor';
 import { DrillPickerModal } from '@/components/drill/DrillPickerModal';
 import { 
@@ -14,21 +14,24 @@ import { fetchDrillById } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Copy, ArrowLeft, PenTool } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Drill } from '@/types/drill';
 
 type StartMode = 'choose' | 'scratch' | 'existing' | 'editing';
 
 export default function CreateDrill() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const editId = searchParams.get('edit');
+  const templateDrill = (location.state as any)?.useAsTemplateDrill as Drill | undefined;
   
-  const [startMode, setStartMode] = useState<StartMode>(editId ? 'editing' : 'choose');
+  const [startMode, setStartMode] = useState<StartMode>(editId ? 'editing' : templateDrill ? 'scratch' : 'choose');
   const [showDrillPicker, setShowDrillPicker] = useState(false);
   const [initialDrill, setInitialDrill] = useState<CustomDrill | null>(null);
   const [basedOnDrillId, setBasedOnDrillId] = useState<string | undefined>();
-  const [isLoading, setIsLoading] = useState(!!editId);
+  const [isLoading, setIsLoading] = useState(!!editId || !!templateDrill);
 
   // Load existing drill if editing
   useEffect(() => {
@@ -48,6 +51,15 @@ export default function CreateDrill() {
       setIsLoading(false);
     }
   }, [editId, navigate, toast]);
+
+  // Handle "Use as Template" from library
+  useEffect(() => {
+    if (templateDrill && !editId) {
+      handleSelectExistingDrill(templateDrill.id);
+      // Clear the location state so refreshing doesn't re-trigger
+      window.history.replaceState({}, document.title);
+    }
+  }, [templateDrill]);
 
   const handleSelectExistingDrill = async (drillId: string) => {
     setShowDrillPicker(false);
