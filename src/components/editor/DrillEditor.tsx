@@ -262,7 +262,7 @@ export function DrillEditor({
             />
           </div>
           <Collapsible className="lg:hidden">
-            <CollapsibleTrigger className="w-full flex items-center justify-between bg-editor text-editor-text rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all [&[data-state=open]>svg]:rotate-180">
+            <CollapsibleTrigger className="w-full flex items-center justify-between bg-editor-surface text-editor-text border border-editor-border rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all [&[data-state=open]>svg]:rotate-180">
               <div className="flex items-center gap-2">
                 <Wrench className="h-4 w-4 text-editor-text-muted" />
                 <span className="text-sm font-semibold">Tools</span>
@@ -303,7 +303,7 @@ export function DrillEditor({
             />
           </div>
           <Collapsible className="lg:hidden">
-            <CollapsibleTrigger className="w-full flex items-center justify-between bg-editor text-editor-text rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all [&[data-state=open]>svg]:rotate-180">
+            <CollapsibleTrigger className="w-full flex items-center justify-between bg-editor-surface text-editor-text border border-editor-border rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all [&[data-state=open]>svg]:rotate-180">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-editor-text-muted" />
                 <span className="text-sm font-semibold">Properties</span>
@@ -328,7 +328,7 @@ export function DrillEditor({
         <DrillDetailsFormContent formData={formData} onFormChange={handleFormChange} categories={categories} />
       </div>
       <Collapsible className="lg:hidden">
-        <CollapsibleTrigger className="w-full flex items-center justify-between bg-editor text-editor-text rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all [&[data-state=open]>svg]:rotate-180">
+        <CollapsibleTrigger className="w-full flex items-center justify-between bg-editor-surface text-editor-text border border-editor-border rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3 transition-all [&[data-state=open]>svg]:rotate-180">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-editor-text-muted" />
             <span className="text-sm font-semibold">Drill Details</span>

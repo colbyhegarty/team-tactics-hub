@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, Save, BookmarkX, PenTool, Plus, Camera, Users as UsersIcon, Moon, Sun } from 'lucide-react';
+import { User, Settings, Save, BookmarkX, PenTool, Plus, Camera, Users as UsersIcon, Moon, Sun, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,15 +20,21 @@ import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
 import { CustomDrillDetailModal } from '@/components/drill/CustomDrillDetailModal';
 import { getUserProfile, saveUserProfile, getSavedDrills, removeDrill, clearAllData } from '@/lib/storage';
 import { getCustomDrills, deleteCustomDrill, clearCustomDrills } from '@/lib/customDrillStorage';
+import { getSessions } from '@/lib/sessionStorage';
+import { Session } from '@/types/session';
+import { SessionCard } from '@/components/session/SessionCard';
 import { UserProfile, Drill } from '@/types/drill';
 import { CustomDrill } from '@/types/customDrill';
 import { useToast } from '@/hooks/use-toast';
+import { deleteSession, duplicateSession } from '@/lib/sessionStorage';
+import { exportSessionToPDF } from '@/lib/sessionPdf';
 
 export default function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile>(getUserProfile());
   const [savedDrills, setSavedDrills] = useState<Drill[]>([]);
   const [customDrills, setCustomDrills] = useState<CustomDrill[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [selectedCustomDrill, setSelectedCustomDrill] = useState<CustomDrill | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -42,6 +48,7 @@ export default function Profile() {
   useEffect(() => {
     setSavedDrills(getSavedDrills());
     setCustomDrills(getCustomDrills());
+    setSessions(getSessions().sort((a, b) => b.updated_at.localeCompare(a.updated_at)));
   }, []);
 
   const handleToggleDarkMode = (checked: boolean) => {
@@ -98,12 +105,28 @@ export default function Profile() {
 
   const handleViewCustomDrill = (drill: CustomDrill) => setSelectedCustomDrill(drill);
 
+  const handleDeleteSession = (id: string) => {
+    if (!confirm('Delete this session?')) return;
+    deleteSession(id);
+    setSessions(prev => prev.filter(s => s.id !== id));
+    toast({ title: 'Session deleted' });
+  };
+
+  const handleDuplicateSession = (id: string) => {
+    const dup = duplicateSession(id);
+    if (dup) {
+      setSessions(prev => [dup, ...prev]);
+      toast({ title: 'Session duplicated' });
+    }
+  };
+
   const handleClearAllData = () => {
     clearAllData();
     clearCustomDrills();
     setProfile(getUserProfile());
     setSavedDrills([]);
     setCustomDrills([]);
+    setSessions([]);
     toast({ title: 'Data Cleared', description: 'All your data has been deleted.', variant: 'destructive' });
   };
 
@@ -234,7 +257,7 @@ export default function Profile() {
             </div>
 
             {/* Quick stats */}
-            <div className="grid grid-cols-2 gap-3 mt-5">
+            <div className="grid grid-cols-3 gap-3 mt-5">
               <div className="text-center p-3 rounded-lg bg-muted/50">
                 <p className="text-lg font-bold text-foreground">{customDrills.length}</p>
                 <p className="text-xs text-muted-foreground">My Drills</p>
@@ -243,20 +266,28 @@ export default function Profile() {
                 <p className="text-lg font-bold text-foreground">{savedDrills.length}</p>
                 <p className="text-xs text-muted-foreground">Saved</p>
               </div>
+              <div className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold text-foreground">{sessions.length}</p>
+                <p className="text-xs text-muted-foreground">Sessions</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Drills Tabs */}
+        {/* Tabs */}
         <Tabs defaultValue="custom" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-3 h-auto p-1">
             <TabsTrigger value="custom" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2 py-2">
               <PenTool className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              My Drills ({customDrills.length})
+              Drills ({customDrills.length})
             </TabsTrigger>
             <TabsTrigger value="saved" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2 py-2">
               <BookmarkX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Saved ({savedDrills.length})
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2 py-2">
+              <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Sessions ({sessions.length})
             </TabsTrigger>
           </TabsList>
 
@@ -308,6 +339,36 @@ export default function Profile() {
                     isSaved={true}
                     onView={handleViewDrill}
                     onSave={handleRemoveDrill}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="sessions" className="mt-4">
+            {sessions.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-border rounded-lg">
+                <CalendarDays className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">No sessions yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Create a training session to see it here
+                </p>
+                <Button className="mt-4" onClick={() => navigate('/sessions/new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Session
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {sessions.map(session => (
+                  <SessionCard
+                    key={session.id}
+                    session={session}
+                    onView={(id) => navigate(`/sessions/${id}`)}
+                    onEdit={(id) => navigate(`/sessions/${id}/edit`)}
+                    onDuplicate={handleDuplicateSession}
+                    onDelete={handleDeleteSession}
+                    onExportPDF={exportSessionToPDF}
                   />
                 ))}
               </div>
