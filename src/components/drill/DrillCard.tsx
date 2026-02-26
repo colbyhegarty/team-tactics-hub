@@ -58,19 +58,19 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         className
       )}
     >
-      {/* Diagram - fixed aspect ratio with field background */}
-      <div className="relative w-full aspect-[4/3] overflow-hidden" onClick={handleDiagramClick}>
+      {/* Diagram - consistent aspect ratio with grass background */}
+      <div className="relative w-full aspect-[16/10] overflow-hidden rounded-t-xl bg-[#63b043]" onClick={handleDiagramClick}>
         {drill.svgUrl ? (
           <img
             src={drill.svgUrl}
             alt={drill.name}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />
         ) : drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-field-lines/60">
