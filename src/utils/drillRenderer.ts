@@ -248,10 +248,7 @@ export function drawField(
     ctx.fillRect(canvasX, 0, stripeWidthPx, canvasHeight);
   }
 
-  // Field outline
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(padding, padding, fieldWidth, fieldHeight);
+  // Field outline removed for cleaner look
 
   // Field markings
   const showMarkings = field?.markings !== false && field?.show_markings !== false;

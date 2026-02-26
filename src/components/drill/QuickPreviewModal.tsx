@@ -44,7 +44,7 @@ export function QuickPreviewModal({
         </div>
         
         {/* Large diagram */}
-        <div className="bg-field p-4">
+        <div className="rounded-xl overflow-hidden">
           {drill.svgUrl ? (
             <img 
               src={drill.svgUrl} 
