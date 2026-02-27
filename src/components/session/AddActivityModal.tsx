@@ -117,6 +117,12 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
     setDrillPage(0);
   }, [search]);
 
+  // Scroll drill grid to top on page change
+  const drillGridRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    drillGridRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [drillPage]);
+
   if (!isOpen) return null;
 
   const filteredDrills = (step === 'library' ? libraryDrills : customDrills).filter(
