@@ -45,6 +45,9 @@ export default function Sessions() {
               <p className="text-sm text-muted-foreground hidden md:block">Plan and manage training sessions</p>
             </div>
           </div>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/sessions/new')} className="md:hidden rounded-full">
+            <Plus className="h-5 w-5" />
+          </Button>
           <Button onClick={() => navigate('/sessions/new')} className="hidden md:inline-flex">
             <Plus className="h-4 w-4 mr-1" /> New Session
           </Button>
