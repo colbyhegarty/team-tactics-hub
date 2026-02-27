@@ -103,7 +103,11 @@ export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOve
   const handleDiagramClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isMobile) {
-      setShowOverlay(prev => !prev);
+      if (onOverlayToggle) {
+        onOverlayToggle(drill.id);
+      } else {
+        onView(drill);
+      }
     } else {
       onView(drill);
     }
