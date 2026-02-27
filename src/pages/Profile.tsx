@@ -331,7 +331,7 @@ export default function Profile() {
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 grid-cols-2">
                 {savedDrills.map(drill => (
                   <DrillCard
                     key={drill.id}
@@ -339,6 +339,9 @@ export default function Profile() {
                     isSaved={true}
                     onView={handleViewDrill}
                     onSave={handleRemoveDrill}
+                    compactOverlay
+                    isOverlayActive={false}
+                    onOverlayToggle={() => handleViewDrill(drill)}
                   />
                 ))}
               </div>
