@@ -55,7 +55,7 @@ export default function Sessions() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <Popover>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button variant={filterDate ? 'outline' : 'ghost'} size="icon" className="rounded-full">
                   <CalendarIcon className="h-5 w-5" />
@@ -65,12 +65,15 @@ export default function Sessions() {
                 <Calendar
                   mode="single"
                   selected={filterDate}
-                  onSelect={(d) => setFilterDate(d)}
+                  onSelect={(d) => {
+                    setFilterDate(d);
+                    setCalendarOpen(false);
+                  }}
                   className="p-3 pointer-events-auto"
                 />
                 {filterDate && (
                   <div className="border-t border-border p-2">
-                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setFilterDate(undefined)}>
+                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setFilterDate(undefined); setCalendarOpen(false); }}>
                       Clear filter
                     </Button>
                   </div>

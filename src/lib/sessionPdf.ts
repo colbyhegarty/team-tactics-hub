@@ -82,42 +82,73 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
         <div style="padding: 10px 12px;">
     `;
 
-    // Diagram - smaller for fitting on one page
-    if (activity.drill_svg_url) {
+    const setup = drillData?.setup;
+    const hasRightContent = setup || instructions || description;
+
+    // Side-by-side layout: diagram left, setup+instructions right
+    if (activity.drill_svg_url && hasRightContent) {
+      html += `<div style="display: flex; gap: 10px; align-items: flex-start;">`;
       html += `
-        <div style="margin-bottom: 8px; border-radius: 6px; overflow: hidden; max-width: 320px;">
+        <div style="flex-shrink: 0; border-radius: 6px; overflow: hidden; width: 220px;">
           <img src="${activity.drill_svg_url}" style="width: 100%; height: auto; display: block;">
         </div>
       `;
-    }
+      html += `<div style="flex: 1; min-width: 0;">`;
 
-    // Description
-    if (description) {
-      html += `<p style="color: #444; font-size: 11px; line-height: 1.5; margin: 0 0 6px 0;">${description}</p>`;
-    }
+      if (description) {
+        html += `<p style="color: #444; font-size: 11px; line-height: 1.5; margin: 0 0 6px 0;">${description}</p>`;
+      }
 
-    // Instructions from drill data
-    if (instructions) {
-      const points = formatBulletPoints(instructions);
-      if (points.length > 0) {
-        html += `
-          <div style="margin-bottom: 6px;">
-            <div style="font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 4px;">Instructions</div>
-            <div style="padding-left: 2px;">
-              ${points.map(p => `<div style="font-size: 11px; color: #333; line-height: 1.4; margin-bottom: 2px; display: flex; gap: 6px;"><span style="color: #16a34a; font-size: 9px; margin-top: 2px;">▸</span><span>${p}</span></div>`).join('')}
+      if (setup) {
+        const setupPoints = formatBulletPoints(setup);
+        if (setupPoints.length > 0) {
+          html += `
+            <div style="margin-bottom: 6px;">
+              <div style="font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 3px;">Setup</div>
+              <div style="padding-left: 2px;">
+                ${setupPoints.map(p => `<div style="font-size: 10px; color: #333; line-height: 1.4; margin-bottom: 1px; display: flex; gap: 5px;"><span style="color: #16a34a; font-size: 8px; margin-top: 2px;">▸</span><span>${p}</span></div>`).join('')}
+              </div>
             </div>
+          `;
+        }
+      }
+
+      if (instructions) {
+        const points = formatBulletPoints(instructions);
+        if (points.length > 0) {
+          html += `
+            <div style="margin-bottom: 6px;">
+              <div style="font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 3px;">Instructions</div>
+              <div style="padding-left: 2px;">
+                ${points.map(p => `<div style="font-size: 10px; color: #333; line-height: 1.4; margin-bottom: 1px; display: flex; gap: 5px;"><span style="color: #16a34a; font-size: 8px; margin-top: 2px;">▸</span><span>${p}</span></div>`).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      html += `</div></div>`;
+    } else {
+      // No diagram or no text content — render sequentially
+      if (activity.drill_svg_url) {
+        html += `
+          <div style="margin-bottom: 8px; border-radius: 6px; overflow: hidden; max-width: 220px;">
+            <img src="${activity.drill_svg_url}" style="width: 100%; height: auto; display: block;">
           </div>
         `;
       }
+      if (description) {
+        html += `<p style="color: #444; font-size: 11px; line-height: 1.5; margin: 0 0 6px 0;">${description}</p>`;
+      }
     }
 
-    // Notes - below diagram with sticky note icon
+    // Notes - below everything
     if (activity.activity_notes) {
       html += `
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 10px; border-radius: 6px; margin-top: 6px;">
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 5px 10px; border-radius: 6px; margin-top: 6px;">
           <div style="display: flex; align-items: flex-start; gap: 5px;">
             ${ICONS.stickyNote}
-            <span style="font-size: 11px; color: #166534;">${activity.activity_notes}</span>
+            <span style="font-size: 10px; color: #166534;">${activity.activity_notes}</span>
           </div>
         </div>
       `;
