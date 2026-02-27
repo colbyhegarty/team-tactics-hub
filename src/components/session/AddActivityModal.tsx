@@ -332,9 +332,13 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                 )}
                 <div className="p-3">
                   <div className="font-semibold text-foreground">{editingActivity.drill_name || editingActivity.title || 'Activity'}</div>
-                  <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                    {editingActivity.drill_difficulty && <span>{editingActivity.drill_difficulty}</span>}
-                    {editingActivity.drill_player_count && <span>👥 {editingActivity.drill_player_count}</span>}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+                    {editingActivity.drill_difficulty && (
+                      <span className="badge-pill badge-muted">{editingActivity.drill_difficulty}</span>
+                    )}
+                    {editingActivity.drill_player_count && (
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {editingActivity.drill_player_count}</span>
+                    )}
                   </div>
                 </div>
               </div>
