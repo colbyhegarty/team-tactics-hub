@@ -240,7 +240,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto">
+                  <div ref={drillGridRef} className="grid grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto">
                     {paginatedDrills.map(drill => (
                       <button
                         key={drill.id}

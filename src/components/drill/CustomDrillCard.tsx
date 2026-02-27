@@ -148,14 +148,16 @@ export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOve
             ? (showOverlay ? "opacity-100" : "opacity-0 pointer-events-none")
             : "opacity-0 group-hover:opacity-100"
         )}>
-          <Button
-            size="sm"
-            className="shadow-lg"
-            onClick={handleViewFull}
-          >
-            View Drill
-            <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
+          {compactOverlay ? (
+            <Button size="icon" className="shadow-lg h-9 w-9" onClick={handleViewFull}>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button size="sm" className="shadow-lg" onClick={handleViewFull}>
+              View Drill
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
         </div>
 
         {/* Category badge */}
