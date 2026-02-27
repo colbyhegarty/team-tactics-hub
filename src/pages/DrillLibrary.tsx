@@ -39,6 +39,7 @@ export default function DrillLibrary() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [gridCols, setGridCols] = useState<1 | 2>(1);
+  const [activeDrillOverlay, setActiveDrillOverlay] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
