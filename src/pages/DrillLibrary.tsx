@@ -243,13 +243,7 @@ export default function DrillLibrary() {
             resultCount={drillsForDisplay.length}
             isLoading={isLoading}
             showAdvanced={true}
-          />
-          {/* Grid toggle - below filters */}
-          {!isLoading && drillsForDisplay.length > 0 && isMobile && (
-            <div className="flex items-center justify-between mt-3">
-              <p className="text-xs text-muted-foreground">
-                {drillsForDisplay.length} drills found
-              </p>
+            rightSlot={isMobile ? (
               <div className="flex items-center gap-1">
                 <Button
                   variant={gridCols === 1 ? 'default' : 'outline'}
@@ -268,8 +262,8 @@ export default function DrillLibrary() {
                   <LayoutGrid className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </div>
-          )}
+            ) : undefined}
+          />
         </div>
       </header>
 
