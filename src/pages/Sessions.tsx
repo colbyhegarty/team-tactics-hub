@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays } from 'lucide-react';
+import { Plus, CalendarDays, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SessionCard } from '@/components/session/SessionCard';
 import { Session } from '@/types/session';
 import { getSessions, deleteSession, duplicateSession } from '@/lib/sessionStorage';
 import { useToast } from '@/hooks/use-toast';
 import { exportSessionToPDF } from '@/lib/sessionPdf';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 export default function Sessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
