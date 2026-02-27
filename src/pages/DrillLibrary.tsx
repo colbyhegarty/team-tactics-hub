@@ -39,6 +39,7 @@ export default function DrillLibrary() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [gridCols, setGridCols] = useState<1 | 2>(1);
+  const [activeDrillOverlay, setActiveDrillOverlay] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -243,13 +244,7 @@ export default function DrillLibrary() {
             resultCount={drillsForDisplay.length}
             isLoading={isLoading}
             showAdvanced={true}
-          />
-          {/* Grid toggle - below filters */}
-          {!isLoading && drillsForDisplay.length > 0 && isMobile && (
-            <div className="flex items-center justify-between mt-3">
-              <p className="text-xs text-muted-foreground">
-                {drillsForDisplay.length} drills found
-              </p>
+            rightSlot={isMobile ? (
               <div className="flex items-center gap-1">
                 <Button
                   variant={gridCols === 1 ? 'default' : 'outline'}
@@ -268,8 +263,8 @@ export default function DrillLibrary() {
                   <LayoutGrid className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </div>
-          )}
+            ) : undefined}
+          />
         </div>
       </header>
 
@@ -300,15 +295,6 @@ export default function DrillLibrary() {
           </div>
         ) : (
           <>
-            {/* Results header - desktop only since mobile toggle is in header */}
-            {!isMobile && (
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-muted-foreground">
-                  {drillsForDisplay.length} drills found
-                </p>
-              </div>
-            )}
-
             <div className={
               isMobile && gridCols === 2
                 ? 'grid gap-3 grid-cols-2'
@@ -322,6 +308,9 @@ export default function DrillLibrary() {
                   onView={handleViewDrill}
                   onSave={handleSaveDrill}
                   onQuickView={handleQuickPreview}
+                  compactOverlay={isMobile && gridCols === 2}
+                  isOverlayActive={activeDrillOverlay === drill.id}
+                  onOverlayToggle={(id) => setActiveDrillOverlay(prev => prev === id ? null : id)}
                 />
               ))}
             </div>

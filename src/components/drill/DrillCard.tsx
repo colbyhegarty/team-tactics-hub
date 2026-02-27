@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
@@ -13,11 +12,16 @@ interface DrillCardProps {
   onSave: (drill: Drill) => void;
   onQuickView?: (drill: Drill) => void;
   className?: string;
+  compactOverlay?: boolean;
+  isOverlayActive?: boolean;
+  onOverlayToggle?: (drillId: string) => void;
 }
 
-export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className }: DrillCardProps) {
+export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className, compactOverlay, isOverlayActive, onOverlayToggle }: DrillCardProps) {
   const isMobile = useIsMobile();
-  const [showOverlay, setShowOverlay] = useState(false);
+
+  // Use external overlay state if provided, otherwise internal
+  const showOverlay = isOverlayActive ?? false;
 
   const handleQuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,7 +43,9 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
   const handleDiagramClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isMobile) {
-      setShowOverlay(prev => !prev);
+      if (onOverlayToggle) {
+        onOverlayToggle(drill.id);
+      }
     } else {
       if (onQuickView) onQuickView(drill);
       else onView(drill);
@@ -90,24 +96,45 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         )}>
           <div className="flex gap-2">
             {onQuickView && (
+              compactOverlay ? (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="bg-white text-primary hover:bg-white/90 shadow-lg h-9 w-9"
+                  onClick={handleQuickView}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white text-primary hover:bg-white/90 shadow-lg"
+                  onClick={handleQuickView}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Quick View
+                </Button>
+              )
+            )}
+            {compactOverlay ? (
               <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white text-primary hover:bg-white/90 shadow-lg"
-                onClick={handleQuickView}
+                size="icon"
+                className="shadow-lg h-9 w-9"
+                onClick={handleViewFull}
               >
-                <Eye className="h-4 w-4 mr-1" />
-                Quick View
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="shadow-lg"
+                onClick={handleViewFull}
+              >
+                View Drill
+                <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             )}
-            <Button
-              size="sm"
-              className="shadow-lg"
-              onClick={handleViewFull}
-            >
-              View Drill
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
           </div>
         </div>
 
