@@ -294,15 +294,6 @@ export default function DrillLibrary() {
           </div>
         ) : (
           <>
-            {/* Results header - desktop only since mobile toggle is in header */}
-            {!isMobile && (
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-muted-foreground">
-                  {drillsForDisplay.length} drills found
-                </p>
-              </div>
-            )}
-
             <div className={
               isMobile && gridCols === 2
                 ? 'grid gap-3 grid-cols-2'
