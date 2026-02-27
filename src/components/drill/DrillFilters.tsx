@@ -207,11 +207,14 @@ export function DrillFilters({
 
       {/* Results Count */}
       {resultCount !== undefined && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Filter className="h-3 w-3" />
-          <span>
-            {isLoading ? 'Searching...' : `${resultCount} drills found`}
-          </span>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Filter className="h-3 w-3" />
+            <span>
+              {isLoading ? 'Searching...' : `${resultCount} drills found`}
+            </span>
+          </div>
+          {rightSlot}
         </div>
       )}
     </div>
