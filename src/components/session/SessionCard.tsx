@@ -1,4 +1,4 @@
-import { Calendar, Clock, Users, MoreVertical, Copy, Trash2, FileText, Edit } from 'lucide-react';
+import { Calendar, Clock, Users, MoreVertical, Copy, Trash2, Share, Edit } from 'lucide-react';
 import { Session } from '@/types/session';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
