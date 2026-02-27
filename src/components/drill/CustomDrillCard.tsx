@@ -134,8 +134,8 @@ export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOve
         'hover:shadow-card-lg hover:border-primary/30 transition-all duration-300'
       )}
     >
-      {/* Diagram - fixed aspect ratio with field background */}
-      <div className="relative w-full aspect-[4/3] bg-field overflow-hidden" onClick={handleDiagramClick}>
+      {/* Diagram - fixed aspect ratio matching library style */}
+      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-t-xl" onClick={handleDiagramClick}>
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
