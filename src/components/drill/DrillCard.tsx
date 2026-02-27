@@ -44,7 +44,9 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
   const handleDiagramClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isMobile) {
-      setShowOverlay(prev => !prev);
+      if (onOverlayToggle) {
+        onOverlayToggle(drill.id);
+      }
     } else {
       if (onQuickView) onQuickView(drill);
       else onView(drill);
