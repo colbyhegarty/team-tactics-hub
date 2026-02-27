@@ -67,24 +67,26 @@ export default function Sessions() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sessions.map(session => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onView={(id) => navigate(`/sessions/${id}`)}
-                onEdit={(id) => navigate(`/sessions/${id}/edit`)}
-                onDuplicate={handleDuplicate}
-                onDelete={handleDelete}
-                onExportPDF={exportSessionToPDF}
-              />
-            ))}
-          </div>
-          <div className="mt-6 flex justify-center">
-            <Button variant="outline" onClick={() => navigate('/sessions/new')} className="rounded-xl">
-              <Plus className="h-4 w-4 mr-1" /> Create New Session
-            </Button>
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {sessions.map(session => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  onView={(id) => navigate(`/sessions/${id}`)}
+                  onEdit={(id) => navigate(`/sessions/${id}/edit`)}
+                  onDuplicate={handleDuplicate}
+                  onDelete={handleDelete}
+                  onExportPDF={exportSessionToPDF}
+                />
+              ))}
+            </div>
+            <div className="mt-6 flex justify-center">
+              <Button variant="outline" onClick={() => navigate('/sessions/new')} className="rounded-xl">
+                <Plus className="h-4 w-4 mr-1" /> Create New Session
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </div>
