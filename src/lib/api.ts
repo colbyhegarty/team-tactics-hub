@@ -299,37 +299,54 @@ export function filterByDuration(
 }
 
 // Client-side filter for grouped age categories (U6-U8, U10-U12, U14-U16, U17+)
+// Uses overlap logic: show drill if ANY overlap between filter range and drill range
 export function filterByAgeGroup(
   drills: LibraryDrillMeta[],
   selectedAgeGroup?: string
 ): LibraryDrillMeta[] {
   if (!selectedAgeGroup || selectedAgeGroup === 'All') return drills;
 
-  // Define max age for each group (drills with age_group number <= max are included)
-  const groupMaxAge: Record<string, number> = {
-    'U6-U8': 8,
-    'U10-U12': 12,
-    'U14-U16': 16,
-    'U17+': 999,
-  };
-  const groupMinAge: Record<string, number> = {
-    'U6-U8': 0,
-    'U10-U12': 9,
-    'U14-U16': 13,
-    'U17+': 17,
+  // Filter age ranges
+  const groupRanges: Record<string, [number, number]> = {
+    'U6-U8': [4, 8],
+    'U10-U12': [9, 12],
+    'U14-U16': [13, 16],
+    'U17+': [17, 99],
   };
 
-  const maxAge = groupMaxAge[selectedAgeGroup];
-  const minAge = groupMinAge[selectedAgeGroup];
-  if (maxAge === undefined) return drills;
+  const filterRange = groupRanges[selectedAgeGroup];
+  if (!filterRange) return drills;
+  const [filterMin, filterMax] = filterRange;
 
   return drills.filter(drill => {
     if (!drill.age_group) return true;
-    // Extract first number from age_group string like "9+", "6+", "13+", "U12", etc.
-    const match = drill.age_group.match(/(\d+)/);
-    if (!match) return true;
-    const ageNum = parseInt(match[1]);
-    return ageNum >= minAge && ageNum <= maxAge;
+
+    const ageStr = drill.age_group.trim();
+    let drillMin: number;
+    let drillMax: number;
+
+    // Parse "9+" format (min age, no upper limit)
+    const plusMatch = ageStr.match(/^(\d+)\+$/);
+    if (plusMatch) {
+      drillMin = parseInt(plusMatch[1]);
+      drillMax = 99;
+    } else {
+      // Parse "8-14" or "10-14" format
+      const rangeMatch = ageStr.match(/(\d+)\s*[-–]\s*(\d+)/);
+      if (rangeMatch) {
+        drillMin = parseInt(rangeMatch[1]);
+        drillMax = parseInt(rangeMatch[2]);
+      } else {
+        // Single number like "12" or "U12"
+        const numMatch = ageStr.match(/(\d+)/);
+        if (!numMatch) return true;
+        drillMin = parseInt(numMatch[1]);
+        drillMax = drillMin;
+      }
+    }
+
+    // Check overlap: two ranges overlap if one starts before the other ends
+    return drillMin <= filterMax && drillMax >= filterMin;
   });
 }
 

@@ -308,6 +308,9 @@ export default function DrillLibrary() {
                   onView={handleViewDrill}
                   onSave={handleSaveDrill}
                   onQuickView={handleQuickPreview}
+                  compactOverlay={isMobile && gridCols === 2}
+                  isOverlayActive={activeDrillOverlay === drill.id}
+                  onOverlayToggle={(id) => setActiveDrillOverlay(prev => prev === id ? null : id)}
                 />
               ))}
             </div>

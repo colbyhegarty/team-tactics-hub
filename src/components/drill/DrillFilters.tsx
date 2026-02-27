@@ -45,6 +45,7 @@ export function DrillFilters({
   resultCount,
   isLoading,
   showAdvanced = true,
+  rightSlot,
 }: DrillFiltersProps) {
   const updateFilter = (key: keyof DrillFilterParams, value: string | number | boolean | undefined) => {
     const newFilters = { ...filters };

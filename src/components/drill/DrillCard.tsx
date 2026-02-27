@@ -97,24 +97,45 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         )}>
           <div className="flex gap-2">
             {onQuickView && (
+              compactOverlay ? (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="bg-white text-primary hover:bg-white/90 shadow-lg h-9 w-9"
+                  onClick={handleQuickView}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white text-primary hover:bg-white/90 shadow-lg"
+                  onClick={handleQuickView}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Quick View
+                </Button>
+              )
+            )}
+            {compactOverlay ? (
               <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white text-primary hover:bg-white/90 shadow-lg"
-                onClick={handleQuickView}
+                size="icon"
+                className="shadow-lg h-9 w-9"
+                onClick={handleViewFull}
               >
-                <Eye className="h-4 w-4 mr-1" />
-                Quick View
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="shadow-lg"
+                onClick={handleViewFull}
+              >
+                View Drill
+                <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             )}
-            <Button
-              size="sm"
-              className="shadow-lg"
-              onClick={handleViewFull}
-            >
-              View Drill
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
           </div>
         </div>
 
