@@ -1,4 +1,4 @@
-import { Calendar, Clock, Users, MoreVertical, Copy, Trash2, FileText, Edit } from 'lucide-react';
+import { Calendar, Clock, Users, MoreVertical, Copy, Trash2, Share, Edit } from 'lucide-react';
 import { Session } from '@/types/session';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ export function SessionCard({ session, onView, onEdit, onDuplicate, onDelete, on
                 <Copy className="h-4 w-4 mr-2" /> Duplicate
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onExportPDF(session)}>
-                <FileText className="h-4 w-4 mr-2" /> Export PDF
+                <Share className="h-4 w-4 mr-2" /> Export PDF
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"

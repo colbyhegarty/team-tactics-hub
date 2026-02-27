@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, X, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, X, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -348,7 +348,7 @@ export default function SessionEditor() {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8">
           <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
-            <FileText className="h-4 w-4 mr-1" /> Export PDF
+            <Share className="h-4 w-4 mr-1" /> Export PDF
           </Button>
           <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
             {saving ? 'Saving...' : 'Save Session'}

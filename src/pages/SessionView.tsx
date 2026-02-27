@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, FileText, Eye, ArrowRight, ListChecks } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, Eye, ArrowRight, ListChecks, Share, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
 import { getSession } from '@/lib/sessionStorage';
@@ -112,7 +112,7 @@ export default function SessionView() {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => exportSessionToPDF(session, drillDetails)}>
-              <FileText className="h-4 w-4" />
+              <Share className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
               <Edit className="h-4 w-4" />
@@ -284,9 +284,9 @@ export default function SessionView() {
                       )}
 
                       {activity.activity_notes && (
-                        <div className="mt-3 rounded-xl bg-accent/8 border border-accent/15 px-3 py-2.5 text-sm text-foreground/80">
-                          <span className="font-semibold text-accent-foreground text-xs uppercase tracking-wider">Notes: </span>
-                          <span className="ml-1">{activity.activity_notes}</span>
+                        <div className="mt-3 rounded-xl bg-secondary border border-border px-3 py-2.5 text-sm text-foreground/80 flex items-start gap-2">
+                          <StickyNote className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+                          <span>{activity.activity_notes}</span>
                         </div>
                       )}
                     </div>

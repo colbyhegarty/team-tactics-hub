@@ -14,6 +14,17 @@ function formatBulletPoints(text: string): string[] {
     .filter(Boolean);
 }
 
+// SVG icons as inline data URIs for professional look
+const ICONS = {
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
+  clock: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  users: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  timer: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  stickyNote: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>`,
+  target: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+  checkSquare: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`,
+};
+
 export function exportSessionToPDF(session: Session, drillDetails?: Record<string, Drill>) {
   const totalDuration = session.activities.reduce((s, a) => s + a.duration_minutes, 0);
 
@@ -22,30 +33,32 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
     : '';
 
   let html = `
-    <div style="font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; max-width: 780px; margin: 0 auto; padding: 30px 20px; color: #1a1a1a;">
+    <div style="font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; max-width: 780px; margin: 0 auto; padding: 20px 16px; color: #1a1a1a;">
       <!-- Header -->
-      <div style="border-bottom: 3px solid #16a34a; padding-bottom: 16px; margin-bottom: 24px;">
-        <h1 style="margin: 0 0 6px 0; font-size: 26px; font-weight: 700; color: #111;">${session.title || 'Training Session'}</h1>
-        <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #555;">
-          ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
-          ${session.session_time ? `<span>🕐 ${session.session_time}</span>` : ''}
-          ${session.team_name ? `<span>👥 ${session.team_name}</span>` : ''}
-          <span>⏱ ${totalDuration} minutes total</span>
+      <div style="border-bottom: 2px solid #16a34a; padding-bottom: 12px; margin-bottom: 16px;">
+        <h1 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: #111;">${session.title || 'Training Session'}</h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #555; align-items: center;">
+          ${dateStr ? `<span style="display: inline-flex; align-items: center; gap: 4px;">${ICONS.calendar} ${dateStr}</span>` : ''}
+          ${session.session_time ? `<span style="display: inline-flex; align-items: center; gap: 4px;">${ICONS.clock} ${session.session_time}</span>` : ''}
+          ${session.team_name ? `<span style="display: inline-flex; align-items: center; gap: 4px;">${ICONS.users} ${session.team_name}</span>` : ''}
+          <span style="display: inline-flex; align-items: center; gap: 4px;">${ICONS.timer} ${totalDuration} min total</span>
         </div>
       </div>
   `;
 
   if (session.session_goals) {
     html += `
-      <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
-        <div style="font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 4px;">Session Goals</div>
-        <p style="margin: 0; font-size: 14px; color: #333; line-height: 1.5;">${session.session_goals}</p>
+      <div style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; border-radius: 0 6px 6px 0; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 3px;">
+          ${ICONS.target} Session Goals
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #333; line-height: 1.5;">${session.session_goals}</p>
       </div>
     `;
   }
 
   // Activities
-  html += `<div style="font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #16a34a; margin-bottom: 16px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb;">Activities</div>`;
+  html += `<div style="font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #16a34a; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb;">Activities</div>`;
 
   let currentTime = 0;
   session.activities.forEach((activity) => {
@@ -55,22 +68,24 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
     const instructions = drillData?.instructions;
 
     html += `
-      <div style="margin-bottom: 24px; page-break-inside: avoid; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+      <div style="margin-bottom: 12px; page-break-inside: avoid; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
         <!-- Activity Header -->
-        <div style="background: #f8fafc; padding: 10px 16px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-weight: 700; font-size: 14px; color: #111;">
-            <span style="color: #16a34a; font-family: monospace; margin-right: 8px;">${formatTime(currentTime)}</span>
+        <div style="background: #f8fafc; padding: 6px 12px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-weight: 700; font-size: 12px; color: #111;">
+            <span style="color: #16a34a; font-family: monospace; margin-right: 6px;">${formatTime(currentTime)}</span>
             ${title.toUpperCase()}
           </div>
-          <div style="font-size: 12px; color: #666; font-weight: 600;">${activity.duration_minutes} min</div>
+          <div style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #666; font-weight: 600;">
+            ${ICONS.timer} ${activity.duration_minutes} min
+          </div>
         </div>
-        <div style="padding: 14px 16px;">
+        <div style="padding: 10px 12px;">
     `;
 
-    // Diagram - full width, below header
+    // Diagram - smaller for fitting on one page
     if (activity.drill_svg_url) {
       html += `
-        <div style="margin-bottom: 12px; border-radius: 8px; overflow: hidden;">
+        <div style="margin-bottom: 8px; border-radius: 6px; overflow: hidden; max-width: 320px;">
           <img src="${activity.drill_svg_url}" style="width: 100%; height: auto; display: block;">
         </div>
       `;
@@ -78,7 +93,7 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
 
     // Description
     if (description) {
-      html += `<p style="color: #444; font-size: 13px; line-height: 1.6; margin: 0 0 10px 0;">${description}</p>`;
+      html += `<p style="color: #444; font-size: 11px; line-height: 1.5; margin: 0 0 6px 0;">${description}</p>`;
     }
 
     // Instructions from drill data
@@ -86,23 +101,23 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
       const points = formatBulletPoints(instructions);
       if (points.length > 0) {
         html += `
-          <div style="margin-bottom: 10px;">
-            <div style="font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 6px;">Instructions</div>
-            <div style="padding-left: 4px;">
-              ${points.map(p => `<div style="font-size: 13px; color: #333; line-height: 1.5; margin-bottom: 4px; display: flex; gap: 8px;"><span style="color: #16a34a; font-size: 10px; margin-top: 3px;">▸</span><span>${p}</span></div>`).join('')}
+          <div style="margin-bottom: 6px;">
+            <div style="font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #16a34a; margin-bottom: 4px;">Instructions</div>
+            <div style="padding-left: 2px;">
+              ${points.map(p => `<div style="font-size: 11px; color: #333; line-height: 1.4; margin-bottom: 2px; display: flex; gap: 6px;"><span style="color: #16a34a; font-size: 9px; margin-top: 2px;">▸</span><span>${p}</span></div>`).join('')}
             </div>
           </div>
         `;
       }
     }
 
-    // Notes - below diagram with matching icon style
+    // Notes - below diagram with sticky note icon
     if (activity.activity_notes) {
       html += `
-        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 8px 12px; border-radius: 6px; margin-top: 8px;">
-          <div style="display: flex; align-items: flex-start; gap: 6px;">
-            <span style="font-size: 11px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;">📋 Notes:</span>
-            <span style="font-size: 13px; color: #78350f;">${activity.activity_notes}</span>
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 10px; border-radius: 6px; margin-top: 6px;">
+          <div style="display: flex; align-items: flex-start; gap: 5px;">
+            ${ICONS.stickyNote}
+            <span style="font-size: 11px; color: #166534;">${activity.activity_notes}</span>
           </div>
         </div>
       `;
@@ -115,10 +130,10 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
   // Equipment
   if (session.equipment.length > 0) {
     html += `
-      <div style="margin-top: 24px; page-break-inside: avoid;">
-        <div style="font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #16a34a; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb;">Equipment Checklist</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-          ${session.equipment.map(e => `<span style="display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 13px;">☐ ${e.name}${e.quantity ? ` <span style="color: #94a3b8;">(×${e.quantity})</span>` : ''}</span>`).join('')}
+      <div style="margin-top: 16px; page-break-inside: avoid;">
+        <div style="font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #16a34a; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb;">Equipment Checklist</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          ${session.equipment.map(e => `<span style="display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 11px;">${ICONS.checkSquare} ${e.name}${e.quantity ? ` <span style="color: #94a3b8;">(×${e.quantity})</span>` : ''}</span>`).join('')}
         </div>
       </div>
     `;
@@ -133,7 +148,7 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
       <style>
         @media print {
           body { margin: 0; }
-          @page { margin: 15mm; }
+          @page { margin: 12mm; }
         }
       </style>
       </head>
