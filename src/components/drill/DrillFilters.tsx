@@ -33,6 +33,7 @@ interface DrillFiltersProps {
   resultCount?: number;
   isLoading?: boolean;
   showAdvanced?: boolean;
+  rightSlot?: React.ReactNode;
 }
 
 export function DrillFilters({
