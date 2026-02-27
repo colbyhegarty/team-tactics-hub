@@ -112,7 +112,7 @@ export default function SessionView() {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => exportSessionToPDF(session, drillDetails)}>
-              <FileText className="h-4 w-4" />
+              <Share className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
               <Edit className="h-4 w-4" />
