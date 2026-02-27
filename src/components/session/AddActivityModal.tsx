@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ArrowLeft, Library, Pencil, FileText } from 'lucide-react';
+import { X, ArrowLeft, Library, Pencil, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,7 +26,9 @@ interface DrillOption {
   svg_url?: string;
 }
 
-type Step = 'choose' | 'library' | 'custom' | 'quick';
+type Step = 'choose' | 'library' | 'custom' | 'quick' | 'edit-drill';
+
+const DRILLS_PER_PAGE = 8;
 
 export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: AddActivityModalProps) {
   const [step, setStep] = useState<Step>('choose');
@@ -35,10 +37,11 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedDrill, setSelectedDrill] = useState<DrillOption | null>(null);
-  const [duration, setDuration] = useState(10);
+  const [duration, setDuration] = useState<number | ''>(10);
   const [activityNotes, setActivityNotes] = useState('');
   const [quickTitle, setQuickTitle] = useState('');
   const [quickDescription, setQuickDescription] = useState('');
+  const [drillPage, setDrillPage] = useState(0);
 
   // Reset state when opened
   useEffect(() => {
@@ -51,7 +54,8 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
           setQuickTitle(editingActivity.title);
           setQuickDescription(editingActivity.description);
         } else {
-          setStep('choose');
+          // Editing a drill-based activity: go directly to edit-drill step
+          setStep('edit-drill');
         }
       } else {
         setStep('choose');
@@ -61,6 +65,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
         setQuickTitle('');
         setQuickDescription('');
         setSearch('');
+        setDrillPage(0);
       }
     }
   }, [isOpen, editingActivity]);
@@ -107,14 +112,30 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
     }
   }, [step]);
 
+  // Reset page on search change
+  useEffect(() => {
+    setDrillPage(0);
+  }, [search]);
+
   if (!isOpen) return null;
 
   const filteredDrills = (step === 'library' ? libraryDrills : customDrills).filter(
     d => !search || d.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredDrills.length / DRILLS_PER_PAGE);
+  const paginatedDrills = filteredDrills.slice(drillPage * DRILLS_PER_PAGE, (drillPage + 1) * DRILLS_PER_PAGE);
+
+  const effectiveDuration = typeof duration === 'number' ? duration : 1;
+
   const handleAdd = () => {
-    if (step === 'quick') {
+    if (step === 'edit-drill' && editingActivity) {
+      onAdd({
+        ...editingActivity,
+        duration_minutes: effectiveDuration,
+        activity_notes: activityNotes,
+      });
+    } else if (step === 'quick') {
       onAdd({
         id: editingActivity?.id || generateActivityId(),
         sort_order: 0,
@@ -123,7 +144,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
         custom_drill_id: null,
         title: quickTitle,
         description: quickDescription,
-        duration_minutes: duration,
+        duration_minutes: effectiveDuration,
         activity_notes: activityNotes,
       });
     } else if (selectedDrill) {
@@ -136,7 +157,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
         custom_drill_id: !isLibrary ? selectedDrill.id : null,
         title: '',
         description: '',
-        duration_minutes: duration,
+        duration_minutes: effectiveDuration,
         activity_notes: activityNotes,
         drill_name: selectedDrill.name,
         drill_svg_url: selectedDrill.svg_url,
@@ -149,7 +170,9 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
   };
 
   const canSubmit =
-    step === 'quick' ? !!quickTitle : step !== 'choose' && !!selectedDrill;
+    step === 'edit-drill' ? true :
+    step === 'quick' ? !!quickTitle :
+    step !== 'choose' && !!selectedDrill;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fadeIn">
@@ -157,7 +180,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-semibold text-foreground">
-            {editingActivity ? 'Edit Activity' : step === 'choose' ? 'Add Activity' : step === 'library' ? 'Drill Library' : step === 'custom' ? 'My Drills' : 'Quick Activity'}
+            {editingActivity ? 'Edit Activity' : step === 'choose' ? 'Add Activity' : step === 'library' ? 'Drill Library' : step === 'custom' ? 'My Drills' : step === 'edit-drill' ? 'Edit Activity' : 'Quick Activity'}
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -210,33 +233,64 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                   {step === 'custom' ? 'No custom drills yet' : 'No drills found'}
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto">
-                  {filteredDrills.map(drill => (
-                    <button
-                      key={drill.id}
-                      onClick={() => {
-                        setSelectedDrill(drill);
-                        setDuration(parseInt(drill.duration || '') || 15);
-                      }}
-                      className={`rounded-lg border-2 p-3 text-left transition-colors ${
-                        selectedDrill?.id === drill.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-muted-foreground/30'
-                      }`}
-                    >
-                      {drill.svg_url && (
-                        <div className="w-full h-16 bg-field rounded mb-2 overflow-hidden">
-                          <img src={drill.svg_url} alt={drill.name} className="w-full h-full object-contain p-1" />
+                <>
+                  <div className="grid grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto">
+                    {paginatedDrills.map(drill => (
+                      <button
+                        key={drill.id}
+                        onClick={() => {
+                          setSelectedDrill(drill);
+                          setDuration(parseInt(drill.duration || '') || 15);
+                        }}
+                        className={`rounded-lg border-2 p-0 text-left transition-colors overflow-hidden ${
+                          selectedDrill?.id === drill.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        {drill.svg_url && (
+                          <div className="w-full aspect-[4/3] overflow-hidden">
+                            <img src={drill.svg_url} alt={drill.name} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="p-2">
+                          <div className="font-medium text-sm text-foreground line-clamp-1">{drill.name}</div>
+                          <div className="flex gap-1.5 text-[10px] text-muted-foreground mt-1">
+                            {drill.duration && <span>⏱ {drill.duration} min</span>}
+                            {drill.difficulty && <span>• {drill.difficulty}</span>}
+                          </div>
                         </div>
-                      )}
-                      <div className="font-medium text-sm text-foreground line-clamp-1">{drill.name}</div>
-                      <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                        {drill.duration && <span>⏱ {drill.duration}</span>}
-                        {drill.difficulty && <span>{drill.difficulty}</span>}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-border">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setDrillPage(p => Math.max(0, p - 1))}
+                        disabled={drillPage === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        {drillPage + 1} / {totalPages}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setDrillPage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={drillPage >= totalPages - 1}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
 
               {selectedDrill && (
@@ -246,7 +300,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                     <Input
                       type="number"
                       value={duration}
-                      onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
+                      onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
                       min={1}
                       max={120}
                       className="w-32 mt-1"
@@ -265,6 +319,47 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                 </div>
               )}
             </>
+          )}
+
+          {step === 'edit-drill' && editingActivity && (
+            <div className="space-y-4">
+              {/* Show existing drill info */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                {editingActivity.drill_svg_url && (
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img src={editingActivity.drill_svg_url} alt={editingActivity.drill_name || ''} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="p-3">
+                  <div className="font-semibold text-foreground">{editingActivity.drill_name || editingActivity.title || 'Activity'}</div>
+                  <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                    {editingActivity.drill_difficulty && <span>{editingActivity.drill_difficulty}</span>}
+                    {editingActivity.drill_player_count && <span>👥 {editingActivity.drill_player_count}</span>}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label>Duration (minutes)</Label>
+                <Input
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
+                  min={1}
+                  max={120}
+                  className="w-32 mt-1"
+                />
+              </div>
+              <div>
+                <Label>Notes (optional)</Label>
+                <Textarea
+                  value={activityNotes}
+                  onChange={(e) => setActivityNotes(e.target.value)}
+                  placeholder="Private coaching notes..."
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+            </div>
           )}
 
           {step === 'quick' && (
@@ -293,7 +388,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                 <Input
                   type="number"
                   value={duration}
-                  onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
+                  onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
                   min={1}
                   max={120}
                   className="w-32 mt-1"
@@ -315,13 +410,14 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border p-4">
-          {step !== 'choose' ? (
+          {step !== 'choose' && step !== 'edit-drill' ? (
             <Button
               variant="ghost"
               onClick={() => {
                 setStep('choose');
                 setSelectedDrill(null);
                 setSearch('');
+                setDrillPage(0);
               }}
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back

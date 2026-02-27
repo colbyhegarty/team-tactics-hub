@@ -96,26 +96,26 @@ export default function SessionView() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md shadow-sm">
-        <div className="px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate('/sessions')}>
+        <div className="px-4 py-3 flex items-center justify-between max-w-3xl mx-auto gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Button variant="ghost" size="icon" className="rounded-full shrink-0" onClick={() => navigate('/sessions')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-lg font-bold text-foreground line-clamp-1">
+            <div className="min-w-0">
+              <h1 className="text-base font-bold text-foreground truncate">
                 {session.title || 'Untitled Session'}
               </h1>
               {session.session_date && (
-                <p className="text-xs text-muted-foreground">{formatDate(session.session_date)}</p>
+                <p className="text-[11px] text-muted-foreground">{formatDate(session.session_date)}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="rounded-lg" onClick={() => exportSessionToPDF(session)}>
-              <FileText className="h-4 w-4 mr-1" /> PDF
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => exportSessionToPDF(session, drillDetails)}>
+              <FileText className="h-4 w-4" />
             </Button>
-            <Button size="sm" className="rounded-lg" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
-              <Edit className="h-4 w-4 mr-1" /> Edit
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
+              <Edit className="h-4 w-4" />
             </Button>
           </div>
         </div>
