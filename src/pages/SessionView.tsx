@@ -284,9 +284,9 @@ export default function SessionView() {
                       )}
 
                       {activity.activity_notes && (
-                        <div className="mt-3 rounded-xl bg-accent/8 border border-accent/15 px-3 py-2.5 text-sm text-foreground/80">
-                          <span className="font-semibold text-accent-foreground text-xs uppercase tracking-wider">Notes: </span>
-                          <span className="ml-1">{activity.activity_notes}</span>
+                        <div className="mt-3 rounded-xl bg-secondary border border-border px-3 py-2.5 text-sm text-foreground/80 flex items-start gap-2">
+                          <StickyNote className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+                          <span>{activity.activity_notes}</span>
                         </div>
                       )}
                     </div>

@@ -87,13 +87,22 @@ export default function Sessions() {
       </header>
 
       <div className="container py-6 px-4">
-        {sessions.length === 0 ? (
+        {filterDate && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarIcon className="h-4 w-4" />
+            <span>Showing sessions for {format(filterDate, 'MMMM d, yyyy')}</span>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFilterDate(undefined)}>
+              Clear
+            </Button>
+          </div>
+        )}
+        {filteredSessions.length === 0 ? (
           <div className="text-center py-16">
             <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <CalendarDays className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-lg mb-2 text-foreground">No sessions yet</h3>
-            <p className="text-muted-foreground mb-6">Create your first training session</p>
+            <h3 className="font-semibold text-lg mb-2 text-foreground">{filterDate ? 'No sessions on this day' : 'No sessions yet'}</h3>
+            <p className="text-muted-foreground mb-6">{filterDate ? 'Try selecting a different date' : 'Create your first training session'}</p>
             <Button onClick={() => navigate('/sessions/new')}>
               <Plus className="h-4 w-4 mr-1" /> Create Session
             </Button>
@@ -101,7 +110,7 @@ export default function Sessions() {
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {sessions.map(session => (
+              {filteredSessions.map(session => (
                 <SessionCard
                   key={session.id}
                   session={session}
