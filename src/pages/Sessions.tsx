@@ -36,6 +36,10 @@ export default function Sessions() {
     }
   };
 
+  const filteredSessions = filterDate
+    ? sessions.filter(s => s.session_date === format(filterDate, 'yyyy-MM-dd'))
+    : sessions;
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -49,12 +53,36 @@ export default function Sessions() {
               <p className="text-sm text-muted-foreground hidden md:block">Plan and manage training sessions</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/sessions/new')} className="md:hidden rounded-full">
-            <Plus className="h-5 w-5" />
-          </Button>
-          <Button onClick={() => navigate('/sessions/new')} className="hidden md:inline-flex">
-            <Plus className="h-4 w-4 mr-1" /> New Session
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={filterDate ? 'outline' : 'ghost'} size="icon" className="rounded-full">
+                  <CalendarIcon className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={filterDate}
+                  onSelect={(d) => setFilterDate(d)}
+                  className="p-3 pointer-events-auto"
+                />
+                {filterDate && (
+                  <div className="border-t border-border p-2">
+                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setFilterDate(undefined)}>
+                      Clear filter
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/sessions/new')} className="rounded-full">
+              <Plus className="h-5 w-5" />
+            </Button>
+            <Button onClick={() => navigate('/sessions/new')} className="hidden md:inline-flex">
+              <Plus className="h-4 w-4 mr-1" /> New Session
+            </Button>
+          </div>
         </div>
       </header>
 
