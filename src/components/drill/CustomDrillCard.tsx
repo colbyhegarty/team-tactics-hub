@@ -73,11 +73,11 @@ function toRenderData(drill: CustomDrill): RenderDrillData {
   };
 }
 
-export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProps) {
+export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOverlayActive, onOverlayToggle }: CustomDrillCardProps) {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isMobile = useIsMobile();
-  const [showOverlay, setShowOverlay] = useState(false);
+  const showOverlay = isOverlayActive ?? false;
 
   // Render diagram using shared renderer with dynamic bounds (same as library)
   useEffect(() => {
