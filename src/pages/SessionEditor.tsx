@@ -348,7 +348,7 @@ export default function SessionEditor() {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8">
           <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto">
-            <FileText className="h-4 w-4 mr-1" /> Export PDF
+            <Share className="h-4 w-4 mr-1" /> Export PDF
           </Button>
           <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
             {saving ? 'Saving...' : 'Save Session'}
