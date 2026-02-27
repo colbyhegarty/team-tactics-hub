@@ -29,6 +29,9 @@ interface CustomDrillCardProps {
   drill: CustomDrill;
   onDelete: (id: string) => void;
   onView: (drill: CustomDrill) => void;
+  compactOverlay?: boolean;
+  isOverlayActive?: boolean;
+  onOverlayToggle?: (id: string) => void;
 }
 
 function toRenderData(drill: CustomDrill): RenderDrillData {
