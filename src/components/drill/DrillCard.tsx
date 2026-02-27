@@ -13,11 +13,16 @@ interface DrillCardProps {
   onSave: (drill: Drill) => void;
   onQuickView?: (drill: Drill) => void;
   className?: string;
+  compactOverlay?: boolean;
+  isOverlayActive?: boolean;
+  onOverlayToggle?: (drillId: string) => void;
 }
 
-export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className }: DrillCardProps) {
+export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className, compactOverlay, isOverlayActive, onOverlayToggle }: DrillCardProps) {
   const isMobile = useIsMobile();
-  const [showOverlay, setShowOverlay] = useState(false);
+
+  // Use external overlay state if provided, otherwise internal
+  const showOverlay = isOverlayActive ?? false;
 
   const handleQuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
