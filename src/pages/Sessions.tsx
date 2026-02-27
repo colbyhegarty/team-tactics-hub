@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 export default function Sessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
