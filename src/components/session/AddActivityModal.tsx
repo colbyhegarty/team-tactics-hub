@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, ArrowLeft, Library, Pencil, FileText, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,6 +117,12 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
     setDrillPage(0);
   }, [search]);
 
+  // Scroll drill grid to top on page change
+  const drillGridRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    drillGridRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [drillPage]);
+
   if (!isOpen) return null;
 
   const filteredDrills = (step === 'library' ? libraryDrills : customDrills).filter(
@@ -234,7 +240,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto">
+                  <div ref={drillGridRef} className="grid grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto">
                     {paginatedDrills.map(drill => (
                       <button
                         key={drill.id}

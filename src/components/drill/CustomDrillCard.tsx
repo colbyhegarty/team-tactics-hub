@@ -29,6 +29,9 @@ interface CustomDrillCardProps {
   drill: CustomDrill;
   onDelete: (id: string) => void;
   onView: (drill: CustomDrill) => void;
+  compactOverlay?: boolean;
+  isOverlayActive?: boolean;
+  onOverlayToggle?: (id: string) => void;
 }
 
 function toRenderData(drill: CustomDrill): RenderDrillData {
@@ -70,11 +73,11 @@ function toRenderData(drill: CustomDrill): RenderDrillData {
   };
 }
 
-export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProps) {
+export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOverlayActive, onOverlayToggle }: CustomDrillCardProps) {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isMobile = useIsMobile();
-  const [showOverlay, setShowOverlay] = useState(false);
+  const showOverlay = isOverlayActive ?? false;
 
   // Render diagram using shared renderer with dynamic bounds (same as library)
   useEffect(() => {
@@ -100,7 +103,11 @@ export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProp
   const handleDiagramClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isMobile) {
-      setShowOverlay(prev => !prev);
+      if (onOverlayToggle) {
+        onOverlayToggle(drill.id);
+      } else {
+        onView(drill);
+      }
     } else {
       onView(drill);
     }
@@ -127,8 +134,8 @@ export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProp
         'hover:shadow-card-lg hover:border-primary/30 transition-all duration-300'
       )}
     >
-      {/* Diagram - fixed aspect ratio with field background */}
-      <div className="relative w-full aspect-[4/3] bg-field overflow-hidden" onClick={handleDiagramClick}>
+      {/* Diagram - fixed aspect ratio matching library style */}
+      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-t-xl" onClick={handleDiagramClick}>
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
@@ -141,14 +148,16 @@ export function CustomDrillCard({ drill, onDelete, onView }: CustomDrillCardProp
             ? (showOverlay ? "opacity-100" : "opacity-0 pointer-events-none")
             : "opacity-0 group-hover:opacity-100"
         )}>
-          <Button
-            size="sm"
-            className="shadow-lg"
-            onClick={handleViewFull}
-          >
-            View Drill
-            <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
+          {compactOverlay ? (
+            <Button size="icon" className="shadow-lg h-9 w-9" onClick={handleViewFull}>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button size="sm" className="shadow-lg" onClick={handleViewFull}>
+              View Drill
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
         </div>
 
         {/* Category badge */}

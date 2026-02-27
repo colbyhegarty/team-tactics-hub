@@ -62,15 +62,21 @@ export default function Sessions() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={filterDate}
-                  onSelect={(d) => {
-                    setFilterDate(d);
-                    setCalendarOpen(false);
-                  }}
-                  className="p-3 pointer-events-auto"
-                />
+                 <Calendar
+                   mode="single"
+                   selected={filterDate}
+                   onSelect={(d) => {
+                     setFilterDate(d);
+                     setCalendarOpen(false);
+                   }}
+                   className="p-3 pointer-events-auto"
+                   modifiers={{ today: new Date() }}
+                   modifiersClassNames={{ today: filterDate ? '' : '' }}
+                   classNames={{
+                     day_today: filterDate ? 'text-foreground font-medium' : 'bg-accent text-accent-foreground',
+                     day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+                   }}
+                 />
                 {filterDate && (
                   <div className="border-t border-border p-2">
                     <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setFilterDate(undefined); setCalendarOpen(false); }}>
