@@ -56,7 +56,7 @@ const filterCoachingPoints = (text?: string): string | undefined => {
   return filteredLines.join('\n').trim() || undefined;
 };
 
-// Helper function to format drill text with bullets (always bullet points, not numbered)
+// Helper function to format drill text with green triangle bullets
 const formatDrillText = (text?: string, useBullets: boolean = true): ReactNode => {
   if (!text) return null;
   
@@ -67,7 +67,7 @@ const formatDrillText = (text?: string, useBullets: boolean = true): ReactNode =
   const flushList = () => {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`ul-${elements.length}`} className="list-disc list-inside space-y-2 mb-4">
+        <ul key={`ul-${elements.length}`} className="space-y-2 mb-4">
           {listItems}
         </ul>
       );
@@ -82,30 +82,29 @@ const formatDrillText = (text?: string, useBullets: boolean = true): ReactNode =
       return;
     }
     
-    // Check if it's a bullet point or numbered item - treat both as bullets
     const isBullet = trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-');
     const numberedMatch = trimmed.match(/^(\d+)[\.\)]\s*(.+)/);
     
     if (isBullet) {
       listItems.push(
-        <li key={index} className="text-foreground">
-          {trimmed.replace(/^[•*-]\s*/, '')}
+        <li key={index} className="text-foreground flex gap-2 leading-relaxed">
+          <span className="text-primary mt-0.5 text-xs shrink-0">▸</span>
+          <span>{trimmed.replace(/^[•*-]\s*/, '')}</span>
         </li>
       );
       return;
     }
     
     if (numberedMatch) {
-      // Convert numbered items to bullet points
       listItems.push(
-        <li key={index} className="text-foreground">
-          {numberedMatch[2]}
+        <li key={index} className="text-foreground flex gap-2 leading-relaxed">
+          <span className="text-primary mt-0.5 text-xs shrink-0">▸</span>
+          <span>{numberedMatch[2]}</span>
         </li>
       );
       return;
     }
     
-    // Regular paragraph
     flushList();
     elements.push(
       <p key={index} className="mb-3 text-foreground leading-relaxed">{trimmed}</p>

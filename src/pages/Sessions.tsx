@@ -45,6 +45,9 @@ export default function Sessions() {
               <p className="text-sm text-muted-foreground hidden md:block">Plan and manage training sessions</p>
             </div>
           </div>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/sessions/new')} className="md:hidden rounded-full">
+            <Plus className="h-5 w-5" />
+          </Button>
           <Button onClick={() => navigate('/sessions/new')} className="hidden md:inline-flex">
             <Plus className="h-4 w-4 mr-1" /> New Session
           </Button>
@@ -64,19 +67,26 @@ export default function Sessions() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sessions.map(session => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onView={(id) => navigate(`/sessions/${id}`)}
-                onEdit={(id) => navigate(`/sessions/${id}/edit`)}
-                onDuplicate={handleDuplicate}
-                onDelete={handleDelete}
-                onExportPDF={exportSessionToPDF}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {sessions.map(session => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  onView={(id) => navigate(`/sessions/${id}`)}
+                  onEdit={(id) => navigate(`/sessions/${id}/edit`)}
+                  onDuplicate={handleDuplicate}
+                  onDelete={handleDelete}
+                  onExportPDF={exportSessionToPDF}
+                />
+              ))}
+            </div>
+            <div className="mt-6 flex justify-center">
+              <Button variant="outline" onClick={() => navigate('/sessions/new')} className="rounded-xl">
+                <Plus className="h-4 w-4 mr-1" /> Create New Session
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </div>
