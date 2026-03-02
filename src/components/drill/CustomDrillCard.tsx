@@ -138,7 +138,7 @@ export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOve
       <div className="relative w-full aspect-[4/3] overflow-hidden rounded-t-xl" onClick={handleDiagramClick}>
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+          className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* Hover/tap overlay */}
@@ -159,13 +159,6 @@ export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOve
             </Button>
           )}
         </div>
-
-        {/* Category badge */}
-        {drill.formData.category && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-primary/90 text-primary-foreground text-xs rounded-full">
-            {drill.formData.category}
-          </div>
-        )}
       </div>
 
       {/* Content */}
