@@ -176,6 +176,8 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
         drill_category: selectedDrill.category,
         drill_difficulty: selectedDrill.difficulty,
         drill_player_count: selectedDrill.player_count,
+        drill_setup: selectedDrill.setup,
+        drill_instructions: selectedDrill.instructions,
       });
     }
     onClose();
