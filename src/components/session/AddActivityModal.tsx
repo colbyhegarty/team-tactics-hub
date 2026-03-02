@@ -268,7 +268,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                         <div className="p-2">
                           <div className="font-medium text-sm text-foreground line-clamp-1">{drill.name}</div>
                           <div className="flex gap-1.5 text-[10px] text-muted-foreground mt-1">
-                            {drill.duration && <span>⏱ {drill.duration} min</span>}
+                            {drill.duration && <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" /> {drill.duration} min</span>}
                             {drill.difficulty && <span>• {drill.difficulty}</span>}
                           </div>
                         </div>
