@@ -44,6 +44,7 @@ export default function Profile() {
   });
   const [savedGridCols, setSavedGridCols] = useState<1 | 2>(2);
   const [customGridCols, setCustomGridCols] = useState<1 | 2>(2);
+  const [sessionGridCols, setSessionGridCols] = useState<1 | 2>(2);
   const [activeSavedOverlay, setActiveSavedOverlay] = useState<string | null>(null);
   const [activeCustomOverlay, setActiveCustomOverlay] = useState<string | null>(null);
   const { toast } = useToast();
