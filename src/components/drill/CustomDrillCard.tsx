@@ -22,8 +22,8 @@ import {
   renderDrillFrame,
   CW,
   CANVAS_PADDING,
-  RenderDrillData,
 } from '@/utils/drillRenderer';
+import { toRenderData } from '@/lib/customDrillRenderer';
 
 interface CustomDrillCardProps {
   drill: CustomDrill;
