@@ -108,6 +108,9 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
           difficulty: d.formData.difficulty,
           duration: d.formData.duration,
           player_count: d.formData.playerCount,
+          svg_url: renderCustomDrillToDataURL(d),
+          setup: d.formData.setupText,
+          instructions: d.formData.instructionsText,
         }))
       );
     }
