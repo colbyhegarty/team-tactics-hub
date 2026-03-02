@@ -25,6 +25,8 @@ interface DrillOption {
   duration?: string;
   player_count?: string;
   svg_url?: string;
+  setup?: string;
+  instructions?: string;
 }
 
 type Step = 'choose' | 'library' | 'custom' | 'quick' | 'edit-drill';
