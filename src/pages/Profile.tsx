@@ -339,19 +339,25 @@ export default function Profile() {
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {sessions.map(session => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    onView={(id) => navigate(`/sessions/${id}`)}
-                    onEdit={(id) => navigate(`/sessions/${id}/edit`)}
-                    onDuplicate={handleDuplicateSession}
-                    onDelete={handleDeleteSession}
-                    onExportPDF={exportSessionToPDF}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-muted-foreground">{sessions.length} sessions</span>
+                  <ColumnToggle cols={sessionGridCols} setCols={setSessionGridCols} />
+                </div>
+                <div className={sessionGridCols === 2 ? 'grid gap-3 grid-cols-2' : 'grid gap-4 grid-cols-1'}>
+                  {sessions.map(session => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      onView={(id) => navigate(`/sessions/${id}`)}
+                      onEdit={(id) => navigate(`/sessions/${id}/edit`)}
+                      onDuplicate={handleDuplicateSession}
+                      onDelete={handleDeleteSession}
+                      onExportPDF={exportSessionToPDF}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
         </Tabs>

@@ -169,6 +169,11 @@ export function CustomDrillCard({ drill, onDelete, onView, compactOverlay, isOve
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-3">
+          {drill.formData.category && (
+            <span className="badge-pill text-xs font-medium bg-primary/10 text-primary">
+              {drill.formData.category}
+            </span>
+          )}
           {drill.formData.difficulty && (
             <span className={cn('badge-pill text-xs font-medium', getDifficultyColor(drill.formData.difficulty))}>
               {drill.formData.difficulty.charAt(0) + drill.formData.difficulty.slice(1).toLowerCase()}
