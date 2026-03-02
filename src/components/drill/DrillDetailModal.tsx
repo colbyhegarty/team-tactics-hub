@@ -264,7 +264,7 @@ export function DrillDetailModal({
                 />
               ) : drill.svgUrl ? (
                 <div className="rounded-xl overflow-hidden">
-                  <div className="transform scale-110 origin-center">
+                  <div className="transform scale-[1.25] origin-center">
                     <img
                       src={drill.svgUrl}
                       alt={drill.name}
@@ -274,7 +274,7 @@ export function DrillDetailModal({
                 </div>
               ) : drill.svg ? (
                 <div className="rounded-xl overflow-hidden">
-                  <div className="transform scale-110 origin-center">
+                  <div className="transform scale-[1.25] origin-center">
                     <img
                       src={`data:image/svg+xml;base64,${drill.svg}`}
                       alt={drill.name}

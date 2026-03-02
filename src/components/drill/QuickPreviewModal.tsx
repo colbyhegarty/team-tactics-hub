@@ -46,7 +46,7 @@ export function QuickPreviewModal({
         {/* Large diagram */}
         <div className="rounded-xl overflow-hidden">
           {drill.svgUrl ? (
-            <div className="transform scale-110 origin-center">
+            <div className="transform scale-[1.25] origin-center">
               <img 
                 src={drill.svgUrl} 
                 alt={drill.name}
@@ -54,7 +54,7 @@ export function QuickPreviewModal({
               />
             </div>
           ) : drill.svg ? (
-            <div className="transform scale-110 origin-center">
+            <div className="transform scale-[1.25] origin-center">
               <img
                 src={`data:image/svg+xml;base64,${drill.svg}`}
                 alt={drill.name}
