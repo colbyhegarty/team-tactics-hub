@@ -65,7 +65,8 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
     const title = activity.title || activity.drill_name || 'Activity';
     const description = activity.description || '';
     const drillData = activity.library_drill_id && drillDetails ? drillDetails[activity.library_drill_id] : null;
-    const instructions = drillData?.instructions;
+    const instructions = drillData?.instructions || activity.drill_instructions || '';
+    const setup = drillData?.setup || activity.drill_setup || '';
 
     html += `
       <div style="margin-bottom: 12px; page-break-inside: avoid; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
