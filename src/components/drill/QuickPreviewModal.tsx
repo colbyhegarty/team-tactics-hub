@@ -46,17 +46,21 @@ export function QuickPreviewModal({
         {/* Large diagram */}
         <div className="rounded-xl overflow-hidden">
           {drill.svgUrl ? (
-            <img 
-              src={drill.svgUrl} 
-              alt={drill.name}
-            className="w-full h-auto block"
-          />
-        ) : drill.svg ? (
-          <img
-            src={`data:image/svg+xml;base64,${drill.svg}`}
-            alt={drill.name}
-            className="w-full h-auto block"
-            />
+            <div className="transform scale-110 origin-center">
+              <img 
+                src={drill.svgUrl} 
+                alt={drill.name}
+                className="w-full h-auto block"
+              />
+            </div>
+          ) : drill.svg ? (
+            <div className="transform scale-110 origin-center">
+              <img
+                src={`data:image/svg+xml;base64,${drill.svg}`}
+                alt={drill.name}
+                className="w-full h-auto block"
+              />
+            </div>
           ) : (
             <div className="flex items-center justify-center h-64 text-field-lines/60">
               No diagram available
