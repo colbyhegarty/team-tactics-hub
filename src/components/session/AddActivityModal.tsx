@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, Library, Pencil, FileText, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { X, ArrowLeft, Library, Pencil, FileText, ChevronLeft, ChevronRight, Users, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,7 @@ import { SessionActivity } from '@/types/session';
 import { generateActivityId } from '@/lib/sessionStorage';
 import { supabase } from '@/lib/supabase';
 import { getCustomDrills } from '@/lib/customDrillStorage';
+import { renderCustomDrillToDataURL } from '@/lib/customDrillRenderer';
 
 interface AddActivityModalProps {
   isOpen: boolean;
