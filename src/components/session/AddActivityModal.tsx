@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, Library, Pencil, FileText, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { X, ArrowLeft, Library, Pencil, FileText, ChevronLeft, ChevronRight, Users, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,7 @@ import { SessionActivity } from '@/types/session';
 import { generateActivityId } from '@/lib/sessionStorage';
 import { supabase } from '@/lib/supabase';
 import { getCustomDrills } from '@/lib/customDrillStorage';
+import { renderCustomDrillToDataURL } from '@/lib/customDrillRenderer';
 
 interface AddActivityModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ interface DrillOption {
   duration?: string;
   player_count?: string;
   svg_url?: string;
+  setup?: string;
+  instructions?: string;
 }
 
 type Step = 'choose' | 'library' | 'custom' | 'quick' | 'edit-drill';
@@ -107,6 +110,9 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
           difficulty: d.formData.difficulty,
           duration: d.formData.duration,
           player_count: d.formData.playerCount,
+          svg_url: renderCustomDrillToDataURL(d),
+          setup: d.formData.setupText,
+          instructions: d.formData.instructionsText,
         }))
       );
     }
@@ -170,6 +176,8 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
         drill_category: selectedDrill.category,
         drill_difficulty: selectedDrill.difficulty,
         drill_player_count: selectedDrill.player_count,
+        drill_setup: selectedDrill.setup,
+        drill_instructions: selectedDrill.instructions,
       });
     }
     onClose();
@@ -262,7 +270,7 @@ export function AddActivityModal({ isOpen, onClose, onAdd, editingActivity }: Ad
                         <div className="p-2">
                           <div className="font-medium text-sm text-foreground line-clamp-1">{drill.name}</div>
                           <div className="flex gap-1.5 text-[10px] text-muted-foreground mt-1">
-                            {drill.duration && <span>⏱ {drill.duration} min</span>}
+                            {drill.duration && <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" /> {drill.duration} min</span>}
                             {drill.difficulty && <span>• {drill.difficulty}</span>}
                           </div>
                         </div>

@@ -20,6 +20,8 @@ export interface SessionActivity {
   drill_category?: string;
   drill_difficulty?: string;
   drill_player_count?: string;
+  drill_setup?: string;
+  drill_instructions?: string;
 }
 
 export interface Session {
