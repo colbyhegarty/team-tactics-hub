@@ -83,7 +83,6 @@ export function exportSessionToPDF(session: Session, drillDetails?: Record<strin
         <div style="padding: 10px 12px;">
     `;
 
-    const setup = drillData?.setup;
     const hasRightContent = setup || instructions || description;
 
     // Side-by-side layout: diagram left, setup+instructions right
