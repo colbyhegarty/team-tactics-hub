@@ -263,15 +263,31 @@ export default function SessionView() {
                             </div>
                           )}
 
-                          {/* Instructions only */}
-                          {drillData?.instructions && (
+                          {/* Instructions */}
+                          {(drillData?.instructions || activity.drill_instructions) && (
                             <div className="flex-1 min-w-0">
+                              {(drillData?.setup || activity.drill_setup) && (
+                                <div className="mb-3">
+                                  <div className="flex items-center gap-1.5 mb-2">
+                                    <ListChecks className="h-3.5 w-3.5 text-primary" />
+                                    <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">Setup</h4>
+                                  </div>
+                                  <ul className="space-y-1.5">
+                                    {formatBulletPoints(drillData?.setup || activity.drill_setup || '').map((point, i) => (
+                                      <li key={i} className="text-sm text-foreground/80 flex gap-2 leading-relaxed">
+                                        <span className="text-primary/60 mt-0.5 text-xs">▸</span>
+                                        <span>{point}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                               <div className="flex items-center gap-1.5 mb-2">
                                 <ListChecks className="h-3.5 w-3.5 text-primary" />
                                 <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">Instructions</h4>
                               </div>
                               <ul className="space-y-1.5">
-                                {formatBulletPoints(drillData.instructions).map((point, i) => (
+                                {formatBulletPoints(drillData?.instructions || activity.drill_instructions || '').map((point, i) => (
                                   <li key={i} className="text-sm text-foreground/80 flex gap-2 leading-relaxed">
                                     <span className="text-primary/60 mt-0.5 text-xs">▸</span>
                                     <span>{point}</span>
