@@ -9,13 +9,14 @@
  * - zoomOutLarge (****): 0.95 base, 1.0 hover  (diagram too zoomed in, zoom out significantly)
  */
 
-type ZoomLevel = 'zoomInSmall' | 'zoomInLarge' | 'zoomOutSmall' | 'zoomOutLarge';
+type ZoomLevel = 'zoomInSmall' | 'zoomInLarge' | 'zoomOutSmall' | 'zoomOutLarge' | 'zoomOutXLarge';
 
 const zoomScales: Record<ZoomLevel, { base: number; hover: number }> = {
-  zoomInSmall:  { base: 1.15, hover: 1.20 },
-  zoomInLarge:  { base: 1.25, hover: 1.30 },
-  zoomOutSmall: { base: 1.05, hover: 1.10 },
-  zoomOutLarge: { base: 0.95, hover: 1.00 },
+  zoomInSmall:   { base: 1.15, hover: 1.20 },
+  zoomInLarge:   { base: 1.25, hover: 1.30 },
+  zoomOutSmall:  { base: 1.05, hover: 1.10 },
+  zoomOutLarge:  { base: 0.95, hover: 1.00 },
+  zoomOutXLarge: { base: 0.85, hover: 0.90 },
 };
 
 const defaultZoom = { base: 1.10, hover: 1.15 };
@@ -26,25 +27,29 @@ const drillZoomOverrides: Record<string, ZoomLevel> = {
   '5v3 Switching Possession': 'zoomOutLarge',
   'Zig-Zag Dribbling Exercise': 'zoomOutLarge',
 
+  // Repadded drills — zoom out more
+  '1-2 Wall Pass Sequence': 'zoomOutLarge',
+  'Agility Training Circuit': 'zoomOutLarge',
+  'Basic Agility Circuit': 'zoomOutLarge',
+  'Cone Dribbling Challenge': 'zoomOutLarge',
+  'Defensive Clearances- High and Wide': 'zoomOutLarge',
+  'Diamond Passing Sequence': 'zoomOutLarge',
+  'Figure Eight Ball Control Exercise': 'zoomOutLarge',
+  'Finishing in Front of Goal': 'zoomOutLarge',
+  'Finishing in Front of Goal 2': 'zoomOutLarge',
+  'Inside of the Foot Passing': 'zoomOutLarge',
+  'Turn and Finish Shooting Drill': 'zoomOutLarge',
+
+  // Repadded drills — zoom out significantly
+  'Cross and Finish with Defensive Pressure': 'zoomOutXLarge',
+  'Wide Service and Scoring Exercise': 'zoomOutXLarge',
+
   // Repadded drills — zoom out a little
-  '1-2 Wall Pass Sequence': 'zoomOutSmall',
   '2v2 Competition': 'zoomOutSmall',
-  'Agility Training Circuit': 'zoomOutSmall',
-  'Basic Agility Circuit': 'zoomOutSmall',
   'Box Passing and Receiving Exercise': 'zoomOutSmall',
-  'Cone Dribbling Challenge': 'zoomOutSmall',
-  'Cross and Finish with Defensive Pressure': 'zoomOutSmall',
-  'Defensive Clearances- High and Wide': 'zoomOutSmall',
-  'Diamond Passing Sequence': 'zoomOutSmall',
-  'Figure Eight Ball Control Exercise': 'zoomOutSmall',
-  'Finishing in Front of Goal': 'zoomOutSmall',
-  'Finishing in Front of Goal 2': 'zoomOutSmall',
-  'Inside of the Foot Passing': 'zoomOutSmall',
   'Midfield Combination to Cross': 'zoomOutSmall',
   'Passing Preparation Exercise': 'zoomOutSmall',
   'Triple Zone 1v1 Challenge': 'zoomOutSmall',
-  'Turn and Finish Shooting Drill': 'zoomOutSmall',
-  'Wide Service and Scoring Exercise': 'zoomOutSmall',
 
   // ** — too zoomed out, zoom in a lot
   '1st Defender Fundamentals': 'zoomInLarge',
