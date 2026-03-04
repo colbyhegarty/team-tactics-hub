@@ -1,4 +1,5 @@
 import { X, Users, Clock, Target, Play, Bookmark, BookmarkCheck } from 'lucide-react';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
