@@ -70,24 +70,30 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
       <div
         className="relative aspect-[4/3] overflow-hidden rounded-t-xl"
         onClick={handleDiagramClick}
+        onMouseEnter={() => {
+          const img = document.getElementById(`drill-img-${drill.id}`) as HTMLElement;
+          if (img) img.style.transform = `scale(${zoom.hover})`;
+        }}
+        onMouseLeave={() => {
+          const img = document.getElementById(`drill-img-${drill.id}`) as HTMLElement;
+          if (img) img.style.transform = `scale(${zoom.base})`;
+        }}
       >
         {drill.svgUrl ? (
           <img
+            id={`drill-img-${drill.id}`}
             src={drill.svgUrl}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300"
             style={{ transform: `scale(${zoom.base})` }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = `scale(${zoom.hover})`}
-            onMouseLeave={(e) => e.currentTarget.style.transform = `scale(${zoom.base})`}
           />
         ) : drill.svg ? (
           <img
+            id={`drill-img-${drill.id}`}
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300"
             style={{ transform: `scale(${zoom.base})` }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = `scale(${zoom.hover})`}
-            onMouseLeave={(e) => e.currentTarget.style.transform = `scale(${zoom.base})`}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-field-lines/60">
