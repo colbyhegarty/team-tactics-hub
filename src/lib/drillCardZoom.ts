@@ -22,46 +22,8 @@ const defaultZoom = { base: 1.10, hover: 1.15 };
 
 // Map of drill name -> zoom level override
 const drillZoomOverrides: Record<string, ZoomLevel> = {
-  // **** — too zoomed in, zoom out significantly
-  '1-2 Wall Pass Sequence': 'zoomOutLarge',
-  '1v1 Recovery Drill': 'zoomOutLarge',
-  'Agility Training Circuit': 'zoomOutLarge',
-  'Basic Agility Circuit': 'zoomOutLarge',
-  'Combination Play Breaking Ball Exercise': 'zoomOutLarge',
-  'Cone Dribbling Challenge': 'zoomOutLarge',
-  'Cross and Finish with Defensive Pressure': 'zoomOutLarge',
-  'Dribble and Turn Under Defensive Pressure': 'zoomOutLarge',
-  'Dribbling Warm-Up Exercise': 'zoomOutLarge',
-  'Dynamic Range Passing Exercise': 'zoomOutLarge',
-  'Fixed Range Passing Exercise': 'zoomOutLarge',
-  'Goalkeeper Agility Training with Hurdle': 'zoomOutLarge',
-  'Goalkeeper Footwork Training': 'zoomOutLarge',
-  'Goalkeeper Movement Drill - Lateral Diving': 'zoomOutLarge',
-  'Passing Preparation Exercise': 'zoomOutLarge',
-  'Stop-and-Turn Dribbling Competition': 'zoomOutLarge',
-  'Y Passing Drill 1': 'zoomOutLarge',
-  'Y Passing Drill 2': 'zoomOutLarge',
-  'Y Passing Drill 3': 'zoomOutLarge',
-
-  // *** — upgraded to zoomOutLarge (need more zoom out)
-  '1v1 Corner Breakout': 'zoomOutLarge',
-  '5v2 Defensive Rotation Drill': 'zoomOutLarge',
+  // Drills that still need zoom out (not repadded)
   '5v3 Switching Possession': 'zoomOutLarge',
-  'Box Passing and Receiving Exercise': 'zoomOutLarge',
-  'Defensive Clearances- High and Wide': 'zoomOutLarge',
-  'Diamond Passing Sequence': 'zoomOutLarge',
-  'Figure Eight Ball Control Exercise': 'zoomOutLarge',
-  'Finishing in Front of Goal': 'zoomOutLarge',
-  'Finishing in Front of Goal 2': 'zoomOutLarge',
-  'Inside of the Foot Passing': 'zoomOutLarge',
-  'Midfeld Combination to Cross': 'zoomOutLarge',
-  'Receiving with Back to Goal': 'zoomOutLarge',
-  'Side-by-Side 1v1 to Goal': 'zoomOutLarge',
-  'Soccer Fitness: Reaction and Acceleration': 'zoomOutLarge',
-  'Three-Goal Triangle Challenge': 'zoomOutLarge',
-  'Triple Zone 1v1 Challenge': 'zoomOutLarge',
-  'Turn and Finish Shooting Drill': 'zoomOutLarge',
-  'Wide Service and Scoring Exercise': 'zoomOutLarge',
   'Zig-Zag Dribbling Exercise': 'zoomOutLarge',
 
   // ** — too zoomed out, zoom in a lot
@@ -76,7 +38,7 @@ const drillZoomOverrides: Record<string, ZoomLevel> = {
   'Agility Speed Test': 'zoomInLarge',
   'Attacking and Defensive Shooting Exercise': 'zoomInLarge',
 
-  // * — upgraded to zoomInLarge (need more zoom in)
+  // * — zoom in a lot
   '1v1 Attack and Reaction Exercise': 'zoomInLarge',
   '1v1 Attacking with Four Mini Goals': 'zoomInLarge',
   '1v1 Battle to Tall Cones': 'zoomInLarge',
@@ -138,6 +100,46 @@ const drillZoomOverrides: Record<string, ZoomLevel> = {
   'T-Cone Dribbling Exercise': 'zoomInLarge',
   'Tidy Up Training Drill': 'zoomInLarge',
   'Traffic Light Dribbling Exercise': 'zoomInLarge',
+
+  // Repadded drills — now need zoom in
+  '1-2 Wall Pass Sequence': 'zoomInLarge',
+  'Agility Training Circuit': 'zoomInLarge',
+  'Basic Agility Circuit': 'zoomInLarge',
+  'Box Passing and Receiving Exercise': 'zoomInLarge',
+  'Combination Play Breaking Ball Exercise': 'zoomInLarge',
+  'Cone Dribbling Challenge': 'zoomInLarge',
+  'Cross and Finish with Defensive Pressure': 'zoomInLarge',
+  'Defensive Clearances- High and Wide': 'zoomInLarge',
+  'Diamond Passing Sequence': 'zoomInLarge',
+  'Dribble and Turn Under Defensive Pressure': 'zoomInLarge',
+  'Dribbling Warm-Up Exercise': 'zoomInLarge',
+  'Dynamic Range Passing Exercise': 'zoomInLarge',
+  'Figure Eight Ball Control Exercise': 'zoomInLarge',
+  'Finishing in Front of Goal': 'zoomInLarge',
+  'Finishing in Front of Goal 2': 'zoomInLarge',
+  'Fixed Range Passing Exercise': 'zoomInLarge',
+  'Goalkeeper Agility Training with Hurdle': 'zoomInLarge',
+  'Goalkeeper Footwork Training': 'zoomInLarge',
+  'Goalkeeper Movement Drill - Lateral Diving': 'zoomInLarge',
+  'Inside of the Foot Passing': 'zoomInLarge',
+  'Midfeld Combination to Cross': 'zoomInLarge',
+  'Passing Preparation Exercise': 'zoomInLarge',
+  'Receiving with Back to Goal': 'zoomInLarge',
+  'Side-by-Side 1v1 to Goal': 'zoomInLarge',
+  'Soccer Fitness: Reaction and Acceleration': 'zoomInLarge',
+  'Stop-and-Turn Dribbling Competition': 'zoomInLarge',
+  'Three-Goal Triangle Challenge': 'zoomInLarge',
+  'Triple Zone 1v1 Challenge': 'zoomInLarge',
+  'Turn and Finish Shooting Drill': 'zoomInLarge',
+  'Wide Service and Scoring Exercise': 'zoomInLarge',
+  '1v1 Corner Breakout': 'zoomInLarge',
+  '1v1 Recovery Drill': 'zoomInLarge',
+  '5v2 Defensive Rotation Drill': 'zoomInLarge',
+  'Check-To Passing Warm-Up': 'zoomInLarge',
+  'Three-Player Pass and Move Warm-Up': 'zoomInLarge',
+  'Y Passing Drill 1': 'zoomInLarge',
+  'Y Passing Drill 2': 'zoomInLarge',
+  'Y Passing Drill 3': 'zoomInLarge',
 };
 
 export function getDrillCardZoom(drillName: string): { base: number; hover: number } {
