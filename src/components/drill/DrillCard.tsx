@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 
 interface DrillCardProps {
   drill: Drill;
@@ -19,6 +20,7 @@ interface DrillCardProps {
 
 export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className, compactOverlay, isOverlayActive, onOverlayToggle }: DrillCardProps) {
   const isMobile = useIsMobile();
+  const zoom = getDrillCardZoom(drill.name);
 
   // Use external overlay state if provided, otherwise internal
   const showOverlay = isOverlayActive ?? false;
@@ -73,13 +75,19 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
           <img
             src={drill.svgUrl}
             alt={drill.name}
-            className="w-full h-full object-cover scale-110 group-hover:scale-[1.15] transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-300"
+            style={{ transform: `scale(${zoom.base})` }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = `scale(${zoom.hover})`}
+            onMouseLeave={(e) => e.currentTarget.style.transform = `scale(${zoom.base})`}
           />
         ) : drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
-            className="w-full h-full object-cover scale-110 group-hover:scale-[1.15] transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-300"
+            style={{ transform: `scale(${zoom.base})` }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = `scale(${zoom.hover})`}
+            onMouseLeave={(e) => e.currentTarget.style.transform = `scale(${zoom.base})`}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-field-lines/60">
