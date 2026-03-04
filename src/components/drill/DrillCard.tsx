@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ interface DrillCardProps {
 
 export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className, compactOverlay, isOverlayActive, onOverlayToggle }: DrillCardProps) {
   const isMobile = useIsMobile();
-  const imgRef = useRef<HTMLImageElement>(null);
   const zoom = getDrillCardZoom(drill.name);
 
   // Use external overlay state if provided, otherwise internal
@@ -67,33 +65,24 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         'hover:shadow-card-lg hover:border-primary/30 transition-all duration-300',
         className
       )}
+      style={{ '--drill-zoom-base': zoom.base, '--drill-zoom-hover': zoom.hover } as React.CSSProperties}
     >
       {/* Diagram - consistent aspect ratio with grass background */}
       <div
         className="relative aspect-[4/3] overflow-hidden rounded-t-xl"
         onClick={handleDiagramClick}
-        onMouseEnter={() => {
-          if (imgRef.current) imgRef.current.style.transform = `scale(${zoom.hover})`;
-        }}
-        onMouseLeave={() => {
-          if (imgRef.current) imgRef.current.style.transform = `scale(${zoom.base})`;
-        }}
       >
         {drill.svgUrl ? (
           <img
-            ref={imgRef}
             src={drill.svgUrl}
             alt={drill.name}
-            className="w-full h-full object-cover transition-transform duration-300"
-            style={{ transform: `scale(${zoom.base})` }}
+            className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
           />
         ) : drill.svg ? (
           <img
-            ref={imgRef}
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
-            className="w-full h-full object-cover transition-transform duration-300"
-            style={{ transform: `scale(${zoom.base})` }}
+            className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-field-lines/60">
