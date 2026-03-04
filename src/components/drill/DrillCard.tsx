@@ -75,7 +75,10 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
           <img
             src={drill.svgUrl}
             alt={drill.name}
-            className="w-full h-full object-cover scale-110 group-hover:scale-[1.15] transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-300"
+            style={{ transform: `scale(${zoom.base})` }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = `scale(${zoom.hover})`}
+            onMouseLeave={(e) => e.currentTarget.style.transform = `scale(${zoom.base})`}
           />
         ) : drill.svg ? (
           <img
