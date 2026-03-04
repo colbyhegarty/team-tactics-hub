@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ interface DrillCardProps {
 
 export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className, compactOverlay, isOverlayActive, onOverlayToggle }: DrillCardProps) {
   const isMobile = useIsMobile();
+  const imgRef = useRef<HTMLImageElement>(null);
   const zoom = getDrillCardZoom(drill.name);
 
   // Use external overlay state if provided, otherwise internal
@@ -71,17 +73,15 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         className="relative aspect-[4/3] overflow-hidden rounded-t-xl"
         onClick={handleDiagramClick}
         onMouseEnter={() => {
-          const img = document.getElementById(`drill-img-${drill.id}`) as HTMLElement;
-          if (img) img.style.transform = `scale(${zoom.hover})`;
+          if (imgRef.current) imgRef.current.style.transform = `scale(${zoom.hover})`;
         }}
         onMouseLeave={() => {
-          const img = document.getElementById(`drill-img-${drill.id}`) as HTMLElement;
-          if (img) img.style.transform = `scale(${zoom.base})`;
+          if (imgRef.current) imgRef.current.style.transform = `scale(${zoom.base})`;
         }}
       >
         {drill.svgUrl ? (
           <img
-            id={`drill-img-${drill.id}`}
+            ref={imgRef}
             src={drill.svgUrl}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300"
@@ -89,7 +89,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
           />
         ) : drill.svg ? (
           <img
-            id={`drill-img-${drill.id}`}
+            ref={imgRef}
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300"
