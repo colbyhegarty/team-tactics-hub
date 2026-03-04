@@ -9,13 +9,14 @@
  * - zoomOutLarge (****): 0.95 base, 1.0 hover  (diagram too zoomed in, zoom out significantly)
  */
 
-type ZoomLevel = 'zoomInSmall' | 'zoomInLarge' | 'zoomOutSmall' | 'zoomOutLarge';
+type ZoomLevel = 'zoomInSmall' | 'zoomInLarge' | 'zoomOutSmall' | 'zoomOutLarge' | 'zoomOutXLarge';
 
 const zoomScales: Record<ZoomLevel, { base: number; hover: number }> = {
-  zoomInSmall:  { base: 1.15, hover: 1.20 },
-  zoomInLarge:  { base: 1.25, hover: 1.30 },
-  zoomOutSmall: { base: 1.05, hover: 1.10 },
-  zoomOutLarge: { base: 0.95, hover: 1.00 },
+  zoomInSmall:   { base: 1.15, hover: 1.20 },
+  zoomInLarge:   { base: 1.25, hover: 1.30 },
+  zoomOutSmall:  { base: 1.05, hover: 1.10 },
+  zoomOutLarge:  { base: 0.95, hover: 1.00 },
+  zoomOutXLarge: { base: 0.85, hover: 0.90 },
 };
 
 const defaultZoom = { base: 1.10, hover: 1.15 };
