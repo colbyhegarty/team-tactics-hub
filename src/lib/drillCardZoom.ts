@@ -62,7 +62,6 @@ const drillZoomOverrides: Record<string, ZoomLevel> = {
   'Triple Zone 1v1 Challenge': 'zoomOutSmall',
   'Turn and Finish Shooting Drill': 'zoomOutSmall',
   'Wide Service and Scoring Exercise': 'zoomOutSmall',
-  'Zig-Zag Dribbling Exercise': 'zoomOutSmall',
 
   // ** — too zoomed out, zoom in a lot
   '1st Defender Fundamentals': 'zoomInLarge',
