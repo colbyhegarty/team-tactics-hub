@@ -21,6 +21,7 @@ interface DrillCardProps {
 
 export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, className, compactOverlay, isOverlayActive, onOverlayToggle }: DrillCardProps) {
   const isMobile = useIsMobile();
+  const imgRef = useRef<HTMLImageElement>(null);
   const zoom = getDrillCardZoom(drill.name);
 
   // Use external overlay state if provided, otherwise internal
