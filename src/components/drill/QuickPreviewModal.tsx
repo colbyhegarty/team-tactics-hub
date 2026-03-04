@@ -1,4 +1,5 @@
 import { X, Users, Clock, Target, Play, Bookmark, BookmarkCheck } from 'lucide-react';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,7 @@ export function QuickPreviewModal({
         {/* Large diagram */}
         <div className="rounded-xl overflow-hidden">
           {drill.svgUrl ? (
-            <div className="transform scale-[1.25] origin-center">
+            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).hover})` }}>
               <img 
                 src={drill.svgUrl} 
                 alt={drill.name}
@@ -54,7 +55,7 @@ export function QuickPreviewModal({
               />
             </div>
           ) : drill.svg ? (
-            <div className="transform scale-[1.25] origin-center">
+            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).hover})` }}>
               <img
                 src={`data:image/svg+xml;base64,${drill.svg}`}
                 alt={drill.name}
