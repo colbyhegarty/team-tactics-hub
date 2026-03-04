@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 
 interface DrillCardProps {
   drill: Drill;
