@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
