@@ -47,7 +47,7 @@ export function QuickPreviewModal({
         {/* Large diagram */}
         <div className="rounded-xl overflow-hidden">
           {drill.svgUrl ? (
-            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).hover})` }}>
+            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).base})` }}>
               <img 
                 src={drill.svgUrl} 
                 alt={drill.name}
@@ -55,7 +55,7 @@ export function QuickPreviewModal({
               />
             </div>
           ) : drill.svg ? (
-            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).hover})` }}>
+            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).base})` }}>
               <img
                 src={`data:image/svg+xml;base64,${drill.svg}`}
                 alt={drill.name}
