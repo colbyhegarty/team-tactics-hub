@@ -1,5 +1,4 @@
 import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb, Image, Film } from 'lucide-react';
-import DrillCanvasRenderer from '@/components/editor/DrillCanvasRenderer';
 import DrillAnimationPlayer from '@/components/drill/DrillAnimationPlayer';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
@@ -266,20 +265,6 @@ export function DrillDetailModal({
                   }}
                   animation={drill.animationJson}
                 />
-              ) : drill.drillJson ? (
-                <DrillCanvasRenderer
-                  drill={{
-                    field: drill.drillJson.field,
-                    players: drill.drillJson.players?.map(p => ({ ...p, role: p.role as string })),
-                    cones: drill.drillJson.cones,
-                    cone_lines: drill.drillJson.cone_lines,
-                    balls: drill.drillJson.balls,
-                    goals: drill.drillJson.goals,
-                    mini_goals: drill.drillJson.mini_goals,
-                    actions: drill.drillJson.actions,
-                  }}
-                  className="rounded-lg max-w-full block"
-                />
               ) : drill.svgUrl ? (
                 <div className="rounded-xl overflow-hidden aspect-[4/3]">
                   <img
@@ -304,7 +289,7 @@ export function DrillDetailModal({
                 </div>
               )}
 
-              {(drill.drillJson || drill.svgUrl || drill.svg) && viewMode === 'static' && (
+              {(drill.svgUrl || drill.svg) && viewMode === 'static' && (
                 <div className="absolute bottom-4 right-4 flex gap-2">
                   <Button
                     variant="secondary"
