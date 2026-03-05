@@ -277,7 +277,7 @@ export function DrillDetailModal({
                 </div>
               ) : drill.svg ? (
                 <div className="rounded-xl overflow-hidden">
-                  <div className="transform scale-[1.25] origin-center">
+                  <div className="transform origin-center" style={{ transform: `scale(${zoom.hover})` }}>
                     <img
                       src={`data:image/svg+xml;base64,${drill.svg}`}
                       alt={drill.name}
