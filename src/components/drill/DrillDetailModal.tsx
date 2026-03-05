@@ -1,5 +1,6 @@
 import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb, Image, Film } from 'lucide-react';
 import DrillAnimationPlayer from '@/components/drill/DrillAnimationPlayer';
+import { DrillCanvasRenderer } from '@/components/editor/DrillCanvasRenderer';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
-import { getDrillCardZoom } from '@/lib/drillCardZoom';
 
 
 
@@ -131,7 +131,20 @@ export function DrillDetailModal({
 
   if (!drill) return null;
 
-  const zoom = getDrillCardZoom(drill.name);
+  // Build render data for canvas-based static view
+  const staticRenderData = drill.drillJson ? {
+    field: drill.drillJson.field ? { type: drill.drillJson.field.type, markings: drill.drillJson.field.markings, goals: drill.drillJson.field.goals } : undefined,
+    players: drill.drillJson.players?.map(p => ({ id: p.id, role: p.role as string, position: p.position })) || [],
+    cones: drill.drillJson.cones?.map(c => ({ position: c.position })) || [],
+    cone_lines: drill.drillJson.cone_lines || [],
+    balls: drill.drillJson.balls?.map(b => ({ position: b.position })) || [],
+    goals: drill.drillJson.goals?.filter(g => g.size !== 'small').map(g => ({ position: g.position, rotation: g.rotation })) || [],
+    mini_goals: drill.drillJson.mini_goals || [],
+    actions: drill.drillJson.actions?.map(a => {
+      if (a.type === 'PASS') return { type: 'PASS' as const, fromPlayer: a.from_player!, toPlayer: a.to_player! };
+      return { type: a.type, player: a.player!, toPosition: a.to_position! };
+    }) || [],
+  } : null;
 
   const handleDownloadSvg = async () => {
     // Try URL-based download first
@@ -265,24 +278,23 @@ export function DrillDetailModal({
                   }}
                   animation={drill.animationJson}
                 />
+              ) : staticRenderData ? (
+                <DrillCanvasRenderer
+                  drill={staticRenderData}
+                  className="rounded-lg w-full h-auto block"
+                />
               ) : drill.svgUrl ? (
-                <div className="rounded-xl overflow-hidden aspect-[4/3]">
-                  <img
-                    src={drill.svgUrl}
-                    alt={drill.name}
-                    className="w-full h-full object-cover"
-                    style={{ transform: `scale(${zoom.base})` }}
-                  />
-                </div>
+                <img
+                  src={drill.svgUrl}
+                  alt={drill.name}
+                  className="w-full h-auto rounded-xl"
+                />
               ) : drill.svg ? (
-                <div className="rounded-xl overflow-hidden aspect-[4/3]">
-                  <img
-                    src={`data:image/svg+xml;base64,${drill.svg}`}
-                    alt={drill.name}
-                    className="w-full h-full object-cover"
-                    style={{ transform: `scale(${zoom.base})` }}
-                  />
-                </div>
+                <img
+                  src={`data:image/svg+xml;base64,${drill.svg}`}
+                  alt={drill.name}
+                  className="w-full h-auto rounded-xl"
+                />
               ) : (
                 <div className="flex items-center justify-center h-48 text-muted-foreground">
                   <p>No diagram available</p>
