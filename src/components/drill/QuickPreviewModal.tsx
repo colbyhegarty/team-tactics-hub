@@ -48,7 +48,7 @@ export function QuickPreviewModal({
         </div>
         
         {/* Large diagram */}
-        <div className="rounded-xl overflow-hidden">
+        <div className="aspect-[4/3] overflow-hidden">
           {drill.drillJson ? (() => {
             const renderData = {
               field: drill.drillJson.field ? { type: drill.drillJson.field.type, markings: drill.drillJson.field.markings, goals: drill.drillJson.field.goals } : undefined,
@@ -63,18 +63,26 @@ export function QuickPreviewModal({
                 return { type: a.type, player: a.player!, toPosition: a.to_position! };
               }) || [],
             };
-            return <DrillCanvasRenderer drill={renderData} className="rounded-lg w-full h-auto block" />;
+            return (
+              <DrillCanvasRenderer
+                drill={renderData}
+                className="w-full h-full object-cover"
+                style={{ transform: `scale(${zoom.base})` }}
+              />
+            );
           })() : drill.svgUrl ? (
             <img 
               src={drill.svgUrl} 
               alt={drill.name}
-              className="w-full h-auto"
+              className="w-full h-full object-cover"
+              style={{ transform: `scale(${zoom.base})` }}
             />
           ) : drill.svg ? (
             <img
               src={`data:image/svg+xml;base64,${drill.svg}`}
               alt={drill.name}
-              className="w-full h-auto"
+              className="w-full h-full object-cover"
+              style={{ transform: `scale(${zoom.base})` }}
             />
           ) : (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
