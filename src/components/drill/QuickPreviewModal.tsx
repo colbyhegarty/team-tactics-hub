@@ -45,23 +45,21 @@ export function QuickPreviewModal({
         </div>
         
         {/* Large diagram */}
-        <div className="rounded-xl overflow-hidden">
+        <div className="rounded-xl overflow-hidden aspect-[4/3]">
           {drill.svgUrl ? (
-            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).base})` }}>
-              <img 
-                src={drill.svgUrl} 
-                alt={drill.name}
-                className="w-full h-auto block"
-              />
-            </div>
+            <img 
+              src={drill.svgUrl} 
+              alt={drill.name}
+              className="w-full h-full object-cover"
+              style={{ transform: `scale(${getDrillCardZoom(drill.name).base})` }}
+            />
           ) : drill.svg ? (
-            <div className="transform origin-center" style={{ transform: `scale(${getDrillCardZoom(drill.name).base})` }}>
-              <img
-                src={`data:image/svg+xml;base64,${drill.svg}`}
-                alt={drill.name}
-                className="w-full h-auto block"
-              />
-            </div>
+            <img
+              src={`data:image/svg+xml;base64,${drill.svg}`}
+              alt={drill.name}
+              className="w-full h-full object-cover"
+              style={{ transform: `scale(${getDrillCardZoom(drill.name).base})` }}
+            />
           ) : (
             <div className="flex items-center justify-center h-64 text-field-lines/60">
               No diagram available
