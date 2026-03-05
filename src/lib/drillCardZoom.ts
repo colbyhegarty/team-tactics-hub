@@ -15,8 +15,8 @@ const zoomScales: Record<ZoomLevel, { base: number; hover: number }> = {
   zoomInSmall:   { base: 1.15, hover: 1.20 },
   zoomInLarge:   { base: 1.25, hover: 1.30 },
   zoomOutSmall:  { base: 1.05, hover: 1.10 },
-  zoomOutLarge:  { base: 0.95, hover: 1.00 },
-  zoomOutXLarge: { base: 0.85, hover: 0.90 },
+  zoomOutLarge:  { base: 1.00, hover: 1.05 },
+  zoomOutXLarge: { base: 0.90, hover: 0.95 },
 };
 
 const defaultZoom = { base: 1.10, hover: 1.15 };
