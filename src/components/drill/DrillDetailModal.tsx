@@ -278,24 +278,23 @@ export function DrillDetailModal({
                   }}
                   animation={drill.animationJson}
                 />
+              ) : staticRenderData ? (
+                <DrillCanvasRenderer
+                  drill={staticRenderData}
+                  className="rounded-lg w-full h-auto block"
+                />
               ) : drill.svgUrl ? (
-                <div className="rounded-xl overflow-hidden aspect-[4/3]">
-                  <img
-                    src={drill.svgUrl}
-                    alt={drill.name}
-                    className="w-full h-full object-cover"
-                    style={{ transform: `scale(${zoom.base})` }}
-                  />
-                </div>
+                <img
+                  src={drill.svgUrl}
+                  alt={drill.name}
+                  className="w-full h-auto rounded-xl"
+                />
               ) : drill.svg ? (
-                <div className="rounded-xl overflow-hidden aspect-[4/3]">
-                  <img
-                    src={`data:image/svg+xml;base64,${drill.svg}`}
-                    alt={drill.name}
-                    className="w-full h-full object-cover"
-                    style={{ transform: `scale(${zoom.base})` }}
-                  />
-                </div>
+                <img
+                  src={`data:image/svg+xml;base64,${drill.svg}`}
+                  alt={drill.name}
+                  className="w-full h-auto rounded-xl"
+                />
               ) : (
                 <div className="flex items-center justify-center h-48 text-muted-foreground">
                   <p>No diagram available</p>
