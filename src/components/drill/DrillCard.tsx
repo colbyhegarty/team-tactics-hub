@@ -1,6 +1,7 @@
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
+import { DrillCanvasRenderer } from '@/components/editor/DrillCanvasRenderer';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -72,7 +73,27 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         className="relative aspect-[4/3] overflow-hidden rounded-t-xl"
         onClick={handleDiagramClick}
       >
-        {drill.svgUrl ? (
+        {drill.drillJson ? (() => {
+          const renderData = {
+            field: drill.drillJson.field ? { type: drill.drillJson.field.type, markings: drill.drillJson.field.markings, goals: drill.drillJson.field.goals } : undefined,
+            players: drill.drillJson.players?.map(p => ({ id: p.id, role: p.role as string, position: p.position })) || [],
+            cones: drill.drillJson.cones?.map(c => ({ position: c.position })) || [],
+            cone_lines: drill.drillJson.cone_lines || [],
+            balls: drill.drillJson.balls?.map(b => ({ position: b.position })) || [],
+            goals: drill.drillJson.goals?.filter(g => g.size !== 'small').map(g => ({ position: g.position, rotation: g.rotation })) || [],
+            mini_goals: drill.drillJson.mini_goals || [],
+            actions: drill.drillJson.actions?.map(a => {
+              if (a.type === 'PASS') return { type: 'PASS' as const, fromPlayer: a.from_player!, toPlayer: a.to_player! };
+              return { type: a.type, player: a.player!, toPosition: a.to_position! };
+            }) || [],
+          };
+          return (
+            <DrillCanvasRenderer
+              drill={renderData}
+              className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
+            />
+          );
+        })() : drill.svgUrl ? (
           <img
             src={drill.svgUrl}
             alt={drill.name}
