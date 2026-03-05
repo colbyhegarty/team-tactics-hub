@@ -14,6 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 
 
 
