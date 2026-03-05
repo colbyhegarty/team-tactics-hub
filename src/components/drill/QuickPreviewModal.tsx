@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DrillCanvasRenderer } from '@/components/editor/DrillCanvasRenderer';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 
 interface QuickPreviewModalProps {
   drill: Drill | null;
