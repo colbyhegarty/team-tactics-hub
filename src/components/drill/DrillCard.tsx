@@ -1,6 +1,7 @@
 import { Clock, Users, Bookmark, BookmarkCheck, Target, Play, Eye, ArrowRight } from 'lucide-react';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
+import { DrillCanvasRenderer } from '@/components/editor/DrillCanvasRenderer';
 import { cn } from '@/lib/utils';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
