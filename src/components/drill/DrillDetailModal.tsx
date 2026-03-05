@@ -14,6 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { useState, ReactNode } from 'react';
 import { getCategoryColor, getDifficultyColor } from '@/lib/api';
+import { getDrillCardZoom } from '@/lib/drillCardZoom';
 
 
 
@@ -127,6 +128,8 @@ export function DrillDetailModal({
   const [viewMode, setViewMode] = useState<'static' | 'animated'>('animated');
   
   const hasAnimation = drill?.hasAnimation;
+
+  const zoom = getDrillCardZoom(drill.name);
 
   if (!drill) return null;
 
@@ -264,7 +267,7 @@ export function DrillDetailModal({
                 />
               ) : drill.svgUrl ? (
                 <div className="rounded-xl overflow-hidden">
-                  <div className="transform scale-[1.25] origin-center">
+                  <div className="transform origin-center" style={{ transform: `scale(${zoom.hover})` }}>
                     <img
                       src={drill.svgUrl}
                       alt={drill.name}
@@ -274,7 +277,7 @@ export function DrillDetailModal({
                 </div>
               ) : drill.svg ? (
                 <div className="rounded-xl overflow-hidden">
-                  <div className="transform scale-[1.25] origin-center">
+                  <div className="transform origin-center" style={{ transform: `scale(${zoom.hover})` }}>
                     <img
                       src={`data:image/svg+xml;base64,${drill.svg}`}
                       alt={drill.name}
