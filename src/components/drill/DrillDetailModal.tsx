@@ -129,6 +129,8 @@ export function DrillDetailModal({
   
   const hasAnimation = drill?.hasAnimation;
 
+  const zoom = getDrillCardZoom(drill.name);
+
   if (!drill) return null;
 
   const handleDownloadSvg = async () => {
