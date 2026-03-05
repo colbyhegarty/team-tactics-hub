@@ -266,6 +266,20 @@ export function DrillDetailModal({
                   }}
                   animation={drill.animationJson}
                 />
+              ) : drill.drillJson ? (
+                <DrillCanvasRenderer
+                  drill={{
+                    field: drill.drillJson.field,
+                    players: drill.drillJson.players?.map(p => ({ ...p, role: p.role as string })),
+                    cones: drill.drillJson.cones,
+                    cone_lines: drill.drillJson.cone_lines,
+                    balls: drill.drillJson.balls,
+                    goals: drill.drillJson.goals,
+                    mini_goals: drill.drillJson.mini_goals,
+                    actions: drill.drillJson.actions,
+                  }}
+                  className="rounded-lg max-w-full block"
+                />
               ) : drill.svgUrl ? (
                 <div className="rounded-xl overflow-hidden aspect-[4/3]">
                   <img
