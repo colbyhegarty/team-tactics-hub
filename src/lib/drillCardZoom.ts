@@ -19,7 +19,7 @@ const zoomScales: Record<ZoomLevel, { base: number; hover: number }> = {
   zoomOutXLarge: { base: 0.90, hover: 0.95 },
 };
 
-const defaultZoom = { base: 1.10, hover: 1.15 };
+const defaultZoom = { base: 1.00, hover: 1.05 };
 
 // Map of drill name -> zoom level override
 const drillZoomOverrides: Record<string, ZoomLevel> = {};
