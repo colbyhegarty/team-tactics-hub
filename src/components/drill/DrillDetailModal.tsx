@@ -266,24 +266,22 @@ export function DrillDetailModal({
                   animation={drill.animationJson}
                 />
               ) : drill.svgUrl ? (
-                <div className="rounded-xl overflow-hidden">
-                  <div className="transform origin-center" style={{ transform: `scale(${zoom.base})` }}>
-                    <img
-                      src={drill.svgUrl}
-                      alt={drill.name}
-                      className="w-full h-auto block"
-                    />
-                  </div>
+                <div className="rounded-xl overflow-hidden aspect-[4/3]">
+                  <img
+                    src={drill.svgUrl}
+                    alt={drill.name}
+                    className="w-full h-full object-cover"
+                    style={{ transform: `scale(${zoom.base})` }}
+                  />
                 </div>
               ) : drill.svg ? (
-                <div className="rounded-xl overflow-hidden">
-                  <div className="transform origin-center" style={{ transform: `scale(${zoom.base})` }}>
-                    <img
-                      src={`data:image/svg+xml;base64,${drill.svg}`}
-                      alt={drill.name}
-                      className="w-full h-auto block"
-                    />
-                  </div>
+                <div className="rounded-xl overflow-hidden aspect-[4/3]">
+                  <img
+                    src={`data:image/svg+xml;base64,${drill.svg}`}
+                    alt={drill.name}
+                    className="w-full h-full object-cover"
+                    style={{ transform: `scale(${zoom.base})` }}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-48 text-muted-foreground">
