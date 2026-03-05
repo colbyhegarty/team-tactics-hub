@@ -64,11 +64,12 @@ export function QuickPreviewModal({
               }) || [],
             };
             return (
-              <DrillCanvasRenderer
-                drill={renderData}
-                className="w-full h-full object-cover"
-                style={{ transform: `scale(${zoom.base})` }}
-              />
+              <div style={{ transform: `scale(${zoom.base})` }} className="w-full h-full">
+                <DrillCanvasRenderer
+                  drill={renderData}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             );
           })() : drill.svgUrl ? (
             <img 
