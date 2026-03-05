@@ -1,4 +1,5 @@
 import { X, Download, Bookmark, BookmarkCheck, Clock, Users, Maximize2, Sparkles, GraduationCap, ClipboardList, Play, RefreshCw, Lightbulb, Image, Film } from 'lucide-react';
+import DrillCanvasRenderer from '@/components/editor/DrillCanvasRenderer';
 import DrillAnimationPlayer from '@/components/drill/DrillAnimationPlayer';
 import { Drill } from '@/types/drill';
 import { Button } from '@/components/ui/button';
