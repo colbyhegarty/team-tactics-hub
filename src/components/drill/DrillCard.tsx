@@ -88,11 +88,12 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
             }) || [],
           };
           return (
-            <DrillCanvasRenderer
-              drill={renderData}
-              className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
-              style={{ translate: `0 var(--drill-offset-y)` }}
-            />
+            <div className="w-full h-full" style={{ translate: `0 var(--drill-offset-y)` }}>
+              <DrillCanvasRenderer
+                drill={renderData}
+                className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
+              />
+            </div>
           );
         })() : drill.svgUrl ? (
           <img
