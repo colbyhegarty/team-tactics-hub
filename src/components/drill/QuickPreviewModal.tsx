@@ -64,7 +64,7 @@ export function QuickPreviewModal({
               }) || [],
             };
             return (
-              <div style={{ transform: `scale(${zoom.base})` }} className="w-full h-full">
+              <div style={{ transform: `scale(${zoom.base}) translateY(${zoom.offsetY || '0%'})` }} className="w-full h-full">
                 <DrillCanvasRenderer
                   drill={renderData}
                   className="w-full h-full object-cover"
