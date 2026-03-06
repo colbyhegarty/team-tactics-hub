@@ -91,6 +91,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
             <DrillCanvasRenderer
               drill={renderData}
               className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
+              style={{ translate: `0 var(--drill-offset-y)` }}
             />
           );
         })() : drill.svgUrl ? (
@@ -98,12 +99,14 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
             src={drill.svgUrl}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
+            style={{ translate: `0 var(--drill-offset-y)` }}
           />
         ) : drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
+            style={{ translate: `0 var(--drill-offset-y)` }}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-field-lines/60">
