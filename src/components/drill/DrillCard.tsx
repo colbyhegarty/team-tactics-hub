@@ -66,7 +66,7 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
         'hover:shadow-card-lg hover:border-primary/30 transition-all duration-300',
         className
       )}
-      style={{ '--drill-zoom-base': zoom.base, '--drill-zoom-hover': zoom.hover, '--drill-offset-y': `${zoom.offsetY}%` } as React.CSSProperties}
+      style={{ '--drill-zoom-base': zoom.base, '--drill-zoom-hover': zoom.hover } as React.CSSProperties}
     >
       {/* Diagram - consistent aspect ratio with grass background */}
       <div
@@ -88,26 +88,22 @@ export function DrillCard({ drill, isSaved, onView, onSave, onQuickView, classNa
             }) || [],
           };
           return (
-            <div className="w-full h-full" style={{ translate: `0 var(--drill-offset-y)` }}>
-              <DrillCanvasRenderer
-                drill={renderData}
-                className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
-              />
-            </div>
+            <DrillCanvasRenderer
+              drill={renderData}
+              className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
+            />
           );
         })() : drill.svgUrl ? (
           <img
             src={drill.svgUrl}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
-            style={{ translate: `0 var(--drill-offset-y)` }}
           />
         ) : drill.svg ? (
           <img
             src={`data:image/svg+xml;base64,${drill.svg}`}
             alt={drill.name}
             className="w-full h-full object-cover transition-transform duration-300 scale-[var(--drill-zoom-base)] group-hover:scale-[var(--drill-zoom-hover)]"
-            style={{ translate: `0 var(--drill-offset-y)` }}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-field-lines/60">
