@@ -233,3 +233,12 @@
 .text-field-lines {
   color: hsl(var(--field-lines));
 }
+
+/* Drill card diagram hover zoom */
+.drill-diagram-transform {
+  transform: scale(var(--drill-zoom-base)) translateY(var(--drill-offset-y, 0));
+  transition: transform 300ms;
+}
+.group:hover .drill-diagram-transform {
+  transform: scale(var(--drill-zoom-hover)) translateY(var(--drill-offset-y, 0));
+}
