@@ -64,7 +64,7 @@ export function QuickPreviewModal({
               }) || [],
             };
             return (
-              <div style={{ transform: `scale(${zoom.base})` }} className="w-full h-full">
+              <div style={{ transform: `scale(${zoom.base}) translateY(${zoom.offsetY || '0%'})` }} className="w-full h-full">
                 <DrillCanvasRenderer
                   drill={renderData}
                   className="w-full h-full object-cover"
@@ -76,14 +76,14 @@ export function QuickPreviewModal({
               src={drill.svgUrl} 
               alt={drill.name}
               className="w-full h-full object-cover"
-              style={{ transform: `scale(${zoom.base})` }}
+              style={{ transform: `scale(${zoom.base}) translateY(${zoom.offsetY || '0%'})` }}
             />
           ) : drill.svg ? (
             <img
               src={`data:image/svg+xml;base64,${drill.svg}`}
               alt={drill.name}
               className="w-full h-full object-cover"
-              style={{ transform: `scale(${zoom.base})` }}
+              style={{ transform: `scale(${zoom.base}) translateY(${zoom.offsetY || '0%'})` }}
             />
           ) : (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
