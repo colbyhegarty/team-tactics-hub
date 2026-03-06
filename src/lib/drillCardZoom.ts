@@ -12,14 +12,14 @@
 type ZoomLevel = 'zoomInSmall' | 'zoomInLarge' | 'zoomOutSmall' | 'zoomOutLarge' | 'zoomOutXLarge';
 
 const zoomScales: Record<ZoomLevel, { base: number; hover: number }> = {
-  zoomInSmall:   { base: 1.30, hover: 1.35 },
-  zoomInLarge:   { base: 1.45, hover: 1.50 },
+  zoomInSmall:   { base: 1.15, hover: 1.20 },
+  zoomInLarge:   { base: 1.25, hover: 1.30 },
   zoomOutSmall:  { base: 1.05, hover: 1.10 },
   zoomOutLarge:  { base: 1.00, hover: 1.05 },
   zoomOutXLarge: { base: 0.90, hover: 0.95 },
 };
 
-const defaultZoom = { base: 1.15, hover: 1.20 };
+const defaultZoom = { base: 1.00, hover: 1.05 };
 
 // Map of drill name -> zoom level override
 const drillZoomOverrides: Record<string, ZoomLevel> = {
