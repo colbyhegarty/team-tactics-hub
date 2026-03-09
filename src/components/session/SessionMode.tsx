@@ -138,14 +138,19 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
   let transform = '';
   let transition = '';
   if (slideDirection) {
+    // Current page sliding out
     transform = `translateX(${slideDirection === 'left' ? '-100%' : '100%'})`;
     transition = 'transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 280ms cubic-bezier(0.4, 0, 0.2, 1)';
+  } else if (enterDirection) {
+    // New page starting position (no transition yet, positioned off-screen)
+    transform = `translateX(${enterDirection === 'right' ? '100%' : '-100%'})`;
+    transition = 'none';
   } else if (isSwiping) {
     transform = `translateX(${swipeOffset}px)`;
     transition = 'none';
   } else {
     transform = 'translateX(0)';
-    transition = 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)';
+    transition = 'transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 280ms cubic-bezier(0.4, 0, 0.2, 1)';
   }
 
   const opacity = slideDirection ? 0 : isSwiping ? Math.max(0.4, 1 - Math.abs(swipeOffset) / 400) : 1;
