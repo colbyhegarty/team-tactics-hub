@@ -133,6 +133,8 @@ export default function Profile() {
   const handleClearAllData = () => {
     clearAllData();
     clearCustomDrills();
+    clearContacts();
+    setContacts([]);
     setProfile(getUserProfile());
     setSavedDrills([]);
     setCustomDrills([]);
