@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ArrowLeft, ArrowRight, X, Clock, Users, ListChecks, StickyNote, Eye, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
@@ -29,11 +29,34 @@ interface SessionModeProps {
 
 export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadingDrillId }: SessionModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const activities = session.activities;
   const activity = activities[currentIndex];
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === activities.length - 1;
   const progress = ((currentIndex + 1) / activities.length) * 100;
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+    // Only trigger if horizontal swipe is dominant and > 50px
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0 && !isLast) {
+        setCurrentIndex(i => i + 1);
+      } else if (dx > 0 && !isFirst) {
+        setCurrentIndex(i => i - 1);
+      }
+    }
+  }, [isFirst, isLast]);
 
   const title = activity.title || activity.drill_name || 'Activity';
   const drillData = activity.library_drill_id ? drillDetails[activity.library_drill_id] : null;
@@ -68,7 +91,7 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
           {/* Activity title & meta */}
           <div>
