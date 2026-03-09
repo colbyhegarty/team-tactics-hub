@@ -91,7 +91,7 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
           {/* Activity title & meta */}
           <div>
