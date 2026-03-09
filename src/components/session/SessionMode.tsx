@@ -30,6 +30,7 @@ interface SessionModeProps {
 export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadingDrillId }: SessionModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [enterDirection, setEnterDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
