@@ -40,6 +40,7 @@ export default function SessionView() {
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [isDrillModalOpen, setIsDrillModalOpen] = useState(false);
   const [loadingDrillId, setLoadingDrillId] = useState<string | null>(null);
+  const [isSessionMode, setIsSessionMode] = useState(false);
 
   const [drillDetails, setDrillDetails] = useState<Record<string, Drill>>({});
 
