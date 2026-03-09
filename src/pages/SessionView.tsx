@@ -121,7 +121,7 @@ export default function SessionView() {
                 <span className="hidden sm:inline">Start Session</span>
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => exportSessionToPDF(session, drillDetails)}>
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => setIsShareOpen(true)}>
               <Share className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
