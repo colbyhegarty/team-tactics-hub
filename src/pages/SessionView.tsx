@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, Eye, ArrowRight, ListChecks, Share, StickyNote } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, Eye, ArrowRight, ListChecks, Share, StickyNote, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
 import { getSession } from '@/lib/sessionStorage';
