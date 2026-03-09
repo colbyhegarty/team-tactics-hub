@@ -371,6 +371,13 @@ export default function SessionView() {
         isSaved={false}
         onSave={() => {}}
       />
+
+      {/* Share Modal */}
+      <ShareSessionModal
+        session={session}
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+      />
     </div>
   );
 }
