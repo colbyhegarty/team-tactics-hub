@@ -153,7 +153,7 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
     transition = 'transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 280ms cubic-bezier(0.4, 0, 0.2, 1)';
   }
 
-  const opacity = slideDirection ? 0 : isSwiping ? Math.max(0.4, 1 - Math.abs(swipeOffset) / 400) : 1;
+  const opacity = slideDirection ? 0 : enterDirection ? 0 : isSwiping ? Math.max(0.4, 1 - Math.abs(swipeOffset) / 400) : 1;
 
   const title = activity.title || activity.drill_name || 'Activity';
   const drillData = activity.library_drill_id ? drillDetails[activity.library_drill_id] : null;
