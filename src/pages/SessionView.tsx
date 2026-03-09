@@ -8,6 +8,7 @@ import { exportSessionToPDF } from '@/lib/sessionPdf';
 import { fetchDrillById } from '@/lib/api';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
 import { SessionMode } from '@/components/session/SessionMode';
+import { ShareSessionModal } from '@/components/session/ShareSessionModal';
 import { Drill } from '@/types/drill';
 
 function formatBulletPoints(text: string): string[] {
@@ -41,6 +42,7 @@ export default function SessionView() {
   const [isDrillModalOpen, setIsDrillModalOpen] = useState(false);
   const [loadingDrillId, setLoadingDrillId] = useState<string | null>(null);
   const [isSessionMode, setIsSessionMode] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const [drillDetails, setDrillDetails] = useState<Record<string, Drill>>({});
 
@@ -119,7 +121,7 @@ export default function SessionView() {
                 <span className="hidden sm:inline">Start Session</span>
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => exportSessionToPDF(session, drillDetails)}>
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => setIsShareOpen(true)}>
               <Share className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => navigate(`/sessions/${session.id}/edit`)}>
@@ -368,6 +370,13 @@ export default function SessionView() {
         }}
         isSaved={false}
         onSave={() => {}}
+      />
+
+      {/* Share Modal */}
+      <ShareSessionModal
+        session={session}
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
       />
     </div>
   );

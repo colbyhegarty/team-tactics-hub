@@ -20,6 +20,9 @@ import { CustomDrillCard } from '@/components/drill/CustomDrillCard';
 import { CustomDrillDetailModal } from '@/components/drill/CustomDrillDetailModal';
 import { getUserProfile, saveUserProfile, getSavedDrills, removeDrill, clearAllData } from '@/lib/storage';
 import { getCustomDrills, deleteCustomDrill, clearCustomDrills } from '@/lib/customDrillStorage';
+import { getContacts, clearContacts } from '@/lib/contactsStorage';
+import { Contact } from '@/lib/contactsStorage';
+import { ContactsManager } from '@/components/profile/ContactsManager';
 import { getSessions } from '@/lib/sessionStorage';
 import { Session } from '@/types/session';
 import { SessionCard } from '@/components/session/SessionCard';
@@ -47,6 +50,7 @@ export default function Profile() {
   const [sessionGridCols, setSessionGridCols] = useState<1 | 2>(2);
   const [activeSavedOverlay, setActiveSavedOverlay] = useState<string | null>(null);
   const [activeCustomOverlay, setActiveCustomOverlay] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,6 +58,7 @@ export default function Profile() {
     setSavedDrills(getSavedDrills());
     setCustomDrills(getCustomDrills());
     setSessions(getSessions().sort((a, b) => b.updated_at.localeCompare(a.updated_at)));
+    setContacts(getContacts());
   }, []);
 
   const handleToggleDarkMode = (checked: boolean) => {
@@ -128,6 +133,8 @@ export default function Profile() {
   const handleClearAllData = () => {
     clearAllData();
     clearCustomDrills();
+    clearContacts();
+    setContacts([]);
     setProfile(getUserProfile());
     setSavedDrills([]);
     setCustomDrills([]);
@@ -197,6 +204,10 @@ export default function Profile() {
                   <Button onClick={handleSaveProfile} disabled={!hasChanges} className="w-full">
                     <Save className="h-4 w-4" /> Save Settings
                   </Button>
+
+                  <div className="border-t border-border pt-4 mt-2">
+                    <ContactsManager contacts={contacts} onContactsChange={setContacts} />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
