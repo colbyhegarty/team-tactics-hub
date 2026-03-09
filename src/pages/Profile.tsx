@@ -204,6 +204,10 @@ export default function Profile() {
                   <Button onClick={handleSaveProfile} disabled={!hasChanges} className="w-full">
                     <Save className="h-4 w-4" /> Save Settings
                   </Button>
+
+                  <div className="border-t border-border pt-4 mt-2">
+                    <ContactsManager contacts={contacts} onContactsChange={setContacts} />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
