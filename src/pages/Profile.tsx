@@ -50,6 +50,7 @@ export default function Profile() {
   const [sessionGridCols, setSessionGridCols] = useState<1 | 2>(2);
   const [activeSavedOverlay, setActiveSavedOverlay] = useState<string | null>(null);
   const [activeCustomOverlay, setActiveCustomOverlay] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
