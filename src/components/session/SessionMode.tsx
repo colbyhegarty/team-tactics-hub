@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ArrowLeft, ArrowRight, X, Clock, Users, ListChecks, StickyNote, Eye, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
