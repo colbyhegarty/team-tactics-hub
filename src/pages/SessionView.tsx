@@ -7,6 +7,7 @@ import { getSession } from '@/lib/sessionStorage';
 import { exportSessionToPDF } from '@/lib/sessionPdf';
 import { fetchDrillById } from '@/lib/api';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
+import { SessionMode } from '@/components/session/SessionMode';
 import { Drill } from '@/types/drill';
 
 function formatBulletPoints(text: string): string[] {
