@@ -56,10 +56,24 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
     setSwipeOffset(0);
     setIsSwiping(false);
 
+    // Phase 1: slide current content out (280ms), then swap index and slide new content in
     setTimeout(() => {
       setCurrentIndex(i => direction === 'left' ? i + 1 : i - 1);
       setSlideDirection(null);
-      setIsAnimating(false);
+      // Set enter direction: new page enters from the opposite side
+      // Swiping left (next) → new page enters from right
+      // Swiping right (prev) → new page enters from left
+      setEnterDirection(direction === 'left' ? 'right' : 'left');
+
+      // Force a frame so the enter position is applied before animating
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setEnterDirection(null);
+          setTimeout(() => {
+            setIsAnimating(false);
+          }, 280);
+        });
+      });
     }, 280);
   }, [isAnimating, isFirst, isLast]);
 
