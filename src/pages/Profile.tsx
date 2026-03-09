@@ -58,6 +58,7 @@ export default function Profile() {
     setSavedDrills(getSavedDrills());
     setCustomDrills(getCustomDrills());
     setSessions(getSessions().sort((a, b) => b.updated_at.localeCompare(a.updated_at)));
+    setContacts(getContacts());
   }, []);
 
   const handleToggleDarkMode = (checked: boolean) => {
