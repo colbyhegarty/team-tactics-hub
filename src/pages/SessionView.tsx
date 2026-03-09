@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, Eye, ArrowRight, ListChecks, Share, StickyNote } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Target, Clipboard, Edit, Eye, ArrowRight, ListChecks, Share, StickyNote, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
 import { getSession } from '@/lib/sessionStorage';
 import { exportSessionToPDF } from '@/lib/sessionPdf';
 import { fetchDrillById } from '@/lib/api';
 import { DrillDetailModal } from '@/components/drill/DrillDetailModal';
+import { SessionMode } from '@/components/session/SessionMode';
 import { Drill } from '@/types/drill';
 
 function formatBulletPoints(text: string): string[] {
@@ -39,6 +40,7 @@ export default function SessionView() {
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
   const [isDrillModalOpen, setIsDrillModalOpen] = useState(false);
   const [loadingDrillId, setLoadingDrillId] = useState<string | null>(null);
+  const [isSessionMode, setIsSessionMode] = useState(false);
 
   const [drillDetails, setDrillDetails] = useState<Record<string, Drill>>({});
 
@@ -111,6 +113,12 @@ export default function SessionView() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {session.activities.length > 0 && (
+              <Button variant="default" size="sm" className="rounded-full gap-1.5" onClick={() => setIsSessionMode(true)}>
+                <Play className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Start Session</span>
+              </Button>
+            )}
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => exportSessionToPDF(session, drillDetails)}>
               <Share className="h-4 w-4" />
             </Button>
@@ -338,6 +346,17 @@ export default function SessionView() {
           </div>
         )}
       </div>
+
+      {/* Session Mode */}
+      {isSessionMode && (
+        <SessionMode
+          session={session}
+          drillDetails={drillDetails}
+          onExit={() => setIsSessionMode(false)}
+          onViewDrill={handleViewDrill}
+          loadingDrillId={loadingDrillId}
+        />
+      )}
 
       {/* Drill Detail Modal */}
       <DrillDetailModal
