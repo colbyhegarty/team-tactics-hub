@@ -347,6 +347,17 @@ export default function SessionView() {
         )}
       </div>
 
+      {/* Session Mode */}
+      {isSessionMode && (
+        <SessionMode
+          session={session}
+          drillDetails={drillDetails}
+          onExit={() => setIsSessionMode(false)}
+          onViewDrill={handleViewDrill}
+          loadingDrillId={loadingDrillId}
+        />
+      )}
+
       {/* Drill Detail Modal */}
       <DrillDetailModal
         drill={selectedDrill}
