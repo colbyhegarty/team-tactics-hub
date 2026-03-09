@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, X, Clock, Users, ListChecks, StickyNote, Eye, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Clock, Users, ListChecks, StickyNote, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Session, SessionActivity } from '@/types/session';
 import { Drill } from '@/types/drill';
@@ -29,47 +29,123 @@ interface SessionModeProps {
 
 export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadingDrillId }: SessionModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const touchLocked = useRef<'horizontal' | 'vertical' | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const activities = session.activities;
   const activity = activities[currentIndex];
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === activities.length - 1;
   const progress = ((currentIndex + 1) / activities.length) * 100;
 
+  const navigateTo = useCallback((direction: 'left' | 'right') => {
+    if (isAnimating) return;
+    if (direction === 'left' && isLast) return;
+    if (direction === 'right' && isFirst) return;
+
+    setIsAnimating(true);
+    setSlideDirection(direction);
+    setSwipeOffset(0);
+    setIsSwiping(false);
+
+    setTimeout(() => {
+      setCurrentIndex(i => direction === 'left' ? i + 1 : i - 1);
+      setSlideDirection(null);
+      setIsAnimating(false);
+    }, 280);
+  }, [isAnimating, isFirst, isLast]);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isAnimating) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
-  }, []);
+    touchLocked.current = null;
+    setIsSwiping(false);
+    setSwipeOffset(0);
+  }, [isAnimating]);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null || isAnimating) return;
+
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    // Lock direction after 10px of movement
+    if (!touchLocked.current && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      touchLocked.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    }
+
+    if (touchLocked.current === 'horizontal') {
+      e.preventDefault();
+      // Clamp offset and add resistance at edges
+      let offset = dx;
+      if ((dx > 0 && isFirst) || (dx < 0 && isLast)) {
+        offset = dx * 0.2; // Rubber band effect
+      }
+      setSwipeOffset(offset);
+      setIsSwiping(true);
+    }
+  }, [isAnimating, isFirst, isLast]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchStartX.current === null || !isSwiping) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      touchLocked.current = null;
+      return;
+    }
+
+    const threshold = 60;
+
+    if (swipeOffset < -threshold && !isLast) {
+      navigateTo('left');
+    } else if (swipeOffset > threshold && !isFirst) {
+      navigateTo('right');
+    } else {
+      // Snap back
+      setSwipeOffset(0);
+      setIsSwiping(false);
+    }
+
     touchStartX.current = null;
     touchStartY.current = null;
-    // Only trigger if horizontal swipe is dominant and > 50px
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0 && !isLast) {
-        setCurrentIndex(i => i + 1);
-      } else if (dx > 0 && !isFirst) {
-        setCurrentIndex(i => i - 1);
-      }
-    }
-  }, [isFirst, isLast]);
+    touchLocked.current = null;
+  }, [isSwiping, swipeOffset, isFirst, isLast, navigateTo]);
+
+  // Compute slide transform
+  let transform = '';
+  let transition = '';
+  if (slideDirection) {
+    transform = `translateX(${slideDirection === 'left' ? '-100%' : '100%'})`;
+    transition = 'transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 280ms cubic-bezier(0.4, 0, 0.2, 1)';
+  } else if (isSwiping) {
+    transform = `translateX(${swipeOffset}px)`;
+    transition = 'none';
+  } else {
+    transform = 'translateX(0)';
+    transition = 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)';
+  }
+
+  const opacity = slideDirection ? 0 : isSwiping ? Math.max(0.4, 1 - Math.abs(swipeOffset) / 400) : 1;
 
   const title = activity.title || activity.drill_name || 'Activity';
   const drillData = activity.library_drill_id ? drillDetails[activity.library_drill_id] : null;
   const hasLibraryDrill = !!activity.library_drill_id;
 
-  // Calculate start time
   let startMin = 0;
   for (let i = 0; i < currentIndex; i++) {
     startMin += activities[i].duration_minutes;
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="border-b border-border bg-card/95 backdrop-blur-md px-4 py-3 shrink-0">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
@@ -86,116 +162,134 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
           </Button>
         </div>
         <div className="max-w-3xl mx-auto mt-2">
-          <Progress value={progress} className="h-1.5" />
+          <Progress value={progress} className="h-1.5 transition-all duration-300" />
         </div>
       </header>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-          {/* Activity title & meta */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="badge-pill bg-primary/10 text-primary text-xs font-semibold">
-                {formatTime(startMin)} – {formatTime(startMin + activity.duration_minutes)}
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">{title}</h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                {activity.duration_minutes} min
-              </span>
-              {(activity.drill_difficulty || drillData?.difficulty) && (
-                <span className="badge-pill badge-muted text-xs">
-                  {activity.drill_difficulty || drillData?.difficulty}
+      {/* Content with swipe */}
+      <div
+        className="flex-1 overflow-hidden relative"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          ref={contentRef}
+          className="h-full overflow-y-auto"
+          style={{ transform, transition, opacity, willChange: 'transform, opacity' }}
+        >
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+            {/* Activity title & meta */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="badge-pill bg-primary/10 text-primary text-xs font-semibold">
+                  {formatTime(startMin)} – {formatTime(startMin + activity.duration_minutes)}
                 </span>
-              )}
-              {(activity.drill_player_count || drillData?.playerCount) && (
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">{title}</h1>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Users className="h-4 w-4" />
-                  {activity.drill_player_count || drillData?.playerCount}
+                  <Clock className="h-4 w-4" />
+                  {activity.duration_minutes} min
                 </span>
-              )}
+                {(activity.drill_difficulty || drillData?.difficulty) && (
+                  <span className="badge-pill badge-muted text-xs">
+                    {activity.drill_difficulty || drillData?.difficulty}
+                  </span>
+                )}
+                {(activity.drill_player_count || drillData?.playerCount) && (
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    {activity.drill_player_count || drillData?.playerCount}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Description for non-drill activities */}
+            {activity.description && !drillData && (
+              <p className="text-foreground/80 leading-relaxed">{activity.description}</p>
+            )}
+
+            {/* Drill diagram */}
+            {activity.drill_svg_url && (
+              <div className="rounded-2xl overflow-hidden bg-field shadow-card">
+                <img
+                  src={activity.drill_svg_url}
+                  alt={title}
+                  className="w-full object-contain"
+                  style={{ background: 'transparent' }}
+                />
+              </div>
+            )}
+
+            {/* View full drill button */}
+            {hasLibraryDrill && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => onViewDrill(activity)}
+                disabled={loadingDrillId === activity.id}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {loadingDrillId === activity.id ? 'Loading...' : 'View Full Drill Details'}
+              </Button>
+            )}
+
+            {/* Setup */}
+            {(drillData?.setup || activity.drill_setup) && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+                <div className="flex items-center gap-2 mb-3">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Setup</h3>
+                </div>
+                <ul className="space-y-2">
+                  {formatBulletPoints(drillData?.setup || activity.drill_setup || '').map((point, i) => (
+                    <li key={i} className="text-sm text-foreground/80 flex gap-2.5 leading-relaxed">
+                      <span className="text-primary/60 mt-0.5">▸</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Instructions */}
+            {(drillData?.instructions || activity.drill_instructions) && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+                <div className="flex items-center gap-2 mb-3">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Instructions</h3>
+                </div>
+                <ul className="space-y-2">
+                  {formatBulletPoints(drillData?.instructions || activity.drill_instructions || '').map((point, i) => (
+                    <li key={i} className="text-sm text-foreground/80 flex gap-2.5 leading-relaxed">
+                      <span className="text-primary/60 mt-0.5">▸</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Notes */}
+            {activity.activity_notes && (
+              <div className="rounded-2xl border border-border bg-secondary p-4 flex items-start gap-2.5">
+                <StickyNote className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</h4>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{activity.activity_notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Swipe hint on first activity */}
+            {currentIndex === 0 && activities.length > 1 && (
+              <p className="text-center text-xs text-muted-foreground/60 pt-2">
+                Swipe left for next activity →
+              </p>
+            )}
           </div>
-
-          {/* Description for non-drill activities */}
-          {activity.description && !drillData && (
-            <p className="text-foreground/80 leading-relaxed">{activity.description}</p>
-          )}
-
-          {/* Drill diagram */}
-          {activity.drill_svg_url && (
-            <div className="rounded-2xl overflow-hidden bg-field shadow-card">
-              <img
-                src={activity.drill_svg_url}
-                alt={title}
-                className="w-full object-contain"
-                style={{ background: 'transparent' }}
-              />
-            </div>
-          )}
-
-          {/* View full drill button */}
-          {hasLibraryDrill && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => onViewDrill(activity)}
-              disabled={loadingDrillId === activity.id}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              {loadingDrillId === activity.id ? 'Loading...' : 'View Full Drill Details'}
-            </Button>
-          )}
-
-          {/* Setup */}
-          {(drillData?.setup || activity.drill_setup) && (
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-              <div className="flex items-center gap-2 mb-3">
-                <ListChecks className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Setup</h3>
-              </div>
-              <ul className="space-y-2">
-                {formatBulletPoints(drillData?.setup || activity.drill_setup || '').map((point, i) => (
-                  <li key={i} className="text-sm text-foreground/80 flex gap-2.5 leading-relaxed">
-                    <span className="text-primary/60 mt-0.5">▸</span>
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Instructions */}
-          {(drillData?.instructions || activity.drill_instructions) && (
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-              <div className="flex items-center gap-2 mb-3">
-                <ListChecks className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Instructions</h3>
-              </div>
-              <ul className="space-y-2">
-                {formatBulletPoints(drillData?.instructions || activity.drill_instructions || '').map((point, i) => (
-                  <li key={i} className="text-sm text-foreground/80 flex gap-2.5 leading-relaxed">
-                    <span className="text-primary/60 mt-0.5">▸</span>
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Notes */}
-          {activity.activity_notes && (
-            <div className="rounded-2xl border border-border bg-secondary p-4 flex items-start gap-2.5">
-              <StickyNote className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</h4>
-                <p className="text-sm text-foreground/80 leading-relaxed">{activity.activity_notes}</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -204,8 +298,8 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <Button
             variant="outline"
-            onClick={() => setCurrentIndex(i => i - 1)}
-            disabled={isFirst}
+            onClick={() => navigateTo('right')}
+            disabled={isFirst || isAnimating}
             className="flex-1 max-w-[160px]"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -225,7 +319,8 @@ export function SessionMode({ session, drillDetails, onExit, onViewDrill, loadin
             </Button>
           ) : (
             <Button
-              onClick={() => setCurrentIndex(i => i + 1)}
+              onClick={() => navigateTo('left')}
+              disabled={isAnimating}
               className="flex-1 max-w-[160px]"
             >
               Next
